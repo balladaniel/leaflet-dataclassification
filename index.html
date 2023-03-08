@@ -1,0 +1,352 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+		<link rel="stylesheet" href="leaflet/leaflet.css" />
+		<script src="leaflet/leaflet.js"></script>
+		<link rel="stylesheet" href="leaflet/leaflet.fullscreen.css" />
+		<script src="leaflet/leaflet.fullscreen.js"></script>		
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="https://unpkg.com/simple-statistics@7.8.0/dist/simple-statistics.min.js"></script>	
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.0/chroma.min.js"></script>
+		
+		<style>
+			html, body {
+				height: 100%;
+				margin: 0;
+				font-family: 'Open Sans', 'OpenSans-Local';
+				font-style: normal;				
+			}
+			
+			#map {
+				position: absolute;
+				margin:  auto;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+			}
+			#infopanel {
+				position: absolute;
+				margin:  auto;
+				bottom: 30px;
+				right: 20px;
+				width: 30%;
+				z-index: 10001;
+				background-color: #ffffff;
+				border-radius: 3px;
+				box-shadow: 3px 3px 8px #00000055;
+				padding: 10px;
+			}
+			.popuprow {
+				display: flex; 
+				flex-direction: row; 
+				justify-content: space-between;
+			}
+			.info {
+				padding: 6px 8px;
+				font: 14px/16px Arial, Helvetica, sans-serif;
+				background: white;
+				background: rgba(255,255,255,0.8);
+				box-shadow: 0 0 15px rgba(0,0,0,0.2);
+				border-radius: 5px;
+			}
+			.legend {
+				line-height: 18px;
+				color: #555;
+			}
+			.legend i {
+				width: 18px;
+				height: 18px;
+				float: left;
+				margin-right: 8px;
+				opacity: 0.7;
+			}
+						
+		</style>
+	</head>
+	<body>
+		
+				<div id="map"></div>
+				
+		<script>
+		
+			// map div object, main Leaflet object:
+			var map = L.map('map').setView([0,0], 3); 
+			map.addControl(new L.Control.Fullscreen());
+			
+			// base maps
+			var OSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+			}).addTo(map);
+				
+			
+						
+			var values = [];
+			var classes = [];
+			var colors = [];
+			
+			function onEachFeature(feature, layer){	
+				if (feature.properties.density != null) {
+					values.push(feature.properties.density);
+				};
+			}
+			
+			function getColor(d) {
+				for (var i = 0; i<classes.length; i++) {
+					if (d < classes[i+1]) {
+						return colors[i];
+					} 					
+				}
+				return colors.at(-1);	// highest group
+			}
+
+			function stylefn(value){
+				return {
+					fillColor: getColor(value),
+					fillOpacity: 0.7,
+					color: 'white',
+					weight: 2
+				};			
+			}
+
+			function start(mode, classnum, colorramp){
+				console.group('Classification and legend generation:');
+				console.log('Mode:', mode);
+				console.log('Number of classes:', classnum);
+				console.log('Color palette:', colorramp);
+				console.groupEnd();
+				
+				var success = false;
+				if (classnum > 2 && classnum < values.length) {				
+					switch (mode) {
+						case 'jenks':	
+							classes = ss.jenks(values, classnum);
+							classes.pop(); // remove last, since its the max value
+							console.log('Jenks classes: ', classes);
+							success = true;
+							break;
+						case 'equalinterval':
+							classes = [];
+							var minmax = ss.extent(values);
+							console.log('min:', minmax[0], ', max:', minmax[1])
+							var range = minmax[1]-minmax[0];
+							console.log('data range:', range)
+							var oneclass = range/classnum;
+							console.log('one class:', oneclass);
+							for (var i=minmax[0]; i<range;) {
+								classes.push(i);
+								i = i + oneclass;
+							}
+							console.log('EI classes: ', classes);
+							success = true;
+							break;
+						case 'quantile':
+							classes = [];
+							for (var i = 0; i<classnum; i++) {
+								var currentq = (1/classnum)*i;
+								classes.push(ss.quantile(values, currentq));
+							}				
+							console.warn('Quantile classes at the middle might be wrong (compared to GIS SW)');		
+							console.log('Quantile classes: ', classes);	
+							success = true;
+							break;
+						default:
+							console.error('wrong classification type (choose from "jenks", "equalinterval", "quantile")')
+					}
+					if (success) {
+						colors = chroma.scale(colorramp).colors(classnum);
+						generateLegend();
+					}
+				} else {
+					console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
+				}
+			}
+				
+			var x=new XMLHttpRequest();
+			x.open('get', 'us-states.geojson', false);
+			x.send();
+			var d=JSON.parse(x.responseText);
+			var testdata = L.geoJSON(d, {onEachFeature: onEachFeature}).addTo(map);
+			
+			map.fitBounds(testdata.getBounds());
+			
+			console.log('Loaded values from GeoJSON for classification:', values);				
+			
+			start('quantile', 5, 'RdPu');
+			// color ramps:
+			//    for sequential data: 	OrRd, PuBu, BuPu, Oranges, BuGn, YlOrBr, YlGn, Reds, RdPu, Greens, YlGnBu, Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn
+			//    for diverging data:	Spectral, RdYlGn, RdBu, PiYG, PRGn, RdYlBu, BrBG, RdGy, PuOr
+ 			//    for qualitative data:	Accent, Set1, Paired, Set2, Dark2, Set3, Pastel1, Pastel2
+			
+			testdata.eachLayer(function(layer) {
+				layer.setStyle(stylefn(layer.feature.properties.density))
+			});
+						
+			function generateLegend() {
+				var legend = L.control({position: 'bottomleft'});
+
+				legend.onAdd = function (map) {
+					var div = L.DomUtil.create('div', 'info legend');
+					for (var i = 0; i < classes.length; i++) {
+						div.innerHTML +=
+							'<i style="background: ' + colors[i] + '"></i> ' +
+							(i == 0 ? '< ' : Math.round(classes[i]) + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? Math.round(classes[i + 1]) + '<br>' : ' <');
+					}
+					return div;
+				};
+				
+				console.log('Legend generated.');
+				legend.addTo(map);
+			}
+			
+			
+			
+			
+			
+			
+			function unixTimestampSolver(ts, mode) {
+				if (mode == "hhmmss") {
+					var date = new Date(ts*1000).toLocaleString("hu-HU", {hour: '2-digit', minute: '2-digit', second: '2-digit'});				
+				} else if (mode == "full") {
+					var date = new Date(ts*1000).toLocaleString("hu-HU");				
+				} else if (mode == "fullutc") {
+					var date = new Date(ts*1000).toUTCString();				
+				}
+				return date;
+			}
+				
+				
+				
+				
+				
+			
+			ss.jenks = function(data, n_classes) {
+
+				// sort data in numerical order
+				data = data.slice().sort(function (a, b) { return a - b; });
+
+				// get our basic matrices
+				var matrices = ss.jenksMatrices(data, n_classes),
+					// we only need lower class limits here
+					lower_class_limits = matrices.lower_class_limits,
+					k = data.length - 1,
+					kclass = [],
+					countNum = n_classes;
+
+				// the calculation of classes will never include the upper and
+				// lower bounds, so we need to explicitly set them
+				kclass[n_classes] = data[data.length - 1];
+				kclass[0] = data[0];
+
+				// the lower_class_limits matrix is used as indexes into itself
+				// here: the `k` variable is reused in each iteration.
+				while (countNum > 1) {
+					kclass[countNum - 1] = data[lower_class_limits[k][countNum] - 2];
+					k = lower_class_limits[k][countNum] - 1;
+					countNum--;
+				}
+
+				return kclass;
+			};
+			
+				ss.jenksMatrices = function(data, n_classes) {
+
+					// in the original implementation, these matrices are referred to
+					// as `LC` and `OP`
+					//
+					// * lower_class_limits (LC): optimal lower class limits
+					// * variance_combinations (OP): optimal variance combinations for all classes
+					var lower_class_limits = [],
+						variance_combinations = [],
+						// loop counters
+						i, j,
+						// the variance, as computed at each step in the calculation
+						variance = 0;
+
+					// Initialize and fill each matrix with zeroes
+					for (i = 0; i < data.length + 1; i++) {
+						var tmp1 = [], tmp2 = [];
+						for (j = 0; j < n_classes + 1; j++) {
+							tmp1.push(0);
+							tmp2.push(0);
+						}
+						lower_class_limits.push(tmp1);
+						variance_combinations.push(tmp2);
+					}
+
+					for (i = 1; i < n_classes + 1; i++) {
+						lower_class_limits[1][i] = 1;
+						variance_combinations[1][i] = 0;
+						// in the original implementation, 9999999 is used but
+						// since Javascript has `Infinity`, we use that.
+						for (j = 2; j < data.length + 1; j++) {
+							variance_combinations[j][i] = Infinity;
+						}
+					}
+
+					for (var l = 2; l < data.length + 1; l++) {
+
+						// `SZ` originally. this is the sum of the values seen thus
+						// far when calculating variance.
+						var sum = 0, 
+							// `ZSQ` originally. the sum of squares of values seen
+							// thus far
+							sum_squares = 0,
+							// `WT` originally. This is the number of 
+							w = 0,
+							// `IV` originally
+							i4 = 0;
+
+						// in several instances, you could say `Math.pow(x, 2)`
+						// instead of `x * x`, but this is slower in some browsers
+						// introduces an unnecessary concept.
+						for (var m = 1; m < l + 1; m++) {
+
+							// `III` originally
+							var lower_class_limit = l - m + 1,
+								val = data[lower_class_limit - 1];
+
+							// here we're estimating variance for each potential classing
+							// of the data, for each potential number of classes. `w`
+							// is the number of data points considered so far.
+							w++;
+
+							// increase the current sum and sum-of-squares
+							sum += val;
+							sum_squares += val * val;
+
+							// the variance at this point in the sequence is the difference
+							// between the sum of squares and the total x 2, over the number
+							// of samples.
+							variance = sum_squares - (sum * sum) / w;
+
+							i4 = lower_class_limit - 1;
+
+							if (i4 !== 0) {
+								for (j = 2; j < n_classes + 1; j++) {
+									if (variance_combinations[l][j] >=
+										(variance + variance_combinations[i4][j - 1])) {
+										lower_class_limits[l][j] = lower_class_limit;
+										variance_combinations[l][j] = variance +
+											variance_combinations[i4][j - 1];
+									}
+								}
+							}
+						}
+
+						lower_class_limits[l][1] = 1;
+						variance_combinations[l][1] = variance;
+					}
+
+					return {
+						lower_class_limits: lower_class_limits,
+						variance_combinations: variance_combinations
+					};
+				};
+			
+			  </script>	
+	</body>
+</html>
