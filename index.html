@@ -8,6 +8,7 @@
 		<script src="leaflet/leaflet.js"></script>
 		<link rel="stylesheet" href="leaflet/leaflet.fullscreen.css" />
 		<script src="leaflet/leaflet.fullscreen.js"></script>		
+		<script src="leaflet/leaflet-svg-shape-markers.min.js"></script>		
 		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 		<script src="https://unpkg.com/simple-statistics@7.8.0/dist/simple-statistics.min.js"></script>	
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.0/chroma.min.js"></script>
@@ -87,11 +88,18 @@
 			var values = [];
 			var classes = [];
 			var colors = [];
+			var field;
 			
 			function onEachFeature(feature, layer){	
 				if (feature.properties.density != null) {
 					values.push(feature.properties.density);
 				};
+				/*if (feature.properties.Shape_Leng != null) {
+					values.push(feature.properties.Shape_Leng);
+				};*/
+				/*if (feature.properties.Terfogat != null) {
+					values.push(feature.properties.Terfogat);
+				};*/
 			}
 			
 			function getColor(d) {
@@ -102,8 +110,19 @@
 				}
 				return colors.at(-1);	// highest group
 			}
+			
+			// EXPERIMENTAL LINE WEIGHT 
+			function getWeight(d) {
+				for (var i = 0; i<classes.length; i++) {
+					if (d < classes[i+1]) {
+						return d*0.00005;
+					} 					
+				}
+				return colors.at(-1);	// highest group
+			}
 
 			function stylefn(value){
+				console.log(value)
 				return {
 					fillColor: getColor(value),
 					fillOpacity: 0.7,
@@ -111,13 +130,32 @@
 					weight: 2
 				};			
 			}
+			function stylefn_point(value){
+				return {
+					fillColor: getColor(value),
+					fillOpacity: 1,
+					color: "black",
+					weight: 1.5,
+					shape: "circle",
+					radius: 8
+				};			
+			}
+			function stylefn_line(value){
+				console.log(value)
+				return {
+					color: getColor(value),
+					weight: 1.5/*getWeight(value)*/
+				};			
+			}
 
-			function start(mode, classnum, colorramp){
+			function start(mode, classnum, colorramp, f, legendtitle){
 				console.group('Classification and legend generation:');
 				console.log('Mode:', mode);
 				console.log('Number of classes:', classnum);
 				console.log('Color palette:', colorramp);
 				console.groupEnd();
+				
+				field = f;
 				
 				var success = false;
 				if (classnum > 2 && classnum < values.length) {				
@@ -158,7 +196,7 @@
 					}
 					if (success) {
 						colors = chroma.scale(colorramp).colors(classnum);
-						generateLegend();
+						generateLegend(legendtitle);
 					}
 				} else {
 					console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
@@ -166,35 +204,51 @@
 			}
 				
 			var x=new XMLHttpRequest();
+			//x.open('get', 'points.geojson', false);
 			x.open('get', 'us-states.geojson', false);
+			//x.open('get', 'rivers.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
-			var testdata = L.geoJSON(d, {onEachFeature: onEachFeature}).addTo(map);
+			var testdata = L.geoJSON(d, {onEachFeature: onEachFeature}).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
 			
 			map.fitBounds(testdata.getBounds());
 			
 			console.log('Loaded values from GeoJSON for classification:', values);				
 			
-			start('quantile', 5, 'RdPu');
+			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle
+			start('quantile', 5, 'RdPu', 'density', 'Density (per m<sup>2</sup>)'); 	// mode, numclasses, colorramp, field, legendtitle
+			
 			// color ramps:
 			//    for sequential data: 	OrRd, PuBu, BuPu, Oranges, BuGn, YlOrBr, YlGn, Reds, RdPu, Greens, YlGnBu, Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn
 			//    for diverging data:	Spectral, RdYlGn, RdBu, PiYG, PRGn, RdYlBu, BrBG, RdGy, PuOr
  			//    for qualitative data:	Accent, Set1, Paired, Set2, Dark2, Set3, Pastel1, Pastel2
 			
 			testdata.eachLayer(function(layer) {
-				layer.setStyle(stylefn(layer.feature.properties.density))
+				console.log(layer.feature.geometry.type)
+				if (layer.feature.geometry.type == "Point") {
+					var coords = layer.feature.geometry.coordinates;
+					var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], stylefn_point(layer.feature.properties.Terfogat));
+					marker.addTo(map);
+				}
+				if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
+					layer.setStyle(stylefn_line(layer.feature.properties.Shape_Leng))
+				}
+				if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
+					layer.setStyle(stylefn(layer.feature.properties.density))
+				}
 			});
-						
-			function generateLegend() {
+			
+			function generateLegend(ltitle) {
 				var legend = L.control({position: 'bottomleft'});
 
 				legend.onAdd = function (map) {
 					var div = L.DomUtil.create('div', 'info legend');
+					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 3px;">' + ltitle + '</div>';
 					for (var i = 0; i < classes.length; i++) {
 						div.innerHTML +=
 							'<i style="background: ' + colors[i] + '"></i> ' +
 							(i == 0 ? '< ' : Math.round(classes[i]) + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? Math.round(classes[i + 1]) + '<br>' : ' <');
-					}
+					};
 					return div;
 				};
 				
