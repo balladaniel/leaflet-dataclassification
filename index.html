@@ -148,14 +148,21 @@
 				};			
 			}
 
-			function start(mode, classnum, colorramp, f, legendtitle){
+			function start(options){
 				console.group('Classification and legend generation:');
-				console.log('Mode:', mode);
-				console.log('Number of classes:', classnum);
-				console.log('Color palette:', colorramp);
+				console.log('Mode:', options.mode);
+				console.log('Number of classes:', options.classes);
+				console.log('Color palette:', options.colorRamp);
+				console.log('Title:', options.legendTitle);
+				console.log('Field:', options.field);
 				console.groupEnd();
 				
-				field = f;
+				// OPTIONS extract
+				var mode = options.mode;
+				var classnum = options.classes;
+				var colorramp = options.colorRamp;
+				var legendtitle = options.legendTitle;
+				var field = options.field;
 				
 				var success = false;
 				if (classnum > 2 && classnum < values.length) {				
@@ -215,8 +222,21 @@
 			
 			console.log('Loaded values from GeoJSON for classification:', values);				
 			
-			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle
-			start('quantile', 5, 'RdPu', 'density', 'Density (per m<sup>2</sup>)'); 	// mode, numclasses, colorramp, field, legendtitle
+			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle OLD
+			/*start({
+				mode: 'quantile',
+				classes: 5,
+				colorRamp: 'PiYG',
+				field: 'density',
+				legendTitle: 'Density (per m<sup>2</sup>)'
+			});*/ 		// mode, numclasses, colorramp, field, legendtitle
+			start({
+				mode: 'quantile',
+				classes: 5,
+				colorRamp: 'PiYG',
+				field: 'density',
+				legendTitle: 'Density (per m<sup>2</sup>)'
+			}); 	// mode, numclasses, colorramp, field, legendtitle
 			
 			// color ramps:
 			//    for sequential data: 	OrRd, PuBu, BuPu, Oranges, BuGn, YlOrBr, YlGn, Reds, RdPu, Greens, YlGnBu, Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn
@@ -229,6 +249,7 @@
 					var coords = layer.feature.geometry.coordinates;
 					var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], stylefn_point(layer.feature.properties.Terfogat));
 					marker.addTo(map);
+					testdata.remove(); // to hide default icon markers - not the most elegant way of course
 				}
 				if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
 					layer.setStyle(stylefn_line(layer.feature.properties.Shape_Leng))
@@ -243,7 +264,7 @@
 
 				legend.onAdd = function (map) {
 					var div = L.DomUtil.create('div', 'info legend');
-					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 3px;">' + ltitle + '</div>';
+					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px;">' + ltitle + '</div>';
 					for (var i = 0; i < classes.length; i++) {
 						div.innerHTML +=
 							'<i style="background: ' + colors[i] + '"></i> ' +
