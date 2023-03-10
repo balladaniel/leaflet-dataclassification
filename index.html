@@ -91,15 +91,15 @@
 			var field;
 			
 			function onEachFeature(feature, layer){	
-				if (feature.properties.density != null) {
+				/*if (feature.properties.density != null) {
 					values.push(feature.properties.density);	//feature.properties[field]
 				};
-				/*if (feature.properties.Shape_Leng != null) {
+				if (feature.properties.Shape_Leng != null) {
 					values.push(feature.properties.Shape_Leng);
 				};*/
-				/*if (feature.properties.Terfogat != null) {
+				if (feature.properties.Terfogat != null) {
 					values.push(feature.properties.Terfogat);
-				};*/
+				};
 			}
 			
 			function getColor(d) {
@@ -121,7 +121,7 @@
 				return colors.at(-1);	// highest group
 			}
 
-			function stylefn(value){
+			function stylePolygon(value){
 				console.log(value)
 				return {
 					fillColor: getColor(value),
@@ -130,7 +130,7 @@
 					weight: 2
 				};			
 			}
-			function stylefn_point(value){
+			function stylePoint(value){
 				return {
 					fillColor: getColor(value),
 					fillOpacity: 1,
@@ -140,7 +140,7 @@
 					radius: 8
 				};			
 			}
-			function stylefn_line(value){
+			function styleLine(value){
 				console.log(value)
 				return {
 					color: getColor(value),
@@ -214,8 +214,8 @@
 			}
 				
 			var x=new XMLHttpRequest();
-			//x.open('get', 'points.geojson', false);
-			x.open('get', 'us-states.geojson', false);
+			x.open('get', 'points.geojson', false);
+			//x.open('get', 'us-states.geojson', false);
 			//x.open('get', 'rivers.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
@@ -230,6 +230,7 @@
 				mode: 'quantile',
 				classes: 5,
 				colorRamp: 'PiYG',
+				reverse: false,
 				field: 'density',
 				legendTitle: 'Density (per m<sup>2</sup>)'
 			});*/ 		// mode, numclasses, colorramp, field, legendtitle
@@ -251,15 +252,15 @@
 				console.log(layer.feature.geometry.type)
 				if (layer.feature.geometry.type == "Point") {
 					var coords = layer.feature.geometry.coordinates;
-					var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], stylefn_point(layer.feature.properties.Terfogat));
+					var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], stylePoint(layer.feature.properties.Terfogat));
 					marker.addTo(map);
 					testdata.remove(); // to hide default icon markers - not the most elegant way of course
 				}
 				if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-					layer.setStyle(stylefn_line(layer.feature.properties.Shape_Leng))
+					layer.setStyle(styleLine(layer.feature.properties.Shape_Leng))
 				}
 				if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
-					layer.setStyle(stylefn(layer.feature.properties.density))
+					layer.setStyle(stylePolygon(layer.feature.properties.density))
 				}
 			});
 			
