@@ -92,7 +92,7 @@
 			
 			function onEachFeature(feature, layer){	
 				if (feature.properties.density != null) {
-					values.push(feature.properties.density);
+					values.push(feature.properties.density);	//feature.properties[field]
 				};
 				/*if (feature.properties.Shape_Leng != null) {
 					values.push(feature.properties.Shape_Leng);
@@ -153,6 +153,7 @@
 				console.log('Mode:', options.mode);
 				console.log('Number of classes:', options.classes);
 				console.log('Color palette:', options.colorRamp);
+				console.log('Color ramp reverse:', options.reverse);
 				console.log('Title:', options.legendTitle);
 				console.log('Field:', options.field);
 				console.groupEnd();
@@ -161,8 +162,9 @@
 				var mode = options.mode;
 				var classnum = options.classes;
 				var colorramp = options.colorRamp;
+				var colorramp_rev = options.reverse;
 				var legendtitle = options.legendTitle;
-				var field = options.field;
+				field = options.field;
 				
 				var success = false;
 				if (classnum > 2 && classnum < values.length) {				
@@ -203,6 +205,7 @@
 					}
 					if (success) {
 						colors = chroma.scale(colorramp).colors(classnum);
+						if (colorramp_rev) {colors.reverse(); };
 						generateLegend(legendtitle);
 					}
 				} else {
@@ -234,6 +237,7 @@
 				mode: 'quantile',
 				classes: 5,
 				colorRamp: 'PiYG',
+				reverse: false,
 				field: 'density',
 				legendTitle: 'Density (per m<sup>2</sup>)'
 			}); 	// mode, numclasses, colorramp, field, legendtitle
