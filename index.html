@@ -151,6 +151,8 @@
 			function start(options){
 				console.group('Classification and legend generation:');
 				console.log('Mode:', options.mode);
+				console.log('Point mode:', options.pointMode);
+				console.log('Line mode:', options.lineMode);
 				console.log('Number of classes:', options.classes);
 				console.log('Color palette:', options.colorRamp);
 				console.log('Color ramp reverse:', options.reverse);
@@ -237,9 +239,11 @@
 			start({
 				mode: 'quantile',
 				classes: 5,
+				pointMode: 'color', 	// NOT IMPLEMENTED YET
+				lineMode: 'width', 		// NOT IMPLEMENTED YET
 				colorRamp: 'PiYG',
 				reverse: false,
-				field: 'density',
+				field: 'density', 		// NOT IMPLEMENTED YET
 				legendTitle: 'Density (per m<sup>2</sup>)'
 			}); 	// mode, numclasses, colorramp, field, legendtitle
 			
