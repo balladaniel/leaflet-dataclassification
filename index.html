@@ -121,6 +121,17 @@
 				return colors.at(-1);	// highest group
 			}
 
+			// EXPERIMENTAL POINT SIZE
+			function getSize(d) {
+			60
+			2
+				for (var i = 0; i<classes.length; i++) {
+					if (d < classes[i+1]) {
+						return d*0.00005;
+					} 					
+				}
+				return colors.at(-1);	// highest group
+			}
 			function stylePolygon(value){
 				console.log(value)
 				return {
@@ -130,7 +141,7 @@
 					weight: 2
 				};			
 			}
-			function stylePoint(value){
+			function stylePoint_color(value){
 				return {
 					fillColor: getColor(value),
 					fillOpacity: 1,
@@ -138,6 +149,16 @@
 					weight: 1.5,
 					shape: "circle",
 					radius: 8
+				};			
+			}
+			function stylePoint_size(value){
+				return {
+					fillColor: "orange",
+					fillOpacity: 1,
+					color: "black",
+					weight: 1.5,
+					shape: "circle",
+					radius: getSize(value)
 				};			
 			}
 			function styleLine(value){
@@ -155,7 +176,7 @@
 				console.log('Line mode:', options.lineMode);
 				console.log('Number of classes:', options.classes);
 				console.log('Color palette:', options.colorRamp);
-				console.log('Color ramp reverse:', options.reverse);
+				console.log('Color ramp reverse:', options.reverseColorRamp);
 				console.log('Title:', options.legendTitle);
 				console.log('Field:', options.field);
 				console.groupEnd();
@@ -164,7 +185,7 @@
 				var mode = options.mode;
 				var classnum = options.classes;
 				var colorramp = options.colorRamp;
-				var colorramp_rev = options.reverse;
+				var colorramp_rev = options.reverseColorRamp;
 				var legendtitle = options.legendTitle;
 				field = options.field;
 				
@@ -213,6 +234,22 @@
 				} else {
 					console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
 				}
+				
+				testdata.eachLayer(function(layer) {
+				console.log(layer.feature.geometry.type)
+				if (layer.feature.geometry.type == "Point") {
+					var coords = layer.feature.geometry.coordinates;
+					var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], (options.pointMode == "color" ? stylePoint_color(layer.feature.properties.Terfogat) : stylePoint_size(layer.feature.properties.Terfogat)));
+					marker.addTo(map);
+					testdata.remove(); // to hide default icon markers - not the most elegant way of course
+				}
+				if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
+					layer.setStyle(styleLine(layer.feature.properties.Shape_Leng))
+				}
+				if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
+					layer.setStyle(stylePolygon(layer.feature.properties.density))
+				}
+			});
 			}
 				
 			var x=new XMLHttpRequest();
@@ -239,10 +276,10 @@
 			start({
 				mode: 'quantile',
 				classes: 5,
-				pointMode: 'color', 	// NOT IMPLEMENTED YET
-				lineMode: 'width', 		// NOT IMPLEMENTED YET
+				pointMode: 'size', 	// fill "color" or "size" (size experimental!!)
+				lineMode: 'width', 		// NOT IMPLEMENTED YET - stroke color or width?
 				colorRamp: 'PiYG',
-				reverse: false,
+				reverseColorRamp: false,
 				field: 'density', 		// NOT IMPLEMENTED YET
 				legendTitle: 'Density (per m<sup>2</sup>)'
 			}); 	// mode, numclasses, colorramp, field, legendtitle
@@ -252,21 +289,7 @@
 			//    for diverging data:	Spectral, RdYlGn, RdBu, PiYG, PRGn, RdYlBu, BrBG, RdGy, PuOr
  			//    for qualitative data:	Accent, Set1, Paired, Set2, Dark2, Set3, Pastel1, Pastel2
 			
-			testdata.eachLayer(function(layer) {
-				console.log(layer.feature.geometry.type)
-				if (layer.feature.geometry.type == "Point") {
-					var coords = layer.feature.geometry.coordinates;
-					var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], stylePoint(layer.feature.properties.Terfogat));
-					marker.addTo(map);
-					testdata.remove(); // to hide default icon markers - not the most elegant way of course
-				}
-				if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-					layer.setStyle(styleLine(layer.feature.properties.Shape_Leng))
-				}
-				if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
-					layer.setStyle(stylePolygon(layer.feature.properties.density))
-				}
-			});
+			
 			
 			function generateLegend(ltitle) {
 				var legend = L.control({position: 'bottomleft'});
