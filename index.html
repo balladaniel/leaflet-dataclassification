@@ -89,6 +89,7 @@
 			var classes = [];
 			var colors = [];
 			var radiuses = [];
+			var widths = [];
 			var field;
 
 			function getColor(d) {
@@ -104,13 +105,14 @@
 			function getWeight(d) {
 				for (var i = 0; i<classes.length; i++) {
 					if (d < classes[i+1]) {
-						return d*0.00005;
+						console.log(widths[i])
+						return widths[i];
 					} 					
 				}
-				return colors.at(-1);	// highest group
+				return widths.at(-1);	// highest group
 			}
 
-			function getSize(d) {
+			function getRadius(d) {
 				for (var i = 0; i<classes.length; i++) {
 					if (d < classes[i+1]) {
 						return radiuses[i];
@@ -144,17 +146,25 @@
 					color: "black",
 					weight: 1.5,
 					shape: "circle",
-					radius: getSize(value)
+					radius: getRadius(value)
 				};			
 			}
-			function styleLine(value){
+			function styleLine_color(value){
 				console.log(value)
 				return {
 					color: getColor(value),
-					weight: 1.5/*getWeight(value)*/
+					weight: 3
+				};			
+			}
+			function styleLine_width(value){
+				console.log(value)
+				return {
+					color: "orange",
+					weight: getWeight(value)
 				};			
 			}
 			
+			// get n[classes] of point radiuses, line widths
 			function pointMode_size_radiuses([min, max]){
 				radiuses = [];
 				
@@ -166,6 +176,17 @@
 				radiuses.push(max);
 				console.log('points: radius categories:', radiuses)
 			}
+			function lineMode_width([min, max]){
+				widths = [];
+				
+				var step = (max-min)/classes.length;
+				for (var i = 1; i<classes.length; i++) {
+					var curr = min+step*i;
+					widths.push(curr);
+				}
+				widths.push(max);
+				console.log('lines: width/weight categories:', widths)
+			}
 
 			function start(options){
 				console.group('Classification and legend generation');
@@ -173,6 +194,7 @@
 				console.log('Point mode:', options.pointMode);
 				console.log('Point size:', options.pointSizeMin, '-', options.pointSizeMax);
 				console.log('Line mode:', options.lineMode);
+				console.log('Line width:', options.lineWidthMin, '-', options.lineWidthMax);
 				console.log('Number of classes:', options.classes);
 				console.log('Color palette:', options.colorRamp);
 				console.log('Legend ascending:', options.legendAscending);
@@ -187,6 +209,8 @@
 				var mode = options.mode;
 				var mode_point = options.pointMode;
 				var pointSize = [options.pointSizeMin, options.pointSizeMax];
+				var lineWidth = [options.lineWidthMin, options.lineWidthMax];
+				var mode_line = options.lineMode;
 				var classnum = options.classes;
 				var colorramp = options.colorRamp;
 				var asc = options.legendAscending;
@@ -265,6 +289,9 @@
 					if (mode_point == "size") {
 						pointMode_size_radiuses(pointSize);
 					}
+					if (mode_line == "width") {
+						lineMode_width(lineWidth);
+					}
 				} else {
 					console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
 					return;
@@ -281,7 +308,7 @@
 						testdata.remove(); // to hide default icon markers - not the most elegant way of course
 					}
 					if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-						layer.setStyle(styleLine(layer.feature.properties[field]))
+						layer.setStyle((options.lineMode == "width" ? styleLine_width(layer.feature.properties[field]) : styleLine_color(layer.feature.properties[field])))
 					}
 					if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
 						layer.setStyle(stylePolygon(layer.feature.properties[field]))
@@ -291,30 +318,32 @@
 			}
 				
 			var x=new XMLHttpRequest();
-			x.open('get', 'points.geojson', false);
+			//x.open('get', 'points.geojson', false);
 			//x.open('get', 'us-states.geojson', false);
-			//x.open('get', 'rivers.geojson', false);
+			x.open('get', 'rivers.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
-			var testdata = L.geoJSON(d/*, {onEachFeature: onEachFeature}*/).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
+			var testdata = L.geoJSON(d).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
 			map.fitBounds(testdata.getBounds());
 			
 			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle OLD
 			start({
-				mode: 'jenks',							// classification method (jenks, quantile, equalinterval)
+				mode: 'jenks',								// classification method (jenks, quantile, equalinterval)
 				classes: 5,									// desired number of classes
 				pointMode: 'color', 						// fill "color" or "size" (size EXPERIMENTAL!!)
 				pointSizeMin: 2,							// with pointMode: size, define min point circle radius
 				pointSizeMax: 10,							// with pointMode: size, define max point circle radius
-				lineMode: 'width', 							// NOT IMPLEMENTED YET - stroke color or width?
+				lineMode: 'width', 							// stroke "color" or "width" (width EXPERIMENTAL!!)
+				lineWidthMin: 1,							// with lineMode: width, define min stroke width
+				lineWidthMax: 10,							// with lineMode: width, define max stroke width
 				colorRamp: 'PiYG',							// color ramp to use in symbology
 				legendAscending: false,						// true = values in legend will be ascending (low first, high last)
 				reverseColorRamp: false,					// true = reverses the chosen color ramp, both in symbology on map and legend colors. 
 															// Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
 															// (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
-				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
+				field: 'Shape_Leng', 						// target attribute field name. Case-sensitive!
 				legendTitle: 'Density (per m<sup>2</sup>)',	// Title for legend (usually a description of visualized data)
-				legendRounding: false						// false = disable class boundary value rounding
+				legendRounding: true						// false = disable class boundary value rounding
 			}); 
 			
 			// color ramps:
