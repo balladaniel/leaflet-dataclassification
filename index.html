@@ -318,9 +318,9 @@
 			}
 				
 			var x=new XMLHttpRequest();
-			//x.open('get', 'points.geojson', false);
+			x.open('get', 'points.geojson', false);
 			//x.open('get', 'us-states.geojson', false);
-			x.open('get', 'rivers.geojson', false);
+			//x.open('get', 'rivers.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
 			var testdata = L.geoJSON(d).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
@@ -338,11 +338,11 @@
 				lineWidthMax: 10,							// with lineMode: width, define max stroke width
 				colorRamp: 'PiYG',							// color ramp to use in symbology
 				legendAscending: false,						// true = values in legend will be ascending (low first, high last)
-				reverseColorRamp: false,					// true = reverses the chosen color ramp, both in symbology on map and legend colors. 
+				reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. 
 															// Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
 															// (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
-				field: 'Shape_Leng', 						// target attribute field name. Case-sensitive!
-				legendTitle: 'Density (per m<sup>2</sup>)',	// Title for legend (usually a description of visualized data)
+				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
+				legendTitle: 'Density (per m2)',			// title for legend (usually a description of visualized data)
 				legendRounding: true						// false = disable class boundary value rounding
 			}); 
 			
@@ -353,7 +353,7 @@
 			
 			
 			
-			function generateLegend(ltitle, asc, round) {				
+			function generateLegend(title, asc, round) {				
 				var legend = L.control({position: 'bottomleft'});
 				
 				if (round) {
@@ -365,8 +365,9 @@
 				
 				legend.onAdd = function (map) {
 					var div = L.DomUtil.create('div', 'info legend');
-					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px;">' + ltitle + '</div>';
+					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px; max-width: 170px;">' + title + '</div>';
 					if (asc) {
+						// ascending legend
 						for (var i = 0; i < classes.length; i++) {
 							console.log('Legend: building line', i)
 							div.innerHTML +=
@@ -374,6 +375,7 @@
 								(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <');
 						}
 					} else {
+						// descending legend
 						for (var i = classes.length; i > 0; i--) {
 							console.log('Legend: building line', i)
 							div.innerHTML +=
