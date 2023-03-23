@@ -119,7 +119,7 @@
 				return radiuses.at(-1);	// highest group
 			}
 			function stylePolygon(value){
-				console.log(value)
+				console.log('value to classify: ', value)
 				return {
 					fillColor: getColor(value),
 					fillOpacity: 0.7,
@@ -176,6 +176,7 @@
 				console.log('Number of classes:', options.classes);
 				console.log('Color palette:', options.colorRamp);
 				console.log('Legend ascending:', options.legendAscending);
+				console.log('Legend rounding:', options.legendRounding);
 				console.log('Color ramp reverse:', options.reverseColorRamp);
 				console.log('Title:', options.legendTitle);
 				console.log('Field:', options.field);
@@ -191,6 +192,7 @@
 				var asc = options.legendAscending;
 				var colorramp_rev = options.reverseColorRamp;
 				var legendtitle = options.legendTitle;
+				var legendrounding = options.legendRounding;
 				var field = options.field;
 				
 				// feature attribute value extraction to array
@@ -258,7 +260,7 @@
 					if (success) {
 						colors = chroma.scale(colorramp).colors(classnum);
 						if (colorramp_rev) {colors.reverse(); };
-						generateLegend(legendtitle, asc);
+						generateLegend(legendtitle, asc, legendrounding);
 					}
 					if (mode_point == "size") {
 						pointMode_size_radiuses(pointSize);
@@ -270,7 +272,7 @@
 				
 				// setting symbology to features
 				testdata.eachLayer(function(layer) {
-					console.log(layer.feature.geometry.type)
+					console.log('feature type:', layer.feature.geometry.type)
 
 					if (layer.feature.geometry.type == "Point") {
 						var coords = layer.feature.geometry.coordinates;
@@ -279,10 +281,10 @@
 						testdata.remove(); // to hide default icon markers - not the most elegant way of course
 					}
 					if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-						layer.setStyle(styleLine(layer.feature.properties.Shape_Leng))
+						layer.setStyle(styleLine(layer.feature.properties[field]))
 					}
 					if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
-						layer.setStyle(stylePolygon(layer.feature.properties.density))
+						layer.setStyle(stylePolygon(layer.feature.properties[field]))
 					}
 					
 				});
@@ -295,20 +297,11 @@
 			x.send();
 			var d=JSON.parse(x.responseText);
 			var testdata = L.geoJSON(d/*, {onEachFeature: onEachFeature}*/).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
-			
 			map.fitBounds(testdata.getBounds());
 			
 			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle OLD
-			/*start({
-				mode: 'quantile',
-				classes: 5,
-				colorRamp: 'PiYG',
-				reverse: false,
-				field: 'density',
-				legendTitle: 'Density (per m<sup>2</sup>)'
-			});*/ 		// mode, numclasses, colorramp, field, legendtitle
 			start({
-				mode: 'quantile',							// classification method (jenks, quantile, equalinterval)
+				mode: 'jenks',							// classification method (jenks, quantile, equalinterval)
 				classes: 5,									// desired number of classes
 				pointMode: 'color', 						// fill "color" or "size" (size EXPERIMENTAL!!)
 				pointSizeMin: 2,							// with pointMode: size, define min point circle radius
@@ -320,7 +313,8 @@
 															// Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
 															// (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
 				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
-				legendTitle: 'Density (per m<sup>2</sup>)'	// Title for legend (usually a description of visualized data)
+				legendTitle: 'Density (per m<sup>2</sup>)',	// Title for legend (usually a description of visualized data)
+				legendRounding: false						// false = disable class boundary value rounding
 			}); 
 			
 			// color ramps:
@@ -330,9 +324,16 @@
 			
 			
 			
-			function generateLegend(ltitle, asc) {				
+			function generateLegend(ltitle, asc, round) {				
 				var legend = L.control({position: 'bottomleft'});
-
+				
+				if (round) {
+					for (var i=0; i<classes.length; i++) {
+						classes[i] = Math.round(classes[i])
+					}
+					console.log('Class break values have been rounded.')
+				}
+				
 				legend.onAdd = function (map) {
 					var div = L.DomUtil.create('div', 'info legend');
 					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px;">' + ltitle + '</div>';
@@ -341,14 +342,14 @@
 							console.log('Legend: building line', i)
 							div.innerHTML +=
 								'<i style="background: ' + colors[i] + '"></i> ' +
-								(i == 0 ? '< ' : Math.round(classes[i]) + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? Math.round(classes[i + 1]) + '<br>' : ' <');
+								(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <');
 						}
 					} else {
 						for (var i = classes.length; i > 0; i--) {
 							console.log('Legend: building line', i)
 							div.innerHTML +=
 								'<i style="background: ' + colors[i-1] + '"></i>' +
-								(i == 1 ? '< ' : '') + (i == classes.length ? Math.round(classes[i-1]) + ' <<br>' : Math.round(classes[i]) + (i == 1 ? '' : ' &ndash; ' + Math.round(classes[i-1]) + '<br>'));
+								(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'));
 						}
 					};
 					return div;
