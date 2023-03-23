@@ -88,20 +88,9 @@
 			var values = [];
 			var classes = [];
 			var colors = [];
+			var radiuses = [];
 			var field;
-			
-			function onEachFeature(feature, layer){	
-				/*if (feature.properties.density != null) {
-					values.push(feature.properties.density);	//feature.properties[field]
-				};
-				if (feature.properties.Shape_Leng != null) {
-					values.push(feature.properties.Shape_Leng);
-				};*/
-				if (feature.properties.Terfogat != null) {
-					values.push(feature.properties.Terfogat);
-				};
-			}
-			
+
 			function getColor(d) {
 				for (var i = 0; i<classes.length; i++) {
 					if (d < classes[i+1]) {
@@ -121,16 +110,13 @@
 				return colors.at(-1);	// highest group
 			}
 
-			// EXPERIMENTAL POINT SIZE
 			function getSize(d) {
-			60
-			2
 				for (var i = 0; i<classes.length; i++) {
 					if (d < classes[i+1]) {
-						return d*0.00005;
+						return radiuses[i];
 					} 					
 				}
-				return colors.at(-1);	// highest group
+				return radiuses.at(-1);	// highest group
 			}
 			function stylePolygon(value){
 				console.log(value)
@@ -168,14 +154,28 @@
 					weight: 1.5/*getWeight(value)*/
 				};			
 			}
+			
+			function pointMode_size_radiuses([min, max]){
+				radiuses = [];
+				
+				var step = (max-min)/classes.length;
+				for (var i = 1; i<classes.length; i++) {
+					var curr = min+step*i;
+					radiuses.push(curr);
+				}
+				radiuses.push(max);
+				console.log('points: radius categories:', radiuses)
+			}
 
 			function start(options){
-				console.group('Classification and legend generation:');
+				console.group('Classification and legend generation');
 				console.log('Mode:', options.mode);
 				console.log('Point mode:', options.pointMode);
+				console.log('Point size:', options.pointSizeMin, '-', options.pointSizeMax);
 				console.log('Line mode:', options.lineMode);
 				console.log('Number of classes:', options.classes);
 				console.log('Color palette:', options.colorRamp);
+				console.log('Legend ascending:', options.legendAscending);
 				console.log('Color ramp reverse:', options.reverseColorRamp);
 				console.log('Title:', options.legendTitle);
 				console.log('Field:', options.field);
@@ -183,12 +183,28 @@
 				
 				// OPTIONS extract
 				var mode = options.mode;
+				var mode_point = options.pointMode;
+				var pointSize = [options.pointSizeMin, options.pointSizeMax];
 				var classnum = options.classes;
 				var colorramp = options.colorRamp;
+				var asc = options.legendAscending;
 				var colorramp_rev = options.reverseColorRamp;
 				var legendtitle = options.legendTitle;
-				field = options.field;
+				var field = options.field;
 				
+				// feature attribute value extraction to array
+				testdata.eachLayer(function(layer) {
+					if (layer.feature.properties[field] != null) {
+						values.push(layer.feature.properties[field]);
+					} else {
+						console.error('Attribute field does not exist in GeoJSON.')
+						return;
+					};
+				});
+				
+				console.log('Loaded values from GeoJSON (field: '+field+'):', values);	
+				
+				// classification process
 				var success = false;
 				if (classnum > 2 && classnum < values.length) {				
 					switch (mode) {
@@ -223,33 +239,52 @@
 							console.log('Quantile classes: ', classes);	
 							success = true;
 							break;
+						// EXPERIMENTAL LOG
+						case 'logarithmic':
+							classes = [];
+							var minmax = ss.extent(values);
+							console.log('min:', minmax[0], ', max:', minmax[1])							
+							for (var i = 0; i<classnum; i++) {
+								var x = Math.pow(10, i);
+								classes.push(x);
+							}					
+							console.log('Logarithmic classes: ', classes);	
+							success = true;
+							break;
 						default:
 							console.error('wrong classification type (choose from "jenks", "equalinterval", "quantile")')
 					}
 					if (success) {
 						colors = chroma.scale(colorramp).colors(classnum);
 						if (colorramp_rev) {colors.reverse(); };
-						generateLegend(legendtitle);
+						generateLegend(legendtitle, asc);
+					}
+					if (mode_point == "size") {
+						pointMode_size_radiuses(pointSize);
 					}
 				} else {
 					console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
+					return;
 				}
 				
+				// setting symbology to features
 				testdata.eachLayer(function(layer) {
-				console.log(layer.feature.geometry.type)
-				if (layer.feature.geometry.type == "Point") {
-					var coords = layer.feature.geometry.coordinates;
-					var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], (options.pointMode == "color" ? stylePoint_color(layer.feature.properties.Terfogat) : stylePoint_size(layer.feature.properties.Terfogat)));
-					marker.addTo(map);
-					testdata.remove(); // to hide default icon markers - not the most elegant way of course
-				}
-				if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-					layer.setStyle(styleLine(layer.feature.properties.Shape_Leng))
-				}
-				if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
-					layer.setStyle(stylePolygon(layer.feature.properties.density))
-				}
-			});
+					console.log(layer.feature.geometry.type)
+
+					if (layer.feature.geometry.type == "Point") {
+						var coords = layer.feature.geometry.coordinates;
+						var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], (options.pointMode == "color" ? stylePoint_color(layer.feature.properties[field]) : stylePoint_size(layer.feature.properties[field])));
+						marker.addTo(map);
+						testdata.remove(); // to hide default icon markers - not the most elegant way of course
+					}
+					if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
+						layer.setStyle(styleLine(layer.feature.properties.Shape_Leng))
+					}
+					if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
+						layer.setStyle(stylePolygon(layer.feature.properties.density))
+					}
+					
+				});
 			}
 				
 			var x=new XMLHttpRequest();
@@ -258,11 +293,9 @@
 			//x.open('get', 'rivers.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
-			var testdata = L.geoJSON(d, {onEachFeature: onEachFeature}).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
+			var testdata = L.geoJSON(d/*, {onEachFeature: onEachFeature}*/).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
 			
 			map.fitBounds(testdata.getBounds());
-			
-			console.log('Loaded values from GeoJSON for classification:', values);				
 			
 			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle OLD
 			/*start({
@@ -274,15 +307,20 @@
 				legendTitle: 'Density (per m<sup>2</sup>)'
 			});*/ 		// mode, numclasses, colorramp, field, legendtitle
 			start({
-				mode: 'quantile',
-				classes: 5,
-				pointMode: 'size', 	// fill "color" or "size" (size experimental!!)
-				lineMode: 'width', 		// NOT IMPLEMENTED YET - stroke color or width?
-				colorRamp: 'PiYG',
-				reverseColorRamp: false,
-				field: 'density', 		// NOT IMPLEMENTED YET
-				legendTitle: 'Density (per m<sup>2</sup>)'
-			}); 	// mode, numclasses, colorramp, field, legendtitle
+				mode: 'quantile',							// classification method (jenks, quantile, equalinterval)
+				classes: 5,									// desired number of classes
+				pointMode: 'size', 							// fill "color" or "size" (size EXPERIMENTAL!!)
+				pointSizeMin: 2,							// with pointMode: size, define min point circle radius
+				pointSizeMax: 10,							// with pointMode: size, define max point circle radius
+				lineMode: 'width', 							// NOT IMPLEMENTED YET - stroke color or width?
+				colorRamp: 'PiYG',							// color ramp to use in symbology
+				legendAscending: false,						// true = values in legend will be ascending (low first, high last)
+				reverseColorRamp: false,					// true = reverses the chosen color ramp, both in symbology on map and legend colors. 
+															// Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
+															// (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
+				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
+				legendTitle: 'Density (per m<sup>2</sup>)'	// Title for legend (usually a description of visualized data)
+			}); 
 			
 			// color ramps:
 			//    for sequential data: 	OrRd, PuBu, BuPu, Oranges, BuGn, YlOrBr, YlGn, Reds, RdPu, Greens, YlGnBu, Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn
@@ -291,26 +329,34 @@
 			
 			
 			
-			function generateLegend(ltitle) {
+			function generateLegend(ltitle, asc) {				
 				var legend = L.control({position: 'bottomleft'});
 
 				legend.onAdd = function (map) {
 					var div = L.DomUtil.create('div', 'info legend');
 					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px;">' + ltitle + '</div>';
-					for (var i = 0; i < classes.length; i++) {
-						div.innerHTML +=
-							'<i style="background: ' + colors[i] + '"></i> ' +
-							(i == 0 ? '< ' : Math.round(classes[i]) + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? Math.round(classes[i + 1]) + '<br>' : ' <');
+					if (asc) {
+						for (var i = 0; i < classes.length; i++) {
+							console.log('Legend: building line', i)
+							div.innerHTML +=
+								'<i style="background: ' + colors[i] + '"></i> ' +
+								(i == 0 ? '< ' : Math.round(classes[i]) + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? Math.round(classes[i + 1]) + '<br>' : ' <');
+						}
+					} else {
+						for (var i = classes.length; i > 0; i--) {
+							console.log('Legend: building line', i)
+							div.innerHTML +=
+								'<i style="background: ' + colors[i-1] + '"></i>' +
+								(i == 1 ? '< ' : '') + (i == classes.length ? Math.round(classes[i-1]) + ' <<br>' : Math.round(classes[i]) + (i == 1 ? '' : ' &ndash; ' + Math.round(classes[i-1]) + '<br>'));
+						}
 					};
 					return div;
 				};
 				
+				
 				console.log('Legend generated.');
 				legend.addTo(map);
 			}
-			
-			
-			
 			
 			
 			
