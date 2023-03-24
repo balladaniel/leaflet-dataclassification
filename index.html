@@ -323,7 +323,7 @@
 			//x.open('get', 'rivers.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
-			var testdata = L.geoJSON(d).addTo(map); 		// FOR POINTS, DISABLE ADDING TO MAP (it is done separately cause of custom markers being built)
+			var testdata = L.geoJSON(d).addTo(map); 		// FOR POINTS, YOU MIGHT NEED TO DISABLE ADDTOMAP to avoid default markers (Custom markers are drawn separately)
 			map.fitBounds(testdata.getBounds());
 			
 			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle OLD
@@ -358,9 +358,9 @@
 				
 				if (round) {
 					for (var i=0; i<classes.length; i++) {
-						classes[i] = Math.round(classes[i])
+						classes[i] = classes[i].toFixed(0);
 					}
-					console.log('Class break values have been rounded.')
+					console.log('Class break values have been rounded to whole numbers.')
 				}
 				
 				legend.onAdd = function (map) {
