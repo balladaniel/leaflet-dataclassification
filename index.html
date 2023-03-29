@@ -328,7 +328,7 @@
 			
 			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle OLD
 			start({
-				mode: 'jenks',								// classification method (jenks, quantile, equalinterval)
+				mode: 'quantile',							// classification method (jenks, quantile, equalinterval)
 				classes: 5,									// desired number of classes
 				pointMode: 'color', 						// fill "color" or "size" (size EXPERIMENTAL!!)
 				pointSizeMin: 2,							// with pointMode: size, define min point circle radius
