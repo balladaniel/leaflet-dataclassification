@@ -157,7 +157,7 @@
 			function styleLine_width(value){
 				console.log(value)
 				return {
-					color: "orange",
+					/*color: "orange",*/
 					weight: getWeight(value)
 				};			
 			}
@@ -216,7 +216,9 @@
 				var legendtitle = options.legendTitle;
 				var legendrounding = options.legendRounding;
 				var field = options.field;
-				
+
+				var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
+
 				// feature attribute value extraction to array
 				testdata.eachLayer(function(layer) {
 					if (layer.feature.properties[field] != null) {
@@ -302,6 +304,30 @@
 				testdata.eachLayer(function(layer) {
 					console.log('feature type:', layer.feature.geometry.type)
 
+					// gather info of geojson feature types
+					switch (layer.feature.geometry.type) {
+						case 'Point': 	
+							features_info.Point += 1;
+							break;
+						case 'MultiPoint': 	
+							features_info.MultiPoint += 1;
+							break;
+						case 'LineString': 	
+							features_info.LineString += 1;
+							break;
+						case 'MultiLineString': 	
+							features_info.MultiLineString += 1;
+							break;
+						case 'Polygon': 	
+							features_info.Polygon += 1;
+							break;
+						case 'MultiPolygon': 	
+							features_info.MultiPolygon += 1;
+							break;
+						default:
+							features_info.Unknown += 1;
+					}
+
 					if (layer.feature.geometry.type == "Point") {
 						var coords = layer.feature.geometry.coordinates;
 						var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], (options.pointMode == "color" ? stylePoint_color(layer.feature.properties[field]) : stylePoint_size(layer.feature.properties[field])));
@@ -316,12 +342,15 @@
 					}
 					
 				});
+
+				console.log('Feature types in GeoJSON:', features_info)
 			}
 				
 			var x=new XMLHttpRequest();
 			x.open('get', 'points.geojson', false);
 			//x.open('get', 'us-states.geojson', false);
 			//x.open('get', 'rivers.geojson', false);
+			//x.open('get', 'test.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
 			var testdata = L.geoJSON(d).addTo(map); 		// FOR POINTS, YOU MIGHT NEED TO DISABLE ADDTOMAP to avoid default markers (Custom markers are drawn separately)
@@ -331,12 +360,12 @@
 			start({
 				mode: 'quantile',							// classification method (jenks, quantile, equalinterval)
 				classes: 5,									// desired number of classes
-				pointMode: 'color', 						// fill "color" or "size" (size EXPERIMENTAL!!)
-				pointSizeMin: 2,							// with pointMode: size, define min point circle radius
-				pointSizeMax: 10,							// with pointMode: size, define max point circle radius
-				lineMode: 'color', 							// stroke "color" or "width" (width EXPERIMENTAL!!)
-				lineWidthMin: 1,							// with lineMode: width, define min stroke width
-				lineWidthMax: 10,							// with lineMode: width, define max stroke width (max 25)
+				pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (size EXPERIMENTAL!!)
+				pointSizeMin: 2,							// POINT FEATURES: when pointMode: "size", define min point circle radius
+				pointSizeMax: 10,							// POINT FEATURES: when pointMode: "size", define max point circle radius
+				lineMode: 'color', 							// LINE FEATURES: stroke "color" or "width" (width EXPERIMENTAL!!)
+				lineWidthMin: 1,							// LINE FEATURES: when lineMode: "width", define min stroke width
+				lineWidthMax: 10,							// LINE FEATURES: when lineMode: "width", define max stroke width (max 25)
 				colorRamp: 'PuRd',							// color ramp to use in symbology
 				legendAscending: false,						// true = values in legend will be ascending (low first, high last)
 				reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. 
@@ -348,7 +377,8 @@
 			}); 
 			
 			// color ramps:
-			//    for sequential data: 	OrRd, PuBu, BuPu, Oranges, BuGn, YlOrBr, YlGn, Reds, RdPu, Greens, YlGnBu, Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn
+			//    for sequential data: 	OrRd, PuBu, BuPu, Oranges, BuGn, YlOrBr, YlGn, Reds, RdPu, Greens, YlGnBu, 
+			//							Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn
 			//    for diverging data:	Spectral, RdYlGn, RdBu, PiYG, PRGn, RdYlBu, BrBG, RdGy, PuOr
  			//    for qualitative data:	Accent, Set1, Paired, Set2, Dark2, Set3, Pastel1, Pastel2
 			
@@ -366,16 +396,20 @@
 				
 				legend.onAdd = function (map) {
 					var div = L.DomUtil.create('div', 'info legend');
+					// legend title:
 					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px; max-width: 170px;">' + title + '</div>';
+					// legenditems container
+					var container = '';
 					if (asc) {
 						// ascending legend
 						if (mode_line == "width") {
+							// ascending line 
 							for (var i = 0; i < classes.length; i++) {
 								console.log('Legend: building line', i+1)
-								div.innerHTML +=
+								container +=
 									'<div style="display: flex; flex-direction: row; align-items: center">'+
 										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: black;"/>'+
+											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: #3687fa;"/>'+
 										'</svg>'+
 										'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <')+'</div>'+
 									'</div>';
@@ -383,7 +417,7 @@
 						} else {
 							for (var i = 0; i < classes.length; i++) {
 								console.log('Legend: building line', i+1)
-								div.innerHTML +=
+								container +=
 									'<div style="display: flex; flex-direction: row; align-items: center">'+
 										'<i style="background: ' + colors[i] + '"></i> ' +
 										'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <')+'</div>'+
@@ -395,10 +429,10 @@
 						if (mode_line == "width") {
 							for (var i = classes.length; i > 0; i--) {
 								console.log('Legend: building line', i)
-								div.innerHTML +=
+								container +=
 									'<div style="display: flex; flex-direction: row; align-items: center">'+
 										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: black;"/>'+
+											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: #3687fa;"/>'+
 										'</svg>'+
 									'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
 									'</div>'
@@ -406,15 +440,16 @@
 						} else {
 							for (var i = classes.length; i > 0; i--) {
 								console.log('Legend: building line', i)
-								div.innerHTML +=
+								container +=
 									'<div style="display: flex; flex-direction: row; align-items: center">'+
-									'<i style="background: ' + colors[i-1] + '"></i>' +
-									'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
+										'<i style="background: ' + colors[i-1] + '"></i>' +
+										'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
 									'</div>'
 							}
 						}
 						
 					};
+					div.innerHTML += container;
 					return div;
 				};
 				
