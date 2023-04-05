@@ -8,8 +8,7 @@
 		<script src="leaflet/leaflet.js"></script>
 		<link rel="stylesheet" href="leaflet/leaflet.fullscreen.css" />
 		<script src="leaflet/leaflet.fullscreen.js"></script>		
-		<script src="leaflet/leaflet-svg-shape-markers.min.js"></script>		
-		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="leaflet/leaflet-svg-shape-markers.min.js"></script>	
 		<script src="https://unpkg.com/simple-statistics@7.8.0/dist/simple-statistics.min.js"></script>	
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/chroma-js/2.4.0/chroma.min.js"></script>
 		
@@ -84,7 +83,6 @@
 			}).addTo(map);
 				
 			
-						
 			var values = [];
 			var classes = [];
 			var colors = [];
@@ -283,8 +281,10 @@
 					}
 					if (success) {
 						colors = chroma.scale(colorramp).colors(classnum);
-						if (colorramp_rev) {colors.reverse(); };
-						generateLegend(legendtitle, asc, legendrounding);
+						if (colorramp_rev) {
+							console.log('reversing colorramp')
+							colors.reverse(); 
+						};
 					}
 					if (mode_point == "size") {
 						pointMode_size_radiuses(pointSize);
@@ -292,6 +292,7 @@
 					if (mode_line == "width") {
 						lineMode_width(lineWidth);
 					}
+					generateLegend(legendtitle, asc, legendrounding, mode_line);
 				} else {
 					console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
 					return;
@@ -333,16 +334,16 @@
 				pointMode: 'color', 						// fill "color" or "size" (size EXPERIMENTAL!!)
 				pointSizeMin: 2,							// with pointMode: size, define min point circle radius
 				pointSizeMax: 10,							// with pointMode: size, define max point circle radius
-				lineMode: 'width', 							// stroke "color" or "width" (width EXPERIMENTAL!!)
+				lineMode: 'color', 							// stroke "color" or "width" (width EXPERIMENTAL!!)
 				lineWidthMin: 1,							// with lineMode: width, define min stroke width
-				lineWidthMax: 10,							// with lineMode: width, define max stroke width
-				colorRamp: 'PiYG',							// color ramp to use in symbology
+				lineWidthMax: 10,							// with lineMode: width, define max stroke width (max 25)
+				colorRamp: 'PuRd',							// color ramp to use in symbology
 				legendAscending: false,						// true = values in legend will be ascending (low first, high last)
 				reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. 
 															// Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
 															// (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
-				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
-				legendTitle: 'Density (per m2)',			// title for legend (usually a description of visualized data)
+				field: 'Terfogat', 						// target attribute field name. Case-sensitive!
+				legendTitle: 'Length (m)',					// title for legend (usually a description of visualized data)
 				legendRounding: true						// false = disable class boundary value rounding
 			}); 
 			
@@ -353,7 +354,7 @@
 			
 			
 			
-			function generateLegend(title, asc, round) {				
+			function generateLegend(title, asc, round, mode_line) {				
 				var legend = L.control({position: 'bottomleft'});
 				
 				if (round) {
@@ -368,20 +369,51 @@
 					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px; max-width: 170px;">' + title + '</div>';
 					if (asc) {
 						// ascending legend
-						for (var i = 0; i < classes.length; i++) {
-							console.log('Legend: building line', i)
-							div.innerHTML +=
-								'<i style="background: ' + colors[i] + '"></i> ' +
-								(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <');
+						if (mode_line == "width") {
+							for (var i = 0; i < classes.length; i++) {
+								console.log('Legend: building line', i+1)
+								div.innerHTML +=
+									'<div style="display: flex; flex-direction: row; align-items: center">'+
+										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: black;"/>'+
+										'</svg>'+
+										'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <')+'</div>'+
+									'</div>';
+							}
+						} else {
+							for (var i = 0; i < classes.length; i++) {
+								console.log('Legend: building line', i+1)
+								div.innerHTML +=
+									'<div style="display: flex; flex-direction: row; align-items: center">'+
+										'<i style="background: ' + colors[i] + '"></i> ' +
+										'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <')+'</div>'+
+									'</div>';
+							}
 						}
 					} else {
 						// descending legend
-						for (var i = classes.length; i > 0; i--) {
-							console.log('Legend: building line', i)
-							div.innerHTML +=
-								'<i style="background: ' + colors[i-1] + '"></i>' +
-								(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'));
+						if (mode_line == "width") {
+							for (var i = classes.length; i > 0; i--) {
+								console.log('Legend: building line', i)
+								div.innerHTML +=
+									'<div style="display: flex; flex-direction: row; align-items: center">'+
+										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: black;"/>'+
+										'</svg>'+
+									'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
+									'</div>'
+							}
+						} else {
+							for (var i = classes.length; i > 0; i--) {
+								console.log('Legend: building line', i)
+								div.innerHTML +=
+									'<div style="display: flex; flex-direction: row; align-items: center">'+
+									'<i style="background: ' + colors[i-1] + '"></i>' +
+									'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
+									'</div>'
+							}
 						}
+						
 					};
 					return div;
 				};
