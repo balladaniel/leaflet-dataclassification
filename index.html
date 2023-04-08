@@ -400,14 +400,14 @@
 				pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
 				pointSizeMin: 2,							// POINT FEATURES: when pointMode: "size", define min point circle radius (default: 2)
 				pointSizeMax: 10,							// POINT FEATURES: when pointMode: "size", define max point circle radius (default: 10, recommended max: 12)
-				/*pointShape: 'circle',*/						// POINT FEATURES: shape of points: 'circle', 'square', 'diamond', 'triangle', etc. See https://github.com/rowanwins/Leaflet.SvgShapeMarkers. (default: 'circle')
+				/*pointShape: 'circle',*/					// POINT FEATURES: shape of points: 'circle', 'square', 'diamond', 'triangle', etc. See https://github.com/rowanwins/Leaflet.SvgShapeMarkers. (default: 'circle')
 				lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
 				lineWidthMin: 1,							// LINE FEATURES: when lineMode: "width", define min stroke width (default: 1)
 				lineWidthMax: 15,							// LINE FEATURES: when lineMode: "width", define max stroke width (default: 15, recommended max: 20)
 				colorRamp: 'purd',							// color ramp to use in symbology. Based on ColorBrewer2 color ramps, included in Chroma.js: https://colorbrewer2.org/. (default: PuRd)
-				colorCustom: [	'rgba(20,200,0,0.8)', 
-								'#cc000044', 
-								'0022cccc'],				// custom color ramp as an array, colors in format supported by Chroma.js, with opacity support. A minimum of two colors are required.
+				colorCustom: [	'rgba(255,247,188,1)', 
+								'#fec44fff', 
+								'd95f0eff'],				// custom color ramp as an array, colors in format supported by Chroma.js, with opacity support. A minimum of two colors are required.
 															// (examples for yellow: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', 
 															// chroma('yellow').alpha(0.5). For more, see: https://gka.github.io/chroma.js/)
 															// Custom colors override colorRamp.
@@ -416,7 +416,7 @@
 															// Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
 															// (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
 				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
-				legendTitle: 'Length (m)',					// title for legend (usually a description of visualized data). HTML-markdown and styling allowed. If you want to hide title, set this as ''. (default: ='field')
+				legendTitle: 'Area (m2)',					// title for legend (usually a description of visualized data). HTML-markdown and styling allowed. If you want to hide title, set this as ''. (default: ='field')
 				legendRounding: true						// false = disable class boundary value rounding (default: true)
 			}); 
 			
