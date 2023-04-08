@@ -69,7 +69,7 @@
 	</head>
 	<body>
 		
-				<div id="map"></div>
+		<div id="map"></div>
 				
 		<script>
 		
@@ -90,6 +90,7 @@
 			var widths = [];
 			var field;
 
+			// value evaluators to match classes
 			function getColor(d) {
 				for (var i = 0; i<classes.length; i++) {
 					if (d < classes[i+1]) {
@@ -98,18 +99,14 @@
 				}
 				return colors.at(-1);	// highest group
 			}
-			
-			// EXPERIMENTAL LINE WEIGHT 
 			function getWeight(d) {
 				for (var i = 0; i<classes.length; i++) {
 					if (d < classes[i+1]) {
-						console.log(widths[i])
 						return widths[i];
 					} 					
 				}
 				return widths.at(-1);	// highest group
 			}
-
 			function getRadius(d) {
 				for (var i = 0; i<classes.length; i++) {
 					if (d < classes[i+1]) {
@@ -118,21 +115,14 @@
 				}
 				return radiuses.at(-1);	// highest group
 			}
-			function stylePolygon(value){
-				console.log('value to classify: ', value)
-				return {
-					fillColor: getColor(value),
-					fillOpacity: 0.7,
-					color: 'white',
-					weight: 2
-				};			
-			}
+
+			// stylers
 			function stylePoint_color(value){
 				return {
 					fillColor: getColor(value),
 					fillOpacity: 1,
 					color: "black",
-					weight: 1.5,
+					weight: 1,
 					shape: "circle",
 					radius: 8
 				};			
@@ -148,21 +138,27 @@
 				};			
 			}
 			function styleLine_color(value){
-				console.log(value)
 				return {
 					color: getColor(value),
 					weight: 3
 				};			
 			}
 			function styleLine_width(value){
-				console.log(value)
 				return {
 					/*color: "orange",*/
 					weight: getWeight(value)
 				};			
 			}
+			function stylePolygon(value){
+				return {
+					fillColor: getColor(value),
+					fillOpacity: 0.7,
+					color: 'white',
+					weight: 2
+				};			
+			}
 			
-			// get n[classes] of point radiuses, line widths
+			// get n categories of point radiuses, line widths for symbology
 			function pointMode_size_radiuses([min, max]){
 				radiuses = [];
 				
@@ -183,7 +179,7 @@
 					widths.push(curr);
 				}
 				widths.push(max);
-				console.log('lines: width/weight categories:', widths)
+				console.log('lines: width categories:', widths)
 			}
 
 			function start(options){
@@ -195,6 +191,7 @@
 				console.log('Line width:', options.lineWidthMin, '-', options.lineWidthMax);
 				console.log('Number of classes:', options.classes);
 				console.log('Color palette:', options.colorRamp);
+				console.log('Color palette custom:', options.colorCustom);
 				console.log('Legend ascending:', options.legendAscending);
 				console.log('Legend rounding:', options.legendRounding);
 				console.log('Color ramp reverse:', options.reverseColorRamp);
@@ -202,35 +199,90 @@
 				console.log('Field:', options.field);
 				console.log(options);
 				console.groupEnd();
+
+				// Stop if required options are missing
+				if (options.mode == null || options.classes == null || options.field == null) {
+					console.error('One or more required options are missing: "mode", "classes", "field".')
+					return;
+				}
 				
-				// OPTIONS extract
+				// OPTIONS extract and checks
 				var mode = options.mode;
-				var mode_point = options.pointMode;
+				var mode_point;
+				(options.pointMode != null ? mode_point = options.pointMode : mode_point = 'color'); 		// default
 				var pointSize = [options.pointSizeMin, options.pointSizeMax];
+				(pointSize[0] == null ? pointSize[0] = 2 : ''); 		 									// default									
+				(pointSize[1] == null ? pointSize[1] = 10 : '');											// default
 				var lineWidth = [options.lineWidthMin, options.lineWidthMax];
-				var mode_line = options.lineMode;
+				(lineWidth[0] == null ? lineWidth[0] = 1 : ''); 		 									// default									
+				(lineWidth[1] == null ? lineWidth[1] = 15 : '');											// default
+				var mode_line;
+				(options.lineMode != null ? mode_line = options.lineMode : mode_line = 'color'); 			// default
 				var classnum = options.classes;
-				var colorramp = options.colorRamp;
-				var asc = options.legendAscending;
-				var colorramp_rev = options.reverseColorRamp;
-				var legendtitle = options.legendTitle;
-				var legendrounding = options.legendRounding;
+				if (classnum > 10) { console.warn("Don't be silly, both map and legend will look incomprehensible. Overriding classnumber with 10."); classnum = 10 }; // over 10
+				var colorramp;
+				(options.colorRamp != null ? colorramp = options.colorRamp : colorramp = 'PuRd'); 			// default
+				var colorramp_custom = options.colorCustom;
+				if (colorramp_custom != null ) {
+					if (colorramp_custom.length == 1) {
+						console.error('Custom colors: only one color was set. At least 2 are required. Falling back to colorRamp.');
+					} else {
+						// if an array of at least 2 colors are set, custom color ramp. Otherwise, fallback to colorramp.
+						(colorramp_custom[0] == null || colorramp_custom[1] == null ? '' : colorramp = colorramp_custom);	
+					}
+				}
+				var asc;
+				(options.legendAscending != null ? asc = options.legendAscending : asc = false); 			// default
+				var colorramp_rev;
+				(options.reverseColorRamp != null ? colorramp_rev = options.reverseColorRamp : colorramp_rev = false); 		// default
 				var field = options.field;
+				var legendtitle;
+				(options.legendTitle != null ? legendtitle = options.legendTitle : legendtitle = field); 	// default
+				var legendrounding;
+				(options.legendRounding != null ? legendrounding = options.legendRounding : legendrounding = true); 		// default
 
 				var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
+				var typeOfFeatures = 'unknown';
 
-				// feature attribute value extraction to array
 				testdata.eachLayer(function(layer) {
+					// gather info of geojson feature types
+					switch (layer.feature.geometry.type) {
+						case 'Point': 	
+							features_info.Point += 1;
+							break;
+						case 'MultiPoint': 	
+							features_info.MultiPoint += 1;
+							break;
+						case 'LineString': 	
+							features_info.LineString += 1;
+							break;
+						case 'MultiLineString': 	
+							features_info.MultiLineString += 1;
+							break;
+						case 'Polygon': 	
+							features_info.Polygon += 1;
+							break;
+						case 'MultiPolygon': 	
+							features_info.MultiPolygon += 1;
+							break;
+						default:
+							features_info.Unknown += 1;
+					}
+
+					// feature attribute value extraction to array
 					if (layer.feature.properties[field] != null) {
 						values.push(layer.feature.properties[field]);
 					} else {
-						console.error('Attribute field does not exist in GeoJSON.')
+						console.error('Attribute field "'+field+'" does not exist in GeoJSON. Please note that attribute field input is case-sensitve.')
 						return;
 					};
 				});
-				
+
 				console.log('Loaded values from GeoJSON (field: '+field+'):', values);	
-				
+
+				typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
+				console.log('Dominant feature type in GeoJSON:', typeOfFeatures)
+
 				// classification process
 				var success = false;
 				if (classnum > 2 && classnum < values.length) {				
@@ -262,7 +314,7 @@
 								var currentq = (1/classnum)*i;
 								classes.push(ss.quantile(values, currentq));
 							}				
-							console.warn('Quantile classes at the middle might be wrong (compared to GIS SW)');		
+							console.warn('Quantile classes at the middle might be different, compared to GIS SW');		
 							console.log('Quantile classes: ', classes);	
 							success = true;
 							break;
@@ -282,7 +334,13 @@
 							console.error('wrong classification type (choose from "jenks", "equalinterval", "quantile")')
 					}
 					if (success) {
-						colors = chroma.scale(colorramp).colors(classnum);
+						try {
+							colors = chroma.scale(colorramp).colors(classnum);
+						} catch (error) {
+							console.error(error)
+							console.error('Make sure chosen color ramp exists (color ramps based on https://colorbrewer2.org/) and custom colors are formatted correctly. For supported formats, see https://gka.github.io/chroma.js/.')
+							return;
+						}
 						if (colorramp_rev) {
 							console.log('reversing colorramp')
 							colors.reverse(); 
@@ -294,7 +352,7 @@
 					if (mode_line == "width") {
 						lineMode_width(lineWidth);
 					}
-					generateLegend(legendtitle, asc, legendrounding, mode_line, mode_point);
+					generateLegend(legendtitle, asc, legendrounding, mode_line, mode_point, typeOfFeatures);
 				} else {
 					console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
 					return;
@@ -302,40 +360,16 @@
 				
 				// setting symbology to features
 				testdata.eachLayer(function(layer) {
-					console.log('feature type:', layer.feature.geometry.type)
-
-					// gather info of geojson feature types
-					switch (layer.feature.geometry.type) {
-						case 'Point': 	
-							features_info.Point += 1;
-							break;
-						case 'MultiPoint': 	
-							features_info.MultiPoint += 1;
-							break;
-						case 'LineString': 	
-							features_info.LineString += 1;
-							break;
-						case 'MultiLineString': 	
-							features_info.MultiLineString += 1;
-							break;
-						case 'Polygon': 	
-							features_info.Polygon += 1;
-							break;
-						case 'MultiPolygon': 	
-							features_info.MultiPolygon += 1;
-							break;
-						default:
-							features_info.Unknown += 1;
-					}
+					//console.log('feature type:', layer.feature.geometry.type)
 
 					if (layer.feature.geometry.type == "Point") {
 						var coords = layer.feature.geometry.coordinates;
-						var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], (options.pointMode == "color" ? stylePoint_color(layer.feature.properties[field]) : stylePoint_size(layer.feature.properties[field])));
+						var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], (mode_point == "color" ? stylePoint_color(layer.feature.properties[field]) : stylePoint_size(layer.feature.properties[field])));
 						marker.addTo(map);
 						testdata.remove(); // to hide default icon markers - not the most elegant way of course
 					}
 					if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-						layer.setStyle((options.lineMode == "width" ? styleLine_width(layer.feature.properties[field]) : styleLine_color(layer.feature.properties[field])))
+						layer.setStyle((mode_line == "width" ? styleLine_width(layer.feature.properties[field]) : styleLine_color(layer.feature.properties[field])))
 					}
 					if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
 						layer.setStyle(stylePolygon(layer.feature.properties[field]))
@@ -347,44 +381,50 @@
 			}
 				
 			var x=new XMLHttpRequest();
-			x.open('get', 'points.geojson', false);
-			//x.open('get', 'us-states.geojson', false);
-			//x.open('get', 'rivers.geojson', false);
+			x.open('get', 'points.geojson', false); 		// attribute to test with: Terfogat
+			//x.open('get', 'us-states.geojson', false);	// attribute to test with: density
+			//x.open('get', 'rivers.geojson', false);			// attribute to test with: Shape_Leng
 			//x.open('get', 'test.geojson', false);
 			x.send();
 			var d=JSON.parse(x.responseText);
-			var testdata = L.geoJSON(d).addTo(map); 		// FOR POINTS, YOU MIGHT NEED TO DISABLE ADDTOMAP to avoid default markers (Custom markers are drawn separately)
+			var testdata = L.geoJSON(d).addTo(map); 		// if added to map, default point-markers are removed later due to custom markers being drawn separately
 			map.fitBounds(testdata.getBounds());
 			
 			//start('quantile', 5, 'RdPu', 'Terfogat', 'Area (m<sup>2</sup>)'); 		// mode, numclasses, colorramp, field, legendtitle OLD
 			start({
-				mode: 'quantile',							// classification method (jenks, quantile, equalinterval)
-				classes: 3,									// desired number of classes
-				pointMode: 'size', 						// POINT FEATURES: fill "color" or "size" (size EXPERIMENTAL!!)
-				pointSizeMin: 2,							// POINT FEATURES: when pointMode: "size", define min point circle radius
-				pointSizeMax: 10,							// POINT FEATURES: when pointMode: "size", define max point circle radius
-				lineMode: 'color', 							// LINE FEATURES: stroke "color" or "width" (width EXPERIMENTAL!!)
-				lineWidthMin: 1,							// LINE FEATURES: when lineMode: "width", define min stroke width
-				lineWidthMax: 10,							// LINE FEATURES: when lineMode: "width", define max stroke width (max 25)
-				colorRamp: 'PuRd',							// color ramp to use in symbology
-				legendAscending: false,						// true = values in legend will be ascending (low first, high last)
-				reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. 
+				mode: 'quantile',							// classification method: jenks, quantile, equalinterval
+				classes: 5,									// desired number of classes (min: 3, max: 10 or featurecount, whichever is lower)
+				pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
+				pointSizeMin: 2,							// POINT FEATURES: when pointMode: "size", define min point circle radius (default: 2)
+				pointSizeMax: 10,							// POINT FEATURES: when pointMode: "size", define max point circle radius (default: 10, recommended max: 12)
+				lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
+				lineWidthMin: 1,							// LINE FEATURES: when lineMode: "width", define min stroke width (default: 1)
+				lineWidthMax: 15,							// LINE FEATURES: when lineMode: "width", define max stroke width (default: 15, recommended max: 20)
+				colorRamp: 'purd',							// color ramp to use in symbology. Based on ColorBrewer2 color ramps, included in Chroma.js: https://colorbrewer2.org/. (default: PuRd)
+				colorCustom: [	'rgba(20,200,0,0.8)', 
+								'#cc000044', 
+								'0022cccc'],				// custom color ramp as an array, colors in format supported by Chroma.js, with opacity support. A minimum of two colors are required.
+															// (examples for yellow: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', 
+															// chroma('yellow').alpha(0.5). For more, see: https://gka.github.io/chroma.js/)
+															// Custom colors override colorRamp.
+				legendAscending: false,						// true = values in legend will be ascending (low first, high last) (default: false)
+				reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. (default: false)
 															// Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
 															// (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
-				field: 'Terfogat', 						// target attribute field name. Case-sensitive!
-				legendTitle: 'Length (m)',					// title for legend (usually a description of visualized data)
-				legendRounding: true						// false = disable class boundary value rounding
+				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
+				legendTitle: 'Length (m)',					// title for legend (usually a description of visualized data). HTML-markdown and styling allowed. If you want to hide title, set this as ''. (default: ='field')
+				legendRounding: true						// false = disable class boundary value rounding (default: true)
 			}); 
 			
 			// color ramps:
 			//    for sequential data: 	OrRd, PuBu, BuPu, Oranges, BuGn, YlOrBr, YlGn, Reds, RdPu, Greens, YlGnBu, 
-			//							Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn
-			//    for diverging data:	Spectral, RdYlGn, RdBu, PiYG, PRGn, RdYlBu, BrBG, RdGy, PuOr
+			//							Purples, GnBu, Greys, YlOrRd, PuRd, Blues, PuBuGn, Viridis
+			//    for diverging data:	PiYG, PRGn, BrBG, PuOr, RdGy, RdBu, RdYlBu, RdYlGn, Spectral
  			//    for qualitative data:	Accent, Set1, Paired, Set2, Dark2, Set3, Pastel1, Pastel2
 			
 			
 			
-			function generateLegend(title, asc, round, mode_line, mode_point) {				
+			function generateLegend(title, asc, round, mode_line, mode_point, typeOfFeatures) {				
 				var legend = L.control({position: 'bottomleft'});
 				
 				if (round) {
@@ -400,84 +440,167 @@
 					div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px; max-width: 170px;">' + title + '</div>';
 					// legenditems container
 					var container = '';
-					if (asc) {
-						// ascending legend
-						if (mode_line == "width") {
-							// line width
-							for (var i = 0; i < classes.length; i++) {
-								console.log('Legend: building line', i+1)
-								container +=
-									'<div style="display: flex; flex-direction: row; align-items: center">'+
-										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i]+'; stroke: #3687fa;"/>'+
-										'</svg>'+
-										'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <')+'</div>'+
-									'</div>';
-							}
-						} else if (mode_point == "size") {
-							// point size
-							for (var i = 0; i < classes.length; i++) {
-								console.log('Legend: building line', i+1)
-								container +=
-									'<div style="display: flex; flex-direction: row; align-items: center">'+
-										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-											'<circle cx="12.5" cy="12.5" r="'+radiuses[i]+'" style="stroke: black; fill: orange;"/>'+
-										'</svg>'+
-										'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <')+'</div>'+
-									'</div>';
-							}
-						} else {
-							for (var i = 0; i < classes.length; i++) {
-								console.log('Legend: building line', i+1)
-								container +=
-									'<div style="display: flex; flex-direction: row; align-items: center">'+
-										'<i style="background: ' + colors[i] + '"></i> ' +
-										'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] + '<br>' : ' <')+'</div>'+
-									'</div>';
-							}
+					
+					// type of features
+					if (typeOfFeatures == "MultiPoint" || typeOfFeatures == "Point") {
+						// points
+						switch (asc) {
+							// ascending legend
+							case true:
+								switch (mode_point) {
+									case 'color':
+									// color based categories
+										for (var i = 0; i < classes.length; i++) {
+											console.log('Legend: building line', i+1)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+														'<circle cx="12.5" cy="12.5" r="8" style="stroke: black; fill: '+colors[i]+';"/>'+
+													'</svg>'+
+													'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+												'</div>';
+										}
+										break;
+									case 'size':
+									// size (radius) based categories
+										for (var i = 0; i < classes.length; i++) {
+											console.log('Legend: building line', i+1)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+														'<circle cx="12.5" cy="12.5" r="'+radiuses[i]+'" style="stroke: black; fill: orange;"/>'+
+													'</svg>'+
+													'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+												'</div>';
+										}
+										break;
+								}
+								break;
+							// descending legend
+							case false:
+								switch (mode_point) {
+									case 'color':
+									// color based categories
+										for (var i = classes.length; i > 0; i--) {
+											console.log('Legend: building line', i)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+														'<circle cx="12.5" cy="12.5" r="8" style="stroke: black; fill: '+colors[i-1]+';"/>'+
+													'</svg>'+
+													'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+												'</div>';
+										}
+										break;
+									case 'size':
+									// size (radius) based categories
+										for (var i = classes.length; i > 0; i--) {
+											console.log('Legend: building line', i)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+														'<circle cx="12.5" cy="12.5" r="'+radiuses[i-1]+'" style="stroke: black; fill: orange;"/>'+
+													'</svg>'+
+													'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+												'</div>';
+										}
+										break;
+								}
+								break;
+						}
+					} else if (typeOfFeatures == "MultiLineString" || typeOfFeatures == "LineString") {
+						// lines
+						switch (asc) {
+							case true:
+							// ascending legend
+								switch (mode_line) {
+									case 'color':
+									// color based categories
+										for (var i = 0; i < classes.length; i++) {
+											console.log('Legend: building line', i+1)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<i style="background: ' + colors[i] + '"></i> ' +
+													'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+												'</div>';
+										}
+										break;
+									case 'width':
+									// width based categories
+										for (var i = 0; i < classes.length; i++) {
+											console.log('Legend: building line', i+1)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+														'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i]+'; stroke: #3687fa;"/>'+
+													'</svg>'+
+													'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+												'</div>';
+										}
+										break;
+								}
+								break;
+							case false:
+							// descending legend
+								switch (mode_line) {
+									case 'color':
+									// color based categories
+										for (var i = classes.length; i > 0; i--) {
+											console.log('Legend: building line', i)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<i style="background: ' + colors[i-1] + '"></i>' +
+													'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+												'</div>'
+										}
+										break;
+									case 'width':
+									// width based categories
+										for (var i = classes.length; i > 0; i--) {
+											console.log('Legend: building line', i)
+											container +=
+												'<div style="display: flex; flex-direction: row; align-items: center">'+
+													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+														'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: #3687fa;"/>'+
+													'</svg>'+
+												'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+												'</div>'
+										}
+										break;
+								}
+								break;
 						}
 					} else {
-						// descending legend
-						if (mode_line == "width") {
-							// line width
-							for (var i = classes.length; i > 0; i--) {
-								console.log('Legend: building line', i)
-								container +=
-									'<div style="display: flex; flex-direction: row; align-items: center">'+
-										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-											'<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: #3687fa;"/>'+
-										'</svg>'+
-									'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
-									'</div>'
-							}
-						} else if (mode_point == "size") {
-							// point size
-							for (var i = classes.length; i > 0; i--) {
-								console.log('Legend: building line', i)
-								container +=
-									'<div style="display: flex; flex-direction: row; align-items: center">'+
-										'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-											'<circle cx="12.5" cy="12.5" r="'+radiuses[i-1]+'" style="stroke: black; fill: orange;"/>'+
-										'</svg>'+
-										'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
-									'</div>';
-							}
-						} else {
-							for (var i = classes.length; i > 0; i--) {
-								console.log('Legend: building line', i)
-								container +=
-									'<div style="display: flex; flex-direction: row; align-items: center">'+
-										'<i style="background: ' + colors[i-1] + '"></i>' +
-										'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <<br>' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1] + '<br>'))+'</div>'+
-									'</div>'
-							}
+						// polygons
+						switch (asc) {
+							case true:
+							// ascending legend
+								for (var i = 0; i < classes.length; i++) {
+									console.log('Legend: building line', i+1)
+									container +=
+										'<div style="display: flex; flex-direction: row; align-items: center">'+
+											'<i style="background: ' + colors[i] + '"></i> ' +
+											'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+										'</div>';
+								}
+								break;
+							case false:
+							// descending legend
+								for (var i = classes.length; i > 0; i--) {
+									console.log('Legend: building line', i)
+									container +=
+										'<div style="display: flex; flex-direction: row; align-items: center">'+
+											'<i style="background: ' + colors[i-1] + '"></i>' +
+											'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+										'</div>'
+								}
+								break;
 						}
-						
-					};
+					}
+					
 					div.innerHTML += container;
 					return div;
 				};
-				
 				
 				console.log('Legend generated.');
 				legend.addTo(map);
@@ -499,7 +622,8 @@
 				
 				
 				
-				
+			// JENKS FUNCTIONS FROM SIMPLESTATISTICS - should be loaded as a library 
+			// instead of inserting it here... but at least it works this way!
 			
 			ss.jenks = function(data, n_classes) {
 
@@ -625,6 +749,6 @@
 					};
 				};
 			
-			  </script>	
+		</script>	
 	</body>
 </html>
