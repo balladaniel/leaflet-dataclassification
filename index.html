@@ -187,6 +187,7 @@
 				console.log('Mode:', options.mode);
 				console.log('Point mode:', options.pointMode);
 				console.log('Point size:', options.pointSizeMin, '-', options.pointSizeMax);
+				/*console.log('Point shape:', options.pointShape);*/
 				console.log('Line mode:', options.lineMode);
 				console.log('Line width:', options.lineWidthMin, '-', options.lineWidthMax);
 				console.log('Number of classes:', options.classes);
@@ -213,6 +214,8 @@
 				var pointSize = [options.pointSizeMin, options.pointSizeMax];
 				(pointSize[0] == null ? pointSize[0] = 2 : ''); 		 									// default									
 				(pointSize[1] == null ? pointSize[1] = 10 : '');											// default
+				/*var pointShape;
+				(options.pointShape != null ? pointShape = options.pointShape : pointShape = 'circle' )*/ 	// default
 				var lineWidth = [options.lineWidthMin, options.lineWidthMax];
 				(lineWidth[0] == null ? lineWidth[0] = 1 : ''); 		 									// default									
 				(lineWidth[1] == null ? lineWidth[1] = 15 : '');											// default
@@ -397,6 +400,7 @@
 				pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
 				pointSizeMin: 2,							// POINT FEATURES: when pointMode: "size", define min point circle radius (default: 2)
 				pointSizeMax: 10,							// POINT FEATURES: when pointMode: "size", define max point circle radius (default: 10, recommended max: 12)
+				/*pointShape: 'circle',*/						// POINT FEATURES: shape of points: 'circle', 'square', 'diamond', 'triangle', etc. See https://github.com/rowanwins/Leaflet.SvgShapeMarkers. (default: 'circle')
 				lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
 				lineWidthMin: 1,							// LINE FEATURES: when lineMode: "width", define min stroke width (default: 1)
 				lineWidthMax: 15,							// LINE FEATURES: when lineMode: "width", define max stroke width (default: 15, recommended max: 20)
