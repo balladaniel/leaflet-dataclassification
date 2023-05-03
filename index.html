@@ -89,6 +89,7 @@
 			var radiuses = [];
 			var widths = [];
 			var field;
+			var pointShape;
 
 			// value evaluators to match classes
 			function getColor(d) {
@@ -187,7 +188,7 @@
 				console.log('Mode:', options.mode);
 				console.log('Point mode:', options.pointMode);
 				console.log('Point size:', options.pointSizeMin, '-', options.pointSizeMax);
-				/*console.log('Point shape:', options.pointShape);*/
+				console.log('Point shape:', options.pointShape);
 				console.log('Line mode:', options.lineMode);
 				console.log('Line width:', options.lineWidthMin, '-', options.lineWidthMax);
 				console.log('Number of classes:', options.classes);
@@ -215,8 +216,8 @@
 				var pointSize = [options.pointSizeMin, options.pointSizeMax];
 				(pointSize[0] == null ? pointSize[0] = 2 : ''); 		 									// default									
 				(pointSize[1] == null ? pointSize[1] = 10 : '');											// default
-				/*var pointShape;
-				(options.pointShape != null ? pointShape = options.pointShape : pointShape = 'circle' )*/ 	// default
+				//var pointShape;
+				(options.pointShape != null ? pointShape = options.pointShape : pointShape = 'circle' ) 	// default
 				var lineWidth = [options.lineWidthMin, options.lineWidthMax];
 				(lineWidth[0] == null ? lineWidth[0] = 1 : ''); 		 									// default									
 				(lineWidth[1] == null ? lineWidth[1] = 15 : '');											// default
@@ -374,7 +375,9 @@
 
 					if (layer.feature.geometry.type == "Point") {
 						var coords = layer.feature.geometry.coordinates;
-						var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], (mode_point == "color" ? stylePoint_color(layer.feature.properties[field]) : stylePoint_size(layer.feature.properties[field])));
+						var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[field]) : stylePoint_size(layer.feature.properties[field]))
+						style.shape = pointShape;
+						var marker = L.shapeMarker([coords[0], coords[1]] = [coords[1], coords[0]], style);
 						marker.addTo(map);
 						testdata.remove(); // to hide default icon markers - not the most elegant way of course
 					}
@@ -407,7 +410,7 @@
 				pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
 				pointSizeMin: 2,							// POINT FEATURES: when pointMode: "size", define min point circle radius (default: 2)
 				pointSizeMax: 10,							// POINT FEATURES: when pointMode: "size", define max point circle radius (default: 10, recommended max: 12)
-				/*pointShape: 'circle',*/					// POINT FEATURES: shape of points: 'circle', 'square', 'diamond', 'triangle', etc. See https://github.com/rowanwins/Leaflet.SvgShapeMarkers. (default: 'circle')
+				pointShape: 'circle',						// POINT FEATURES: shape of points: 'circle', 'square', 'diamond' (default: 'circle')
 				lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
 				lineWidthMin: 1,							// LINE FEATURES: when lineMode: "width", define min stroke width (default: 1)
 				lineWidthMax: 15,							// LINE FEATURES: when lineMode: "width", define max stroke width (default: 15, recommended max: 20)
@@ -425,7 +428,7 @@
 				/*middlePoint: 0,*/							// optional: adjust boundary value of middle classes (only for even classcount), useful for symmetric classification of diverging data around 0 for example. Only use a value within the original middle classes range.
 				field: 'Terfogat', 							// target attribute field name. Case-sensitive!
 				legendTitle: 'Area (m2)',					// title for legend (usually a description of visualized data). HTML-markdown and styling allowed. If you want to hide title, set this as ''. (default: ='field')
-				classRounding: 2							// class boundary value rounding to decimal (default: 2, set 0 to disable rounding)
+				classRounding: 0							// class boundary value rounding to decimal (default: 2, set 0 to disable rounding)
 			}); 
 			
 			// color ramps:
@@ -434,6 +437,36 @@
 			//    for diverging data:	PiYG, PRGn, BrBG, PuOr, RdGy, RdBu, RdYlBu, RdYlGn, Spectral
  			//    for qualitative data:	Accent, Set1, Paired, Set2, Dark2, Set3, Pastel1, Pastel2
 						
+			// svg icon creator only for use in legend
+			function svgCreator(options){
+				(options.shape == null ? options.shape = 'circle' : '');			// default shape
+				(options.color == null ? options.color = 'orange' : '');			// default color
+				(options.size == null ? options.size = 8 : '');						// default size
+				var svg;
+				switch (options.shape) {
+					case 'circle':
+						svg = '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+									'<circle cx="12.5" cy="12.5" r="'+options.size+'" style="stroke: black; fill: '+options.color+';"/>'+
+								'</svg>'
+						break;
+					case 'square':
+						svg = '<svg width="25" height="25"  style="margin-left: 4px; margin-right: 10px">'+
+									'<rect x="'+(25-(options.size*2))/2+'" y="'+(25-(options.size*2))/2+'" height="'+options.size*2+'" width="'+options.size*2+'" style="stroke: black; fill: '+options.color+';"/>'+
+								'</svg>'
+						break;
+					case 'diamond':
+						svg = '<svg width="30" height="30" style="margin-left: 4px; margin-right: 10px">'+
+									'<path d="M -'+options.size*1.4+' 0 L 0 -'+options.size*1.4+' L '+options.size*1.4+' 0 L 0 '+options.size*1.4+' Z" style="fill: '+options.color+'; stroke: black; transform: translateX(15px) translateY(15px);"/>'+
+								'</svg>'
+						break;
+					/*case 'triangle':
+						svg = '<svg width="30" height="30" style="margin-left: 4px; margin-right: 10px; scale: '+options.size/7.5+'; stroke: black; ">'+
+									'<polygon points="50 15, 100 100, 0 100" style="fill: '+options.color+'; scale: 0.2; transform: translateX(30px) translateY(15px)"/>'+
+								'</svg>'
+						break;*/
+				}
+				return svg;
+			}
 			
 			function generateLegend(title, asc, round, mode_line, mode_point, typeOfFeatures) {				
 				var legend = L.control({position: 'bottomleft'});
@@ -465,9 +498,7 @@
 											console.log('Legend: building line', i+1)
 											container +=
 												'<div style="display: flex; flex-direction: row; align-items: center">'+
-													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-														'<circle cx="12.5" cy="12.5" r="8" style="stroke: black; fill: '+colors[i]+';"/>'+
-													'</svg>'+
+													svgCreator({shape: pointShape, color: colors[i]})+
 													'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
 												'</div>';
 										}
@@ -478,9 +509,7 @@
 											console.log('Legend: building line', i+1)
 											container +=
 												'<div style="display: flex; flex-direction: row; align-items: center">'+
-													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-														'<circle cx="12.5" cy="12.5" r="'+radiuses[i]+'" style="stroke: black; fill: orange;"/>'+
-													'</svg>'+
+													svgCreator({shape: pointShape, size: radiuses[i]})+
 													'<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
 												'</div>';
 										}
@@ -496,9 +525,7 @@
 											console.log('Legend: building line', i)
 											container +=
 												'<div style="display: flex; flex-direction: row; align-items: center">'+
-													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-														'<circle cx="12.5" cy="12.5" r="8" style="stroke: black; fill: '+colors[i-1]+';"/>'+
-													'</svg>'+
+													svgCreator({shape: pointShape, color: colors[i-1]})+
 													'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
 												'</div>';
 										}
@@ -509,9 +536,7 @@
 											console.log('Legend: building line', i)
 											container +=
 												'<div style="display: flex; flex-direction: row; align-items: center">'+
-													'<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-														'<circle cx="12.5" cy="12.5" r="'+radiuses[i-1]+'" style="stroke: black; fill: orange;"/>'+
-													'</svg>'+
+													svgCreator({shape: pointShape, size: radiuses[i-1]})+
 													'<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
 												'</div>';
 										}
