@@ -4,17 +4,17 @@
 	<head>
 		<meta charset="utf-8">
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
-		<link rel="stylesheet" href="leaflet/leaflet.css" />
-		<script src="leaflet/leaflet.js"></script>
-		<link rel="stylesheet" href="leaflet/leaflet.fullscreen.css" />
-		<script src="leaflet/leaflet.fullscreen.js"></script>	
+		<link rel="stylesheet" href="../leaflet/leaflet.css" />
+		<script src="../leaflet/leaflet.js"></script>
+		<link rel="stylesheet" href="../leaflet/leaflet.fullscreen.css" />
+		<script src="../leaflet/leaflet.fullscreen.js"></script>	
 
 		<!-- plugin: -->
-		<script src="leaflet.dataclassification.js"></script>
-		<link rel="stylesheet" href="leaflet.dataclassification.css" />				
+		<script src="../leaflet.dataclassification.js"></script>
+		<link rel="stylesheet" href="../leaflet.dataclassification.css" />				
 		<!-- dependencies: -->
-		<script src="lib/simple-statistics.min.js"></script>
-		<script src="lib/chroma.min.js"></script>
+		<script src="../lib/simple-statistics.min.js"></script>
+		<script src="../lib/chroma.min.js"></script>
 		
 		<style>
 			html, body {
@@ -57,9 +57,6 @@
 
 			// Point features example. Attribute to test with: 'samplenumber'
 			fetch('us-state-capitals.geojson').then(r => r.json()).then(d => {
-				function onEachFeature(feature, layer) {
-					layer.bindPopup(feature.properties.state);
-				}
 				window.testdata2 = L.dataClassification(d, {
 					mode: 'jenks',
 					classes: 4,
@@ -69,7 +66,7 @@
 						min: 1,
 						max: 12
 					},
-					legendTitle: 'Population',
+					legendTitle: 'Population (2018)',
     				attribution: "US Capitals source: <a href='https://mangomap.com/examples/data/7986d760_1129_11e6_8e77_22000bb3a3a1/us-state-capitals'>Mangomap (2018)</a>"
 				}).addTo(map);
 				map.fitBounds(testdata2.getBounds());

@@ -52,7 +52,7 @@ const layer = L.dataClassification(data, {
     field: 'density',
     // optional:					
     pointMode: 'size',
-    pointSize: {min: 2, max: 10}
+    pointSize: {min: 2, max: 10},
     pointShape: 'square',
     lineMode: 'width',
     lineWidth: {min: 1, max: 15},
@@ -83,7 +83,7 @@ const layer = L.dataClassification(data, {
 - `colorRamp <string>`: color ramp to use for symbology. Based on ColorBrewer2 color ramps (https://colorbrewer2.org/), included in Chroma.js. (default: 'PuRd')
 - `colorCustom <array>`: custom color ramp defined as an array, colors in formats supported by Chroma.js, with opacity support. A minimum of two colors are required. Custom colors override `colorRamp`. Example: ['rgba(210,255,178,1)', '#fec44fff', 'f95f0eff']. Examples for yellow in different color formats: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', chroma('yellow').alpha(0.5). For more formats, see: https://gka.github.io/chroma.js/.
 - `legendAscending <boolean>`: if true, value classes in legend will be ascending (low first, high last) (default: false)
-- `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful if you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
+- `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful when you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
 - `middlePointValue <number>`: adjust boundary value of middle classes (only when classifying into even classes). Useful for symmetric classification of diverging data around 0. Only use a value within the range of the two middle classes.    
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
 - `classRounding <integer>`: class boundary value rounding to a decimal place (default: 0 for whole numbers), set -1 to disable rounding
