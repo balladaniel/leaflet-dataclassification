@@ -57,6 +57,11 @@
 
 			// Point features example. Attribute to test with: 'samplenumber'
 			fetch('points_gas.geojson').then(r => r.json()).then(d => {
+				function tooltip(feature, layer) {
+					if (feature.properties.price_gazole) {
+						layer.bindTooltip(String(feature.properties.price_gazole)+' €/l');
+					}
+				}
 				window.testdata = L.dataClassification(d, {
 					style: {radius: 2},
 					mode: 'jenks',
@@ -66,7 +71,8 @@
 					colorRamp: 'YlOrRd',
 					classRounding: 2,
 					legendTitle: 'Diesel prices (€/l)<br>on 7-Jul-2023 ',
-    				attribution: "Diesel prices (7-Jul-2023): <a href='https://www.prix-carburants.gouv.fr/rubrique/opendata/'>Ministère de l'Economie, de l'Industrie et du Numérique</a>"
+    				attribution: "Diesel prices (7-Jul-2023): <a href='https://www.prix-carburants.gouv.fr/rubrique/opendata/'>Ministère de l'Economie, de l'Industrie et du Numérique</a>",
+					onEachFeature: tooltip
 				}).addTo(map);
 				map.fitBounds(testdata.getBounds());
 			});

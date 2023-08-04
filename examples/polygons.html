@@ -1,0 +1,87 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+		<link rel="stylesheet" href="../leaflet/leaflet.css" />
+		<script src="../leaflet/leaflet.js"></script>
+		<link rel="stylesheet" href="../leaflet/leaflet.fullscreen.css" />
+		<script src="../leaflet/leaflet.fullscreen.js"></script>	
+
+		<!-- plugin: -->
+		<script src="../leaflet.dataclassification.js"></script>
+		<link rel="stylesheet" href="../leaflet.dataclassification.css" />				
+		<!-- dependencies: -->
+		<script src="../lib/simple-statistics.min.js"></script>
+		<script src="../lib/chroma.min.js"></script>
+		
+		<style>
+			html, body {
+				height: 100%;
+				margin: 0;
+				font-family: 'Open Sans', 'OpenSans-Local';
+				font-style: normal;				
+			}
+			
+			#map {
+				position: absolute;
+				margin:  auto;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+			}						
+		</style>
+	</head>
+	<body>		
+		<div id="map"></div>				
+		<script>
+		
+			
+			// base maps
+			var OSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+			});
+			var stamen_toner = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', {
+				attribution: 'Map tiles by <a href="http://stamen.com" target="_blank">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0" target="_blank">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org" target="_blank">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright" target="_blank">ODbL</a>.'
+			});
+			var baseMaps = {
+				"OpenStreetMap": OSM,
+				"Stamen Toner": stamen_toner
+			};
+			// map div object, main Leaflet object:
+			var map = L.map('map', {layers: [OSM]}); 
+			map.addControl(new L.Control.Fullscreen());
+			var layerControl = L.control.layers(baseMaps).addTo(map);
+
+			// Point features example. Attribute to test with: 'samplenumber'
+			fetch('polygons_nz_regions.geojson').then(r => r.json()).then(d => {
+				function tooltip(feature, layer) {
+					if (feature.properties.name_1 && feature.properties.density2022) {
+						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>' + String(feature.properties.density2022)+' pop/km²');
+						layer.on('mousemove',e=>{
+							e.target.getTooltip().setLatLng(e.latlng);
+						});
+					}
+				}
+
+				window.testdata = L.dataClassification(d, {
+					style: {color: "white"},
+					mode: 'jenks',
+					classes: 5,
+					field: 'density2022',
+					pointMode: 'color',
+					colorRamp: 'Greens',
+					classRounding: 2,
+					legendTitle: 'Population density (pop/km²)',
+					classRounding: 2,
+    				attribution: "Administrative boundaries: <a href='https://maps.princeton.edu/catalog/stanford-pv084qp8629' target='_blank'>Hijmans, Robert J.. University of California</a>, Census data: <a href='https://nzdotstat.stats.govt.nz' target='_blank'>nzdotstat.stats.govt.nz</a>",
+					onEachFeature: tooltip
+				}).addTo(map);
+				map.fitBounds([[-48, 165], [-33, 179]]);
+			});
+
+		</script>	
+	</body>
+</html>

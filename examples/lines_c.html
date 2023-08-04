@@ -1,0 +1,82 @@
+<!doctype html>
+
+<html>
+	<head>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+		<link rel="stylesheet" href="../leaflet/leaflet.css" />
+		<script src="../leaflet/leaflet.js"></script>
+		<link rel="stylesheet" href="../leaflet/leaflet.fullscreen.css" />
+		<script src="../leaflet/leaflet.fullscreen.js"></script>	
+
+		<!-- plugin: -->
+		<script src="../leaflet.dataclassification.js"></script>
+		<link rel="stylesheet" href="../leaflet.dataclassification.css" />				
+		<!-- dependencies: -->
+		<script src="../lib/simple-statistics.min.js"></script>
+		<script src="../lib/chroma.min.js"></script>
+		
+		<style>
+			html, body {
+				height: 100%;
+				margin: 0;
+				font-family: 'Open Sans', 'OpenSans-Local';
+				font-style: normal;				
+			}
+			
+			#map {
+				position: absolute;
+				margin:  auto;
+				top: 0;
+				bottom: 0;
+				left: 0;
+				right: 0;
+			}						
+		</style>
+	</head>
+	<body>		
+		<div id="map"></div>				
+		<script>
+		
+			
+			// base maps
+			var OSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				opacity: 0.5,
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
+			});
+			var stamen_toner = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', {
+				attribution: 'Map tiles by <a href="http://stamen.com" target="_blank">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0" target="_blank">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org" target="_blank">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright" target="_blank">ODbL</a>.'
+			});
+			var baseMaps = {
+				"OpenStreetMap": OSM,
+				"Stamen Toner": stamen_toner
+			};
+			// map div object, main Leaflet object:
+			var map = L.map('map', {layers: [OSM]}); 
+			map.addControl(new L.Control.Fullscreen());
+			var layerControl = L.control.layers(baseMaps).addTo(map);
+
+			// Point features example. Attribute to test with: 'samplenumber'
+			fetch('lines_c_wsdot_aadt.geojson').then(r => r.json()).then(d => {
+				function tooltip(feature, layer) {
+					if (feature.properties.AADT) {
+						layer.bindTooltip(String(feature.properties.AADT));
+					}
+				}
+				window.testdata = L.dataClassification(d, {
+					style: {weight: 5},
+					mode: 'jenks',
+					classes: 5,
+					field: 'AADT',
+					lineMode: 'color',
+					colorCustom: ['green', 'yellow', 'red'],
+					legendTitle: 'Annual average daily traffic (2022)',
+					attribution: 'Traffic data: <a href="https://gisdata-wsdot.opendata.arcgis.com/datasets/WSDOT::wsdot-traffic-sections-aadt-current/about" target="_blank">Washington State Department of Transportation (2022)</a>',
+					onEachFeature: tooltip
+				}).addTo(map);
+				map.fitBounds(testdata.getBounds());
+			});
+
+		</script>	
+	</body>
+</html>

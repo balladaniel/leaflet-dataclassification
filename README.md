@@ -15,7 +15,7 @@ Aims to aid easy creation of elegant thematic web maps with Leaflet, using GeoJS
     - natural breaks (Jenks)
     - quantile
     - equal interval
-- Supports ColorBrewer2 color ramps and custom color ramps thanks to [chroma.js](https://github.com/gka/chroma.js)
+- Supports ColorBrewer2 color ramps and custom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
 - Various SVG shapes/symbols for Point features
 - For size/width based symbology, min and max values can be adjusted to create a telling visualization with distinguishable classes
 - Legend generation with options for:
@@ -69,7 +69,7 @@ const layer = L.dataClassification(data, {
 ### Required options 
 - `mode <string>`: ['jenks'|'quantile'|'equalinterval'] classification method: jenks, quantile, equalinterval
 - `classes <integer>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.)
-- `field <string>:`: target attribute field name to base classification on. Case-sensitive!
+- `field <string>`: target attribute field name to base classification on. Case-sensitive!
 
 ### Additional options (in addition to the standard L.geoJSON options)
 #### Specific for Point	features
@@ -86,4 +86,4 @@ const layer = L.dataClassification(data, {
 - `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful when you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
 - `middlePointValue <number>`: adjust boundary value of middle classes (only when classifying into even classes). Useful for symmetric classification of diverging data around 0. Only use a value within the range of the two middle classes.    
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
-- `classRounding <integer>`: class boundary value rounding to a decimal place (default: 0 for whole numbers), set -1 to disable rounding
+- `classRounding <integer>`: round class boundary values to a decimal place (default: 0 for whole numbers), set -1 to disable rounding

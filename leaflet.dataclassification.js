@@ -100,8 +100,8 @@ L.DataClassification = L.GeoJSON.extend({
     },
     _styleLine_color(value){
         return {
-            color: getColor(value),
-            weight: 3
+            color: getColor(value)/*,
+            weight: 3*/
         };			
     },
     _styleLine_width(value){
@@ -357,6 +357,7 @@ L.DataClassification = L.GeoJSON.extend({
 
     onAdd(map) {
         console.log('L.dataClassification: Classifying...')
+        console.log('L.dataClassification: options:', this.options)
         this._field=this.options.field
         L.GeoJSON.prototype.onAdd.call(this, map);
         this._classify(map);
@@ -395,7 +396,7 @@ L.DataClassification = L.GeoJSON.extend({
             if (layer.feature.properties[this._field] != null) {
                 values.push(layer.feature.properties[this._field]);
             } else {
-                console.error('Attribute field "'+this._field+'" does not exist in GeoJSON. Please note that attribute field input is case-sensitve.')
+                console.error('Attribute field "'+this._field+'" does not exist, or is NULL in given GeoJSON. Please note that attribute field input is case-sensitve.')
                 return;
             };
         })

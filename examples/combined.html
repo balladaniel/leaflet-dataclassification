@@ -41,10 +41,10 @@
 			
 			// base maps
 			var OSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var stamen_toner = L.tileLayer('https://stamen-tiles.a.ssl.fastly.net/toner/{z}/{x}/{y}.png', {
-				attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright">ODbL</a>.'
+				attribution: 'Map tiles by <a href="http://stamen.com" target="_blank">Stamen Design</a>, under <a href="http://creativecommons.org/licenses/by/3.0" target="_blank">CC BY 3.0</a>. Data by <a href="http://openstreetmap.org" target="_blank">OpenStreetMap</a>, under <a href="http://www.openstreetmap.org/copyright" target="_blank">ODbL</a>.'
 			});
 			var baseMaps = {
 				"OpenStreetMap": OSM,
@@ -67,7 +67,7 @@
 						max: 12
 					},
 					legendTitle: 'Population (2018)',
-    				attribution: "US Capitals source: <a href='https://mangomap.com/examples/data/7986d760_1129_11e6_8e77_22000bb3a3a1/us-state-capitals'>Mangomap (2018)</a>"
+    				attribution: "US Capitals source: <a href='https://mangomap.com/examples/data/7986d760_1129_11e6_8e77_22000bb3a3a1/us-state-capitals' target='_blank'>Mangomap (2018)</a>"
 				}).addTo(map);
 				map.fitBounds(testdata2.getBounds());
 			});
