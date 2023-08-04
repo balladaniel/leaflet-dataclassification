@@ -32,7 +32,7 @@ Aims to aid easy creation of elegant thematic web maps with Leaflet, using GeoJS
 - polygons: [./examples/polygons.html](https://balladaniel.github.io/leaflet_dataclassification/examples/polygons.html)
 
 ## Requirements
-- [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v1.6.0)
+- [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v1.9.4)
 ### External dependencies
 - [simple-statistics.js](https://github.com/simple-statistics/simple-statistics) (tested with v7.8.0)
 - [chroma.js](https://github.com/gka/chroma.js) (tested with v2.4.0)

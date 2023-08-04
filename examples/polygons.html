@@ -56,7 +56,7 @@
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
 			// Point features example. Attribute to test with: 'samplenumber'
-			fetch('polygons_nz_regions.geojson').then(r => r.json()).then(d => {
+			fetch('data/polygons_nz_regions.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.name_1 && feature.properties.density2022) {
 						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>' + String(feature.properties.density2022)+' pop/km²');

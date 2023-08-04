@@ -56,7 +56,7 @@
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
 			// Point features example. Attribute to test with: 'samplenumber'
-			fetch('points_gas.geojson').then(r => r.json()).then(d => {
+			fetch('data/points_gas.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.price_gazole) {
 						layer.bindTooltip(String(feature.properties.price_gazole)+' €/l');

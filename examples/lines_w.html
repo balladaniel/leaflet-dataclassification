@@ -55,7 +55,7 @@
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
 			// Line features example. Attribute to test with: 'Shape_Leng'
-			fetch('rivers.geojson').then(r => r.json()).then(d => {
+			fetch('data/rivers.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.Shape_Leng) {
 						layer.bindTooltip(String(feature.properties.Shape_Leng));

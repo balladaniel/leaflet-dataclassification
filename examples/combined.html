@@ -56,7 +56,7 @@
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
 			// Point features example. Attribute to test with: 'samplenumber'
-			fetch('us-state-capitals.geojson').then(r => r.json()).then(d => {
+			fetch('data/us-state-capitals.geojson').then(r => r.json()).then(d => {
 				window.testdata2 = L.dataClassification(d, {
 					mode: 'jenks',
 					classes: 4,
@@ -73,7 +73,7 @@
 			});
 
 			// Line features example. Attribute to test with: 'Shape_Leng'
-			fetch('rivers.geojson').then(r => r.json()).then(d => {
+			fetch('data/rivers.geojson').then(r => r.json()).then(d => {
 				window.testdata3 = L.dataClassification(d, {
 					mode: 'quantile',
 					classes: 3,
@@ -89,7 +89,7 @@
 			});
 			
 			// Polygon features example. Attribute to test with: 'density'
-			fetch('us-states.geojson').then(r => r.json()).then(d => {
+			fetch('data/us-states.geojson').then(r => r.json()).then(d => {
 				function onEachFeature(feature, layer) {
 					layer.bindPopup(feature.properties.name);
 				}

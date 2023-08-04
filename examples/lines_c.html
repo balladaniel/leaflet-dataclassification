@@ -57,7 +57,7 @@
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
 			// Point features example. Attribute to test with: 'samplenumber'
-			fetch('lines_c_wsdot_aadt.geojson').then(r => r.json()).then(d => {
+			fetch('data/lines_c_wsdot_aadt.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.AADT) {
 						layer.bindTooltip(String(feature.properties.AADT));
