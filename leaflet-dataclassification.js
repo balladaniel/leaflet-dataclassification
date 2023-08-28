@@ -545,21 +545,17 @@ L.DataClassification = L.GeoJSON.extend({
 
         // apply symbology to features
         this.eachLayer(function(layer) {
-            //console.log('feature type:', layer.feature.geometry.type)
             if (layer.feature.geometry.type == "Point" || layer.feature.geometry.type == "MultiPoint") {
                 var coords = layer.feature.geometry.coordinates;
                 var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field]))
                 style.shape = ps;
 
-                //console.log(style)
                 const svgIcon = L.divIcon({
                     html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
                     className: "",
                     iconSize: [25, 25],
                     iconAnchor: [17, 25/2],
                 });                
-                //console.log(svgIcon)             
-
                 layer.setIcon(svgIcon);
             }
             if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
@@ -573,7 +569,6 @@ L.DataClassification = L.GeoJSON.extend({
 
         console.log('L.dataClassification: Finished!')
         console.log('------------------------------------')
-        window.ll = this._legends;
     },
 
     classify() {
