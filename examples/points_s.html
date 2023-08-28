@@ -63,14 +63,14 @@
 					}
 				}
 				window.testdata = L.dataClassification(d, {
-					style: {fillColor: 'yellow'},
 					mode: 'jenks',
 					classes: 4,
 					field: 'population',
 					pointMode: 'size',
-					pointSize: {min: 1, max: 12},
+					pointSize: {min: 1, max: 10},
 					classRounding: 0,
 					legendTitle: 'Population',
+					pointShape: 'diamond',
 					onEachFeature: tooltip
 				}).addTo(map);
 				map.fitBounds(testdata.getBounds());

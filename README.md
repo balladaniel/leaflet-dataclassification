@@ -26,7 +26,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 ## Demo
 - combined (three layers): [./examples/combined.html](https://balladaniel.github.io/leaflet-dataclassification/examples/combined.html)
 - points (color): [./examples/points_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_c.html)
-- points (size): [./examples/points_s.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_s.html)
+- points (size, with diamond-shaped symbols): [./examples/points_s.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_s.html)
 - lines (color): [./examples/lines_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_c.html)
 - lines (width): [./examples/lines_w.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_w.html)
 - polygons: [./examples/polygons.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons.html)
