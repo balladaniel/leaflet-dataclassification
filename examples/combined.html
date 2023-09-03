@@ -51,9 +51,11 @@
 			};
 			// map div object, main Leaflet object:
 			var map = L.map('map', {layers: [OSM]}).setView([0,0], 3); 
+			map.createPane('front');
+			map.getPane('front').style.zIndex = 650;
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
-			// Point features example. Attribute to test with: 'samplenumber'
+			// Point features example. Attribute to test with: 'population'
 			fetch('data/us-state-capitals.geojson').then(r => r.json()).then(d => {
 				window.testdata2 = L.dataClassification(d, {
 					mode: 'jenks',
@@ -65,24 +67,8 @@
 						max: 12
 					},
 					legendTitle: 'Population of capitals',
-    				attribution: "US Capitals source: <a href='https://mangomap.com/examples/data/7986d760_1129_11e6_8e77_22000bb3a3a1/us-state-capitals' target='_blank'>Mangomap (2018)</a>"
-				}).addTo(map);
-				map.fitBounds(testdata2.getBounds());
-			});
-
-			// Line features example. Attribute to test with: 'Shape_Leng'
-			fetch('data/rivers.geojson').then(r => r.json()).then(d => {
-				window.testdata3 = L.dataClassification(d, {
-					mode: 'quantile',
-					classes: 3,
-					field: 'Shape_Leng',
-					lineMode: 'width',
-					lineWidth: {
-						min: 0.2,
-						max: 13
-					},
-					legendAscending: false,
-					legendTitle: 'Length (m)'
+    				attribution: "US Capitals: <a href='https://mangomap.com/examples/data/7986d760_1129_11e6_8e77_22000bb3a3a1/us-state-capitals' target='_blank'>Mangomap (2018)</a>",
+        			pane: 'front'
 				}).addTo(map);
 			});
 			
@@ -108,6 +94,27 @@
 					}
 				}).addTo(map);
 			});
+
+			// Line features example. Attribute to test with: 'length'
+			fetch('data/rivers_yukon.geojson').then(r => r.json()).then(d => {
+				window.testdata3 = L.dataClassification(d, {
+					mode: 'quantile',
+					classes: 3,
+					field: 'length',
+					lineMode: 'width',
+					lineWidth: {
+						min: 1,
+						max: 13
+					},
+					legendAscending: false,
+					legendTitle: 'River length (m)',
+    				attribution: "Rivers (10m scale): <a href='https://www.naturalearthdata.com/' target='_blank'>Natural Earth</a>",
+        			pane: 'front'
+				}).addTo(map);
+			});
+			//testdata3.bringToFront();
+			
+			map.fitBounds([[17, -170],[68, -65]]);
 
 		</script>	
 	</body>
