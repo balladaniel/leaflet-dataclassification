@@ -78,7 +78,7 @@ const layer = L.dataClassification(data, {
 - `pointShape <string>`: ['circle'|'square'|'diamond'] shape of points: 'circle', 'square', 'diamond' (default: 'circle')
 #### Specific for Line features
 - `lineMode <string>`: ['color'|'width'] stroke "color" or "width" (default: 'color')
-- `lineWidth <object>`: when lineMode: "width", define min/max stroke width as object (defaults: {min: 1, max: 15}, recommended max: 20)
+- `lineWidth <object>`: when lineMode: "width", define min/max stroke width as object (defaults: {min: 3, max: 15}, recommended max: 20)
 #### General options
 - `colorRamp <string>`: color ramp to use for symbology. Based on ColorBrewer2 color ramps (https://colorbrewer2.org/), included in Chroma.js. Custom colors (`colorCustom`) override this. (default: 'PuRd')
 - `colorCustom <array>`: custom color ramp defined as an array, colors in formats supported by Chroma.js, with opacity support. A minimum of two colors are required. If defined, custom colors override `colorRamp`. Example: ['rgba(210,255,178,1)', '#fec44fff', 'f95f0eff']. Examples for yellow in different color formats: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', chroma('yellow').alpha(0.5). For more formats, see: https://gka.github.io/chroma.js/. For an interactive color palette helper, see: https://gka.github.io/palettes/.

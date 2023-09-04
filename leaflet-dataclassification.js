@@ -20,7 +20,7 @@ L.DataClassification = L.GeoJSON.extend({
         pointSize: {min: 2, max: 10},               // POINT FEATURES: when pointMode: "size", define min/max point circle radius (default min: 2, default max: 10, recommended max: 12)
         pointShape: 'circle',						// POINT FEATURES: shape of points: 'circle', 'square', 'diamond' (default: 'circle')
         lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
-        lineWidth: {min: 1, max: 15},				// LINE FEATURES: when lineMode: "width", define min/max stroke width as object (default min: 1, default max: 15, recommended max: 20)
+        lineWidth: {min: 3, max: 15},				// LINE FEATURES: when lineMode: "width", define min/max stroke width as object (default min: 1, default max: 15, recommended max: 20)
         colorRamp: 'purd',							// color ramp to use in symbology. Based on ColorBrewer2 color ramps, included in Chroma.js: https://colorbrewer2.org/. (default: PuRd)
         /*colorCustom: [	'rgba(210,255,178,1)', 
                         '#fec44fff', 
@@ -122,23 +122,20 @@ L.DataClassification = L.GeoJSON.extend({
     _pointMode_size_radiuses(sizes){
         radiuses = [];
         
-        var step = (sizes.max-sizes.min)/classes.length;
-        for (var i = 1; i<classes.length; i++) {
-            var curr = sizes.min+step*i;
+        var step = (sizes.max - sizes.min) / (classes.length - 1);
+        for (var i = 0; i < classes.length; i++) {
+            var curr = sizes.min + (step * i);
             radiuses.push(curr);
         }
-        radiuses.push(sizes.max);
         console.log('points: radius categories:', radiuses)
     },
     _lineMode_width(sizes){
         widths = [];
         
-        var step = (sizes.max-sizes.min)/classes.length;
-        for (var i = 1; i<classes.length; i++) {
-            var curr = sizes.min+step*i;
-            widths.push(curr);
+        var step = (sizes.max - sizes.min) / (classes.length - 1);
+        for (var i = 0; i < classes.length; i++) {
+            widths.push(sizes.min + (step * i));
         }
-        widths.push(sizes.max);
         console.log('lines: width categories:', widths)
     },
 
