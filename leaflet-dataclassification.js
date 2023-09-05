@@ -35,7 +35,12 @@ L.DataClassification = L.GeoJSON.extend({
         /*middlePointValue: 0,*/					// optional: adjust boundary value of middle classes (only for even classcount), useful for symmetric classification of diverging data around 0 for example. Only use a value within the original middle classes range.
         /*field: '',*/					            // target attribute field name. Case-sensitive!
         legendTitle: '',					        // title for legend (usually a description of visualized data). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
-        classRounding: 0                            // class boundary value rounding to decimal (default: 0 - whole numbers), set -1 to disable rounding
+        classRounding: 0,                           // class boundary value rounding to decimal (default: 0 - whole numbers), set -1 to disable rounding
+        
+        style: {
+            fillColor: 'orange',
+            color: L.Path.prototype.options.color
+        }
     },
 
     // variables for plugin scope
@@ -49,7 +54,6 @@ L.DataClassification = L.GeoJSON.extend({
     _field: '',
     _pointShape: '',
     _linecolor: '',
-    _pointcolor: '',
 
     // value evaluators to match classes
     _getColor(d) {
@@ -88,9 +92,9 @@ L.DataClassification = L.GeoJSON.extend({
             radius: 8
         };			
     },
-    _stylePoint_size(value){
+    _stylePoint_size(value, options){
         return {
-            fillColor: "orange",
+            fillColor: options.style.fillColor,
             fillOpacity: 1,
             color: "black",
             weight: 1,
@@ -141,7 +145,6 @@ L.DataClassification = L.GeoJSON.extend({
 
     _svgCreator(options){
         (options.shape == null ? options.shape = 'circle' : '');			// default shape
-        (options.color == null ? options.color = 'orange' : '');			// default color
         (options.size == null ? options.size = 8 : '');						// default size
         var svg;
         switch (options.shape) {
@@ -172,10 +175,10 @@ L.DataClassification = L.GeoJSON.extend({
         return svg;
     },
 
-    _generateLegend(title, asc, round, mode_line, mode_point, typeOfFeatures) {
+    _generateLegend(title, asc, round, mode_line, mode_point, typeOfFeatures, pfc) {
         svgCreator = this._svgCreator;
         ps = this._pointShape;
-        lc = this._linecolor
+        lc = this._linecolor;
 
         var legend = L.control({position: 'bottomleft'});
         
@@ -217,7 +220,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.log('Legend: building line', i+1)*/
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
-                                            svgCreator({shape: ps, size: radiuses[i]})+
+                                            svgCreator({shape: ps, size: radiuses[i], color: pfc})+
                                             '<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
                                         '</div>';
                                 }
@@ -244,7 +247,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.log('Legend: building line', i)*/
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
-                                            svgCreator({shape: ps, size: radiuses[i-1]})+
+                                            svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
                                             '<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
                                         '</div>';
                                 }
@@ -361,7 +364,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     _classify(map) {
-        _field=this.options.field
+        _field=this.options.field;
         var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
         var typeOfFeatures = 'unknown';
         values = [];
@@ -445,6 +448,7 @@ L.DataClassification = L.GeoJSON.extend({
             console.warn("Don't be silly, legend will look incomprehensible. Overriding classrounding with 0 (whole numbers)."); 
             classrounding = 0;
         }; 
+        var pointfillcolor = this.options.style.fillColor;
 
         // classification process
         var success = false;
@@ -519,7 +523,7 @@ L.DataClassification = L.GeoJSON.extend({
                 console.log('Adjusting middle classes to value: ', middlepoint);
                 classes[classes.length / 2] = middlepoint;
             }
-            this._generateLegend(legendtitle, asc, classrounding, mode_line, mode_point, typeOfFeatures);
+            this._generateLegend(legendtitle, asc, classrounding, mode_line, mode_point, typeOfFeatures, pointfillcolor);
         } else {
             console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
             return;
@@ -537,6 +541,7 @@ L.DataClassification = L.GeoJSON.extend({
         getRadius = this._getRadius;
         getWeight = this._getWeight;
         pointMarkers = this._pointMarkers;
+        options = this.options;
 
         currentmarker = null;
 
@@ -544,7 +549,7 @@ L.DataClassification = L.GeoJSON.extend({
         this.eachLayer(function(layer) {
             if (layer.feature.geometry.type == "Point" || layer.feature.geometry.type == "MultiPoint") {
                 var coords = layer.feature.geometry.coordinates;
-                var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field]))
+                var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
                 style.shape = ps;
 
                 const svgIcon = L.divIcon({

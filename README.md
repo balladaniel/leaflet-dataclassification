@@ -57,12 +57,16 @@ const layer = L.dataClassification(data, {
     lineMode: 'width',
     lineWidth: {min: 1, max: 15},
     colorRamp: 'OrRd',
-    colorCustom: ['rgba(210,255,178,1)', '#fec44fff', 'f95f0eff'],    // if specified, overrides colorRamp!
+    colorCustom: ['rgba(210,255,178,1)', '#fec44fff', 'f95f0eff'],  // if specified, overrides colorRamp!
     legendAscending: false,	
     reverseColorRamp: false,
     middlePointValue: 0,
     legendTitle: 'Density (pop/km²)',	
-    classRounding: 2
+    classRounding: 2,
+    style: {
+        fillColor: 'purple' // marker fill color in point/size mode
+        color: '#aabbcc'    // line stroke color in line/width mode
+    }
 }.addTo(map);
 ```
 
@@ -74,11 +78,19 @@ const layer = L.dataClassification(data, {
 ### Additional options (in addition to the standard L.geoJSON options)
 #### Specific for Point	features
 - `pointMode <string>`: ['color'|'size'] fill "color" or "size" (default: 'color')
-- `pointSize <object>`: when pointMode: "size", define min/max point circle radius (defaults: {min: 2, max: 10}, recommended max: 12)
+- `pointSize <object>`: when pointMode: "size", define min/max point circle radius 
+    - `min <float>`: symbol size for the lowest class. (default: 2)
+    - `max <float>`: symbol size for the highest class. (default: 10)
 - `pointShape <string>`: ['circle'|'square'|'diamond'] shape of points: 'circle', 'square', 'diamond' (default: 'circle')
+- `style <object>`: custom styling
+    - `fillColor <string>`: marker fill color, use only in size mode (default: orange)
 #### Specific for Line features
 - `lineMode <string>`: ['color'|'width'] stroke "color" or "width" (default: 'color')
-- `lineWidth <object>`: when lineMode: "width", define min/max stroke width as object (defaults: {min: 3, max: 15}, recommended max: 20)
+- `lineWidth <object>`: when lineMode: "width", define min/max stroke width as object
+    - `min <float>`: symbol size for the lowest class. (default: 3)
+    - `max <float>`: symbol size for the highest class. (default: 15)
+- `style <object>`: custom styling
+    - `color <string>`: line stroke color, use only in width mode (default: blue, the leaflet-path default)
 #### General options
 - `colorRamp <string>`: color ramp to use for symbology. Based on ColorBrewer2 color ramps (https://colorbrewer2.org/), included in Chroma.js. Custom colors (`colorCustom`) override this. (default: 'PuRd')
 - `colorCustom <array>`: custom color ramp defined as an array, colors in formats supported by Chroma.js, with opacity support. A minimum of two colors are required. If defined, custom colors override `colorRamp`. Example: ['rgba(210,255,178,1)', '#fec44fff', 'f95f0eff']. Examples for yellow in different color formats: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', chroma('yellow').alpha(0.5). For more formats, see: https://gka.github.io/chroma.js/. For an interactive color palette helper, see: https://gka.github.io/palettes/.
