@@ -21,7 +21,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 - Legend generation with options for:
     - class order (ascending/descending)
     - legend header (title)
-    - rounding of class boundary values to n decimals
+    - rounding of class boundary values to n decimals or to the nearest 10, 100, 1000 etc. numbers
 
 ## Demo
 - combined (three layers): [./examples/combined.html](https://balladaniel.github.io/leaflet-dataclassification/examples/combined.html)
@@ -98,4 +98,4 @@ const layer = L.dataClassification(data, {
 - `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful when you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
 - `middlePointValue <number>`: adjust boundary value of middle classes (only when classifying into even classes). Useful for symmetric classification of diverging data around 0. Only use a value within the range of the two middle classes.    
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
-- `classRounding <integer>`: round class boundary values to a decimal place (default: 0 for whole numbers), set -1 to disable rounding
+- `classRounding <integer>`: class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. Example: with a setting of "-2", a value of 254777.253 will get rounded up to 254800, with "0" it will be 254777, with "1" it will become 254777.3. (default: null - no rounding, values are used as-is)

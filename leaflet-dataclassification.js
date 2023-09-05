@@ -35,8 +35,8 @@ L.DataClassification = L.GeoJSON.extend({
         /*middlePointValue: 0,*/					// optional: adjust boundary value of middle classes (only for even classcount), useful for symmetric classification of diverging data around 0 for example. Only use a value within the original middle classes range.
         /*field: '',*/					            // target attribute field name. Case-sensitive!
         legendTitle: '',					        // title for legend (usually a description of visualized data). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
-        classRounding: 0,                           // class boundary value rounding to decimal (default: 0 - whole numbers), set -1 to disable rounding
-        
+        classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
+
         style: {
             fillColor: 'orange',
             color: L.Path.prototype.options.color
@@ -175,19 +175,51 @@ L.DataClassification = L.GeoJSON.extend({
         return svg;
     },
 
-    _generateLegend(title, asc, round, mode_line, mode_point, typeOfFeatures, pfc) {
+    _classPostProc_roundinghelper(num) {
+        // This recommends an optimal "classRounding" parameter in a console message, when it was set too high. Basically the reverse of function _classesPostProcessing_rounding().
+        var i = 1;
+        var x;
+        do {
+            x = num/i
+            i = i*10
+        } while (num > i)
+        return (Math.log10(i)*-1)+2;
+    },
+
+    _classPostProc_rounding(n) { 
+        if (n >= 0) {
+            // rounding to decimals using toFixed()
+            for (var i=0; i<classes.length; i++) {
+                classes[i] = classes[i].toFixed(n);
+            }
+            console.log('Class interval boundary values have been rounded to', n, 'decimals.')
+        } else {
+            // rounding up/down to 10s, 100s, 1000s etc.
+            if (Math.max.apply(Math, classes) < Math.pow(10,Math.abs(n))) {
+                // check if the highest class boundary value is higher than the requested nearest value 
+                // (requested -3, so 1000, while the highest class is 386.2 - this would yield useless rounded values for classes, with ~all classes between 0 and 0.)
+                console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
+                ') is larger than the highest class boundary value (' + Math.max.apply(Math, classes) + '). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
+                + this._classPostProc_roundinghelper(Math.max.apply(Math, classes)) + ' (optimal).');                
+                return;
+            }
+            if (Math.max.apply(Math, classes) < Math.pow(10,Math.abs(n-1))) {
+                // the highest class boundary value vs. requested nearest value being high enough might cause problems at the lowest classes (lowest class does not belong to any features etc.).
+                console.warn('Class interval boundary rounding warning: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + ') might result in the lowest class not belonging to any features on the map (class empty). Make sure the visualized data is correct on the map, otherwise, fix this by adjusting the "classRounding" option to ' + parseInt(n+1) + '.')
+            }
+            for (var i=0; i<classes.length; i++) {
+                classes[i] = Math.round(classes[i]/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); // round(number/100)*100 to round up/down to nearest 100 value
+            }
+            console.log('Class interval boundary values have been rounded to the nearest', Math.pow(10,Math.abs(n)), 'values.')
+        }
+    },
+
+    _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures, pfc) {
         svgCreator = this._svgCreator;
         ps = this._pointShape;
         lc = this._linecolor;
 
         var legend = L.control({position: 'bottomleft'});
-        
-        if (round >= 0) {
-            for (var i=0; i<classes.length; i++) {
-                classes[i] = classes[i].toFixed(round);
-            }
-            console.log('Class interval boundary values have been rounded to', round, 'decimals.')
-        }
         
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'info legend');
@@ -356,6 +388,16 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     onAdd(map) {
+        // DEBUG FLAG - enable for development
+        var DEBUG = false;
+        if(!DEBUG){
+            if(!window.console) window.console = {};
+            var methods = ["log"];
+            for(var i=0;i<methods.length;i++){
+                console[methods[i]] = function(){};
+            }
+        }
+
         console.log('L.dataClassification: Classifying...')
         console.log('L.dataClassification: options:', this.options)
         this._field=this.options.field
@@ -444,8 +486,8 @@ L.DataClassification = L.GeoJSON.extend({
             (this.options.legendTitle == '' ? legendtitle = this._field :legendtitle = this.options.legendTitle )
         }; 	
         var classrounding = this.options.classRounding;
-        if (classrounding > 15) { // over 15
-            console.warn("Don't be silly, legend will look incomprehensible. Overriding classrounding with 0 (whole numbers)."); 
+        if (classrounding > 10) { // over 10
+            console.warn("Don't be silly, by rounding class boundary values to 10+ decimal places the legend will look incomprehensible. Overriding classrounding with 0 (whole numbers) for now. Fix this by using a more sensible number for the 'classRounding' parameter (like 2), set it to zero to get whole numbers, or set it to negative numbers to round up/down to 10s (-1), 100s (-2), 1000s (-3), etc."); 
             classrounding = 0;
         }; 
         var pointfillcolor = this.options.style.fillColor;
@@ -505,7 +547,7 @@ L.DataClassification = L.GeoJSON.extend({
                     colors = chroma.scale(colorramp).colors(classnum);
                 } catch (error) {
                     console.error(error)
-                    console.error('Make sure chosen color ramp exists (color ramps based on https://colorbrewer2.org/) and custom colors are formatted correctly. For supported formats, see https://gka.github.io/chroma.js/.')
+                    console.error('Make sure chosen color ramp exists (color ramps based on https://colorbrewer2.org/) and custom colors are formatted correctly. For supported formats, see https://gka.github.io/chroma.js/. For an interactive color palette helper, see https://gka.github.io/palettes/.')
                     return;
                 }
                 if (colorramp_rev) {
@@ -523,7 +565,8 @@ L.DataClassification = L.GeoJSON.extend({
                 console.log('Adjusting middle classes to value: ', middlepoint);
                 classes[classes.length / 2] = middlepoint;
             }
-            this._generateLegend(legendtitle, asc, classrounding, mode_line, mode_point, typeOfFeatures, pointfillcolor);
+            if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
+            this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, pointfillcolor);  // generate legend
         } else {
             console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
             return;
