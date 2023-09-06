@@ -37,6 +37,7 @@ L.DataClassification = L.GeoJSON.extend({
         legendTitle: '',					        // title for legend (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
         classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
         unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
+        legendPosition: 'bottomleft',               // Legend position (L.control option: 'topleft', 'topright', 'bottomleft' or 'bottomright')
 
         style: {
             fillColor: 'orange',
@@ -56,8 +57,14 @@ L.DataClassification = L.GeoJSON.extend({
     _field: '',
     _pointShape: '',
     _linecolor: '',
+    _legendPos: '',
 
     // value evaluators to match classes
+    /**
+     * Value evaluator to match a color class.
+     * @param {float} d - Number to match a class to
+     * @returns {string} Symbol color of the class
+     */
     _getColor(d) {
         for (var i = 0; i<classes.length; i++) {
             if (d < classes[i+1]) {
@@ -66,6 +73,12 @@ L.DataClassification = L.GeoJSON.extend({
         }
         return colors.at(-1);	// highest group
     },
+
+    /**
+     * Value evaluator to match a line width class.
+     * @param {float} d - Number to match a class to
+     * @returns {float} Symbol width of the class
+     */
     _getWeight(d) {
         for (var i = 0; i<classes.length; i++) {
             if (d < classes[i+1]) {
@@ -74,6 +87,12 @@ L.DataClassification = L.GeoJSON.extend({
         }
         return widths.at(-1);	// highest group
     },
+
+    /**
+     * Value evaluator to match a point symbol size class.
+     * @param {float} d - Number to match a class to
+     * @returns {float} Symbol radius of the class
+     */
     _getRadius(d) {
         for (var i = 0; i<classes.length; i++) {
             if (d < classes[i+1]) {
@@ -84,6 +103,11 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     // stylers
+    /**
+     * Feature styler for point/color mode.
+     * @param {float} value - Attribute (number), based on which we classify the feature
+     * @returns {object} Final symbol style of the feature
+     */
     _stylePoint_color(value){
         return {
             fillColor: getColor(value),
@@ -94,6 +118,13 @@ L.DataClassification = L.GeoJSON.extend({
             radius: 8
         };			
     },
+
+    /**
+     * Feature styler for point/size mode.
+     * @param {float} value - Attribute (number), based on which we classify the feature
+     * @param {object} options - Custom styling (see the `style` option)
+     * @returns {object} Final symbol style of the feature
+     */
     _stylePoint_size(value, options){
         return {
             fillColor: options.style.fillColor,
@@ -104,17 +135,35 @@ L.DataClassification = L.GeoJSON.extend({
             radius: getRadius(value)
         };			
     },
+
+    /**
+     * Feature styler for line/color mode.
+     * @param {float} value - Attribute (number), based on which we classify the feature
+     * @returns {object} Final symbol style of the feature
+     */
     _styleLine_color(value){
         return {
             color: getColor(value)/*,
             weight: 3*/
         };			
     },
+
+    /**
+     * Feature styler for line/width mode.
+     * @param {float} value - Attribute (number), based on which we classify the feature
+     * @returns {object} Final symbol style of the feature
+     */
     _styleLine_width(value){
         return {
             weight: getWeight(value)
         };			
     },
+
+    /**
+     * Feature styler for polygons.
+     * @param {float} value - Attribute (number), based on which we classify the feature
+     * @returns {object} Final symbol style of the feature
+     */
     _stylePolygon(value){
         return {
             fillColor: getColor(value),
@@ -125,6 +174,12 @@ L.DataClassification = L.GeoJSON.extend({
     },
     
     // get n categories of point radiuses, line widths for symbology
+    /**
+     * Generates a range of symbol sizes for point/size mode. Fills up global array `radiuses[]`.
+     * @param {Object} sizes Symbol size information
+     * @param {float} sizes.min Minimum symbol size, radius (symbol of the lowest class)
+     * @param {float} sizes.max Maximum symbol size, radius (symbol of the highest class)
+     */
     _pointMode_size_radiuses(sizes){
         radiuses = [];
         
@@ -135,6 +190,12 @@ L.DataClassification = L.GeoJSON.extend({
         }
         console.log('points: radius categories:', radiuses)
     },
+    /**
+     * Generates a range of symbol sizes for line/width mode. Fills up global array `widths[]`.
+     * @param {Object} sizes Symbol size information
+     * @param {float} sizes.min Minimum symbol size, width (symbol of the lowest class)
+     * @param {float} sizes.max Maximum symbol size, width (symbol of the highest class)
+     */
     _lineMode_width(sizes){
         widths = [];
         
@@ -145,6 +206,14 @@ L.DataClassification = L.GeoJSON.extend({
         console.log('lines: width categories:', widths)
     },
 
+    /**
+     * SVG creator. This creates symbols for the point/size and point/color modes.
+     * @param {Object} options Options for the SVG to be created
+     * @param {('circle'|'square'|'diamond')} options.shape Choose from circle, square, diamond shapes for symbol
+     * @param {string} options.color Fill color of the symbol
+     * @param {number} options.size Size of the symbol
+     * @returns {string} Final HTML-formatted SVG symbol as string.
+     */
     _svgCreator(options){
         (options.shape == null ? options.shape = 'circle' : '');			// default shape
         (options.size == null ? options.size = 8 : '');						// default size
@@ -243,6 +312,7 @@ L.DataClassification = L.GeoJSON.extend({
         svgCreator = this._svgCreator;
         legendPP_unitMod = this._legendPostProc_unitModifier;
         unitMod_options = this._unitMod;
+        position = this._legendPos;
         ps = this._pointShape;
         lc = this._linecolor;
 
@@ -255,7 +325,13 @@ L.DataClassification = L.GeoJSON.extend({
             };
         }
 
-        var legend = L.control({position: 'bottomleft'});
+        // make sure legendPosition option is valid, if not, revert to default
+        if(!['topleft', 'topright', 'bottomleft', 'bottomright'].includes(position)) {
+            console.error('Invalid legendPosition. Choose one of: "bottomleft", "bottomright", "topleft", "topright". Overriding with default ("bottomleft").');
+            position = 'bottomleft';
+        }
+
+        var legend = L.control({position: position});
         
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'info legend');
@@ -548,6 +624,7 @@ L.DataClassification = L.GeoJSON.extend({
         }; 
         var pointfillcolor = this.options.style.fillColor;
         this._unitMod = this.options.unitModifier;
+        this._legendPos = this.options.legendPosition;
 
         // classification process
         var success = false;
