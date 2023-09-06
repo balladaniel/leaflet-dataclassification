@@ -239,21 +239,25 @@ L.DataClassification = L.GeoJSON.extend({
                             // color based categories
                                 for (var i = 0; i < classes.length; i++) {
                                     /*console.log('Legend: building line', i+1)*/
+                                    let low = classes[i];
+                                    let high = classes[i+1];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, color: colors[i]})+
-                                            '<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
                                         '</div>';
                                 }
                                 break;
                             case 'size':
                             // size (radius) based categories
                                 for (var i = 0; i < classes.length; i++) {
+                                    let low = classes[i];
+                                    let high = classes[i+1];
                                     /*console.log('Legend: building line', i+1)*/
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, size: radiuses[i], color: pfc})+
-                                            '<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -266,10 +270,12 @@ L.DataClassification = L.GeoJSON.extend({
                             // color based categories
                                 for (var i = classes.length; i > 0; i--) {
                                     /*console.log('Legend: building line', i)*/
+                                    let low = classes[i-1];
+                                    let high = classes[i];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, color: colors[i-1]})+
-                                            '<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -277,10 +283,12 @@ L.DataClassification = L.GeoJSON.extend({
                             // size (radius) based categories
                                 for (var i = classes.length; i > 0; i--) {
                                     /*console.log('Legend: building line', i)*/
+                                    let low = classes[i-1];
+                                    let high = classes[i];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
-                                            '<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -297,10 +305,12 @@ L.DataClassification = L.GeoJSON.extend({
                             // color based categories
                                 for (var i = 0; i < classes.length; i++) {
                                     /*console.log('Legend: building line', i+1)*/
+                                    let low = classes[i];
+                                    let high = classes[i+1];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             '<i style="background: ' + colors[i] + '"></i> ' +
-                                            '<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -308,12 +318,14 @@ L.DataClassification = L.GeoJSON.extend({
                             // width based categories
                                 for (var i = 0; i < classes.length; i++) {
                                     /*console.log('Legend: building line', i+1)*/
+                                    let low = classes[i];
+                                    let high = classes[i+1];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
-                                            '<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -326,10 +338,12 @@ L.DataClassification = L.GeoJSON.extend({
                             // color based categories
                                 for (var i = classes.length; i > 0; i--) {
                                     /*console.log('Legend: building line', i)*/
+                                    let low = classes[i-1];
+                                    let high = classes[i];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             '<i style="background: ' + colors[i-1] + '"></i>' +
-                                            '<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
                                         '</div>'
                                 }
                                 break;
@@ -337,12 +351,14 @@ L.DataClassification = L.GeoJSON.extend({
                             // width based categories
                                 for (var i = classes.length; i > 0; i--) {
                                     /*console.log('Legend: building line', i)*/
+                                    let low = classes[i-1];
+                                    let high = classes[i];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
-                                        '<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
                                         '</div>'
                                 }
                                 break;
@@ -356,10 +372,12 @@ L.DataClassification = L.GeoJSON.extend({
                     // ascending legend
                         for (var i = 0; i < classes.length; i++) {
                             /*console.log('Legend: building line', i+1)*/
+                            let low = classes[i];
+                            let high = classes[i+1];
                             container +=
                                 '<div style="display: flex; flex-direction: row; align-items: center">'+
                                     '<i style="background: ' + colors[i] + '"></i> ' +
-                                    '<div>'+(i == 0 ? '< ' : classes[i] + (classes[i + 1] ? ' &ndash; ' : '')) + (classes[i + 1] ? classes[i + 1] : ' <')+'</div>'+
+                                    '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
                                 '</div>';
                         }
                         break;
@@ -367,10 +385,12 @@ L.DataClassification = L.GeoJSON.extend({
                     // descending legend
                         for (var i = classes.length; i > 0; i--) {
                             /*console.log('Legend: building line', i)*/
+                            let low = classes[i-1];
+                            let high = classes[i];
                             container +=
                                 '<div style="display: flex; flex-direction: row; align-items: center">'+
                                     '<i style="background: ' + colors[i-1] + '"></i>' +
-                                    '<div>'+(i == 1 ? '< ' : '') + (i == classes.length ? classes[i-1] + ' <' : classes[i] + (i == 1 ? '' : ' &ndash; ' + classes[i-1]))+'</div>'+
+                                    '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
                                 '</div>'
                         }
                         break;

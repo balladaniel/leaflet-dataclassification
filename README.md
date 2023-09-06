@@ -1,10 +1,10 @@
 # leaflet-dataclassification
 
-Classifies quantitative data from attributes, styles the features appropriately and also creates a clean, simple and appealing legend depicting the value classes and their associated symbols, all combined in a single step. Classifying point features can be done based on color and size, line features based on color and width, polygon features based on fill color (for choropleth maps). Extends the L.GeoJSON layer.
+Classifies quantitative data from attributes, styles the features appropriately and also creates a clean, simple and appealing legend depicting the value classes and their associated symbols, all combined in a single step. Classifying point features can be done based on color and size, line features based on color and width, polygon features based on fill color (for choropleth maps). Extends the L.geoJSON layer.
 
 Aims to simplify data visualization and creation of elegant thematic web maps with Leaflet using GeoJSON data, with a more traditional approach of thematic cartography. Although tutorials for defining style functions (to retrieve class colors through pre-defined conditional statements) and basic legend creation exist for Leaflet, those are static (are only created for a specific dataset) and might require using GIS software beforehand to classify and style the dataset properly (to get class boundaries and exact colors), in order to have a visualization that gets the message through. This customizable plugin automates all this and can easily be used for any dataset with quantitative data. As it extends L.GeoJSON, you can have multiple layers of this (with a matched legend for each) to create a more complex data visualization.
 
-![Samples](screenshots.png)
+![Screenshot of example maps created with the plugin. Samples.](screenshots.png)
 
 ## Features
 - Classification and styling of:
@@ -21,7 +21,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 - Legend generation with options for:
     - class order (ascending/descending)
     - legend header (title)
-    - rounding of class boundary values to n decimals or to the nearest 10, 100, 1000 etc. numbers
+    - rounding of class boundary values to n decimals or up/down to the nearest 10, 100, 1000 etc. numbers
 
 ## Demo
 - combined (three layers): [./examples/combined.html](https://balladaniel.github.io/leaflet-dataclassification/examples/combined.html)
@@ -64,8 +64,8 @@ const layer = L.dataClassification(data, {
     legendTitle: 'Density (pop/km²)',	
     classRounding: 2,
     style: {
-        fillColor: 'purple' // marker fill color in point/size mode
-        color: '#aabbcc'    // line stroke color in line/width mode
+        fillColor: 'purple',    // marker fill color in point/size mode
+        color: '#aabbcc'        // line stroke color in line/width mode
     }
 }.addTo(map);
 ```
@@ -98,4 +98,4 @@ const layer = L.dataClassification(data, {
 - `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful when you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
 - `middlePointValue <number>`: adjust boundary value of middle classes (only when classifying into even classes). Useful for symmetric classification of diverging data around 0. Only use a value within the range of the two middle classes.    
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
-- `classRounding <integer>`: class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. Example: with a setting of "-2", a value of 254777.253 will get rounded up to 254800, with "0" it will be 254777, with "1" it will become 254777.3. (default: null - no rounding, values are used as-is)
+- `classRounding <integer>`: class boundary value rounding. When positive numbers are used for this option, class boundary values are rounded to x decimals, zero will round to whole numbers, while negative numbers will round values to the nearest 10, 100, 1000, etc. Example: with a setting of "1", a value of 254777.253 will get rounded up to 254777.3, with "0" it will be 254777, with "-2" it will become 254800. (default: null - no rounding happens, values are used as-is)
