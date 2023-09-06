@@ -57,6 +57,14 @@
 
 			// Point features example. Attribute to test with: 'population'
 			fetch('data/us-state-capitals.geojson').then(r => r.json()).then(d => {
+				function tooltip(feature, layer) {
+					if (feature.properties.name && feature.properties.population) {
+						layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + parseInt(feature.properties.population));
+						layer.on('mousemove',e=>{
+							e.target.getTooltip().setLatLng(e.latlng);
+						});
+					}
+				}
 				window.testdata2 = L.dataClassification(d, {
 					mode: 'jenks',
 					classes: 4,
@@ -69,12 +77,21 @@
 					classRounding: -4,
 					legendTitle: 'Population of capitals',
     				attribution: "US Capitals: <a href='https://mangomap.com/examples/data/7986d760_1129_11e6_8e77_22000bb3a3a1/us-state-capitals' target='_blank'>Mangomap (2018)</a>",
-        			pane: 'front'
+        			pane: 'front',
+					onEachFeature: tooltip
 				}).addTo(map);
 			});
 			
 			// Polygon features example. Attribute to test with: 'density'
 			fetch('data/us-states.geojson').then(r => r.json()).then(d => {
+				function tooltip(feature, layer) {
+					if (feature.properties.name && feature.properties.density) {
+						layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + parseInt(feature.properties.density)+' pop/mi²');
+						layer.on('mousemove',e=>{
+							e.target.getTooltip().setLatLng(e.latlng);
+						});
+					}
+				}
 				function onEachFeature(feature, layer) {
 					layer.bindPopup(feature.properties.name);
 				}
@@ -87,7 +104,7 @@
 					reverseColorRamp: false,
 					legendTitle: 'Density (pop/mi²)',
 					classRounding: 1,						
-					onEachFeature: onEachFeature,
+					onEachFeature: tooltip,
 					// polygon outline styling example (standard L.Path styling options):
 					style: {
 						weight: 2, 
