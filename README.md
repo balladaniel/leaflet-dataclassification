@@ -63,6 +63,10 @@ const layer = L.dataClassification(data, {
     middlePointValue: 0,
     legendTitle: 'Density (pop/km²)',	
     classRounding: 2,
+    unitModifier: {
+        action: 'divide',
+        by: 1000
+    },
     style: {
         fillColor: 'purple',    // marker fill color in point/size mode
         color: '#aabbcc'        // line stroke color in line/width mode
@@ -99,3 +103,6 @@ const layer = L.dataClassification(data, {
 - `middlePointValue <number>`: adjust boundary value of middle classes (only when classifying into even classes). Useful for symmetric classification of diverging data around 0. Only use a value within the range of the two middle classes.    
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
 - `classRounding <integer>`: class boundary value rounding. When positive numbers are used for this option, class boundary values are rounded to x decimals, zero will round to whole numbers, while negative numbers will round values to the nearest 10, 100, 1000, etc. Example: with a setting of "1", a value of 254777.253 will get rounded up to 254777.3, with "0" it will be 254777, with "-2" it will become 254800. (default: null - no rounding happens, values are used as-is)
+- `unitModifier <object>`: modifies the final class boundary values in order to multiply/divide them by a number. Useful for example when a dataset attribute is in metres, but kilometres would fit the legend better (786000 metres shown as 786 km). Purely visual, only affects legend. Happens after classRounding.
+    - `action <string>`: ['divide'|'multiply']
+    - `by <number>`: a number to divide/multiply class boundary values with.

@@ -34,8 +34,9 @@ L.DataClassification = L.GeoJSON.extend({
                                                     // (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
         /*middlePointValue: 0,*/					// optional: adjust boundary value of middle classes (only for even classcount), useful for symmetric classification of diverging data around 0 for example. Only use a value within the original middle classes range.
         /*field: '',*/					            // target attribute field name. Case-sensitive!
-        legendTitle: '',					        // title for legend (usually a description of visualized data). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
+        legendTitle: '',					        // title for legend (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
         classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
+        unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
 
         style: {
             fillColor: 'orange',
@@ -51,6 +52,7 @@ L.DataClassification = L.GeoJSON.extend({
     _radiuses: [],
     _widths: [],
     _pointMarkers: [],
+    _unitMod: {},
     _field: '',
     _pointShape: '',
     _linecolor: '',
@@ -214,10 +216,44 @@ L.DataClassification = L.GeoJSON.extend({
         }
     },
 
+    _legendPostProc_unitModifier(options) {
+        // This processes the final class boundary values in order to multiply/divide them as wished. Purely visual, only affects legend. 
+        // (useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres as 786 km).
+        // Note: runs after clsasRounding(). Runs during _generatelegend(). It DOES change the main classes[] array elements, but since legend generation is the last step in the whole process, it's OK (for now).
+        switch (options.action) {
+            case 'multiply':
+                for (var i = 0; i<classes.length; i++) {
+                    console.log('MULTIPLY', classes[i],' by', options.by)
+                    classes[i] = classes[i] * options.by;
+                }
+                break;
+            case 'divide':
+                for (var i = 0; i<classes.length; i++) {
+                    console.log('DIVIDE', classes[i],' by', options.by)  
+                    classes[i] = classes[i] / options.by;                  
+                }
+                break;
+            default:
+                console.error('Invalid action for "unitModifier". Choose one of: "multiply", "divide".')
+        }
+        return;         
+    },
+
     _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures, pfc) {
         svgCreator = this._svgCreator;
+        legendPP_unitMod = this._legendPostProc_unitModifier;
+        unitMod_options = this._unitMod;
         ps = this._pointShape;
         lc = this._linecolor;
+
+        // unitModifier process:
+        if (unitMod_options != null) {
+            if (unitMod_options.hasOwnProperty('action') && unitMod_options.action != null && typeof unitMod_options.action == "string" && unitMod_options.hasOwnProperty('by') && unitMod_options.by != null && typeof unitMod_options.by == "number") { 
+                legendPP_unitMod(unitMod_options)
+            } else {
+                console.error('Missing/invalid options for "unitModifier". Try `unitModifier: {action: "multiply", number: 1000}`.')
+            };
+        }
 
         var legend = L.control({position: 'bottomleft'});
         
@@ -511,6 +547,7 @@ L.DataClassification = L.GeoJSON.extend({
             classrounding = 0;
         }; 
         var pointfillcolor = this.options.style.fillColor;
+        this._unitMod = this.options.unitModifier;
 
         // classification process
         var success = false;
@@ -586,12 +623,10 @@ L.DataClassification = L.GeoJSON.extend({
                 classes[classes.length / 2] = middlepoint;
             }
             if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
-            this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, pointfillcolor);  // generate legend
         } else {
             console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
             return;
         };
-
         
         svgCreator = this._svgCreator;
         ps = this._pointShape;
@@ -631,6 +666,8 @@ L.DataClassification = L.GeoJSON.extend({
             }
             
         });
+
+        this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, pointfillcolor);  // generate legend
 
         console.log('L.dataClassification: Finished!')
         console.log('------------------------------------')

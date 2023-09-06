@@ -52,7 +52,7 @@
 			// map div object, main Leaflet object:
 			var map = L.map('map', {layers: [OSM]}).setView([0,0], 3); 
 			map.createPane('front');
-			map.getPane('front').style.zIndex = 650;
+			map.getPane('front').style.zIndex = 450;
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
 			// Point features example. Attribute to test with: 'population'
@@ -98,19 +98,30 @@
 
 			// Line features example. Attribute to test with: 'length'
 			fetch('data/rivers_yukon.geojson').then(r => r.json()).then(d => {
+				function tooltip(feature, layer) {
+					layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + String(feature.properties.length)+' m');
+					layer.on('mousemove',e=>{
+						e.target.getTooltip().setLatLng(e.latlng);
+					});
+				}
 				window.testdata3 = L.dataClassification(d, {
 					mode: 'quantile',
-					classes: 3,
+					classes: 4,
 					field: 'length',
 					lineMode: 'width',
 					lineWidth: {
 						min: 3,
 						max: 10
 					},
-					classRounding: -3,
-					legendTitle: 'River length (m)',
+					classRounding: -4,
+					legendTitle: 'River length (km)',
+					unitModifier: {
+						action: 'divide',
+						by: 1000
+					},
     				attribution: "Rivers (10m scale): <a href='https://www.naturalearthdata.com/' target='_blank'>Natural Earth</a>",
-        			pane: 'front'
+        			pane: 'front',			
+					onEachFeature: tooltip
 				}).addTo(map);
 			});
 			//testdata3.bringToFront();

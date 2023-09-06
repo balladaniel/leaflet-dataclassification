@@ -70,8 +70,9 @@
 						max: 13
 					},
 					classRounding: -2,
+					unitModifier: {action: 'divide', by: 1000},
 					legendAscending: false,
-					legendTitle: 'Length (m)',
+					legendTitle: 'Length (km)',
 					onEachFeature: tooltip
 				}).addTo(map);
 				map.fitBounds(testdata.getBounds());
