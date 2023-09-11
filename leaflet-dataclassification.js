@@ -41,7 +41,8 @@ L.DataClassification = L.GeoJSON.extend({
 
         style: {
             fillColor: 'orange',
-            color: L.Path.prototype.options.color
+            color: L.Path.prototype.options.color,
+            weight: L.Path.prototype.options.weight
         }
     },
 
@@ -57,6 +58,7 @@ L.DataClassification = L.GeoJSON.extend({
     _field: '',
     _pointShape: '',
     _linecolor: '',
+    _lineweight: '',
     _legendPos: '',
 
     // value evaluators to match classes
@@ -143,8 +145,7 @@ L.DataClassification = L.GeoJSON.extend({
      */
     _styleLine_color(value){
         return {
-            color: getColor(value)/*,
-            weight: 3*/
+            color: getColor(value)
         };			
     },
 
@@ -315,6 +316,7 @@ L.DataClassification = L.GeoJSON.extend({
         position = this._legendPos;
         ps = this._pointShape;
         lc = this._linecolor;
+        lw = this._lineweight;
 
         // unitModifier process:
         if (unitMod_options != null) {
@@ -421,7 +423,9 @@ L.DataClassification = L.GeoJSON.extend({
                                     let high = classes[i+1];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
-                                            '<i style="background: ' + colors[i] + '"></i> ' +
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i]+';"/>'+
+                                            '</svg>' +
                                             '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
                                         '</div>';
                                 }
@@ -454,7 +458,9 @@ L.DataClassification = L.GeoJSON.extend({
                                     let high = classes[i];
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
-                                            '<i style="background: ' + colors[i-1] + '"></i>' +
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
+                                            '</svg>' +
                                             '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
                                         '</div>'
                                 }
@@ -584,8 +590,14 @@ L.DataClassification = L.GeoJSON.extend({
         if ((typeOfFeatures == 'LineString' || typeOfFeatures == 'MultiLineString')) {
             if (this.options.hasOwnProperty('style')) {
                 this._linecolor = this.options.style.color;
+                if (this.options.style.hasOwnProperty('weight')) {
+                    this._lineweight = this.options.style.weight;
+                } else {
+                    this._lineweight = L.Path.prototype.options.weight;     // fallback to Leaflet default
+                }
             } else {
-                this._linecolor = L.Path.prototype.options.color;
+                this._linecolor = L.Path.prototype.options.color;           // fallback to Leaflet default
+                this._lineweight = L.Path.prototype.options.weight;         // fallback to Leaflet default
             }
         };
 
@@ -609,7 +621,7 @@ L.DataClassification = L.GeoJSON.extend({
                 (colorramp_custom[0] == null || colorramp_custom[1] == null ? '' : colorramp = colorramp_custom);	
             }
         }
-        var asc = this.options.legendAscending;
+        var asc = (this.options.legendAscending != null ? this.options.legendAscending : false);
         middlepoint = this.options.middlePointValue;
         var legendtitle;
         if (this.options.legendTitle == 'hidden') {

@@ -63,7 +63,6 @@
 					}
 				}
 				window.testdata = L.dataClassification(d, {
-					style: {weight: 5},
 					mode: 'jenks',
 					classes: 5,
 					field: 'AADT',
@@ -71,7 +70,8 @@
 					colorCustom: ['green', 'yellow', 'red'],
 					legendTitle: 'Annual average daily traffic (2022)',
 					attribution: 'Traffic data: <a href="https://gisdata-wsdot.opendata.arcgis.com/datasets/WSDOT::wsdot-traffic-sections-aadt-current/about" target="_blank">Washington State Department of Transportation (2022)</a>',
-					onEachFeature: tooltip
+					onEachFeature: tooltip,
+					style: {weight: 5}
 				}).addTo(map);
 				map.fitBounds(testdata.getBounds());
 			});
