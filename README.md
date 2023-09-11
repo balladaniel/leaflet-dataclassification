@@ -70,7 +70,7 @@ const layer = L.dataClassification(data, {
     unitModifier: {action: 'divide', by: 1000},
     style: {
         fillColor: 'purple',    // marker fill color in point/size mode
-        color: '#aabbcc'        // line stroke color in line/width mode
+        color: '#aabbcc',       // line stroke color in line/width mode
         weight: 5,              // line stroke weight in line/color mode
     }
 }.addTo(map);
