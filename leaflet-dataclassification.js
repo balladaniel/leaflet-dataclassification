@@ -248,7 +248,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     _classPostProc_roundinghelper(num) {
-        // This recommends an optimal "classRounding" parameter in a console message, when it was set too high. Basically the reverse of function _classesPostProcessing_rounding().
+        // This recommends an optimal "classRounding" parameter in a console message, when it was set too high. Basically the reverse of function _classPostProc_rounding().
         var i = 1;
         var x;
         do {
@@ -276,11 +276,26 @@ L.DataClassification = L.GeoJSON.extend({
                 return;
             }
             if (Math.max.apply(Math, classes) < Math.pow(10,Math.abs(n-1))) {
-                // the highest class boundary value vs. requested nearest value being high enough might cause problems at the lowest classes (lowest class does not belong to any features etc.).
-                console.warn('Class interval boundary rounding warning: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + ') might result in the lowest class not belonging to any features on the map (class empty). Make sure the visualized data is correct on the map, otherwise, fix this by adjusting the "classRounding" option to ' + parseInt(n+1) + '.')
+                // the highest class boundary value vs. requested nearest value being high enough might cause problems (lowest class does not belong to any features etc.).
+                console.warn('Class interval boundary rounding warning: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + ') might result in weird class boundaries and/or in the lowest class not belonging to any features on the map (class empty). Make sure the visualized data is correct on the map, otherwise, fix this by adjusting the "classRounding" option to ' + parseInt(n+1) + '.')
             }
-            for (var i=0; i<classes.length; i++) {
-                classes[i] = Math.round(classes[i]/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); // round(number/100)*100 to round up/down to nearest 100 value
+            for (var i=1; i<classes.length; i++) {
+                // Lowest/highest class boundary value gets rounded up/down here, respectively. Done to avoid features with extreme attr. values
+                // (which should fall in the lowest/highest classes) falling in the 2nd lowest/highest class upon rounding.
+                if (i+1 == classes.length) {
+                    // highest class, round down
+                    if (n >= this._classPostProc_roundinghelper(Math.max.apply(Math, classes)) ) {
+                        classes[i] = Math.floor(classes[i]/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                    }
+                } else if (i == 1) {
+                    // lowest class, round up
+                    if (n >= this._classPostProc_roundinghelper(classes[3]) ) {
+                        classes[i] = Math.ceil(classes[i]/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                    }
+                } else {
+                    // midway classes
+                    classes[i] = Math.round(classes[i]/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); // round(number/100)*100 to round up/down to nearest 100 value
+                }
             }
             console.log('Class interval boundary values have been rounded to the nearest', Math.pow(10,Math.abs(n)), 'values.')
         }
@@ -289,7 +304,7 @@ L.DataClassification = L.GeoJSON.extend({
     _legendPostProc_unitModifier(options) {
         // This processes the final class boundary values in order to multiply/divide them as wished. Purely visual, only affects legend. 
         // (useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres as 786 km).
-        // Note: runs after clsasRounding(). Runs during _generatelegend(). It DOES change the main classes[] array elements, but since legend generation is the last step in the whole process, it's OK (for now).
+        // Note: runs after classRounding(). Called inside _generatelegend(). It DOES change the main classes[] array elements, but since legend generation is the last step in the whole process, it's OK (for now).
         switch (options.action) {
             case 'multiply':
                 for (var i = 0; i<classes.length; i++) {
