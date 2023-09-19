@@ -52,6 +52,7 @@
 			};
 			// map div object, main Leaflet object:
 			var map = L.map('map', {layers: [OSM]}); 
+			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps).addTo(map);
 
 			// Point features example. Attribute to test with: 'samplenumber'
