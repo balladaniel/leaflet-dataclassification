@@ -21,6 +21,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 - Legend generation with options for:
     - class order (ascending/descending)
     - legend header (title)
+    - custom HTML templating of legend rows
     - rounding of class boundary values to n decimals or up/down to the nearest 10, 100, 1000 etc. numbers
     - modifying class boundary values in legend by dividing/multiplying by a number (to easily change unit of measurement from m to km for example)
     - positioning (L.control options)
@@ -67,6 +68,11 @@ const layer = L.dataClassification(data, {
     legendTitle: 'Density (pop/km²)',
     legendPosition: 'bottomleft',
     legendAscending: false,	
+    legendTemplate: {
+        highest: '{low} and above',
+        middle: '{low} – {high}',
+        lowest: 'below {high}'
+    },
     unitModifier: {action: 'divide', by: 1000},
     style: {
         fillColor: 'purple',    // marker fill color in point/size mode
@@ -107,6 +113,10 @@ const layer = L.dataClassification(data, {
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
 - `legendPosition <string>`: ['topleft'|'topright'|'bottomleft'|'bottomright'] legend position, L.control option. (default: 'bottomleft')
 - `legendAscending <boolean>`: if true, value classes in legend will be ascending (low first, high last) (default: false)
+- `legendTemplate <object>`: custom HTML formatting of legend rows using {high} and {low} placeholders (interpreted as high/low value in the context of a given class interval). Distinct formatting for the highest, lowest and middle class intervals. Middle class format requires both {high} and {low}, highest only {low} and lowest only {high}.
+    - `highest <string>`: template for the upper end of classes, "highest value and above" (default: '{low} <')
+    - `middle <string>`: template for rows in the middle, "low to high" (default: '{low} – {high}')
+    - `lowest <string>`: template for the lower end of classes, "lowest value and below" (default: '< {high}')
 - `unitModifier <object>`: modifies the final class boundary values in order to multiply/divide them by a number. Useful for example when a dataset attribute is in metres, but kilometres would fit the legend better (786000 metres shown as 786 km). Purely visual, only affects legend. Happens after classRounding.
     - `action <string>`: ['divide'|'multiply'] action to take on the number specified by `by`. Required for `unitModifier`.
     - `by <number>`: a number to divide/multiply class boundary values with. Required for `unitModifier`.
