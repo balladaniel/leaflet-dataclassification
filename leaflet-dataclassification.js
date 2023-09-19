@@ -38,6 +38,11 @@ L.DataClassification = L.GeoJSON.extend({
         classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
         unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
         legendPosition: 'bottomleft',               // Legend position (L.control option: 'topleft', 'topright', 'bottomleft' or 'bottomright')
+        legendTemplate: {                           // Legend row template for custom formatting using {high} and {low} placeholders (interpreted as high/low value in the context of a given class). Distinct formatting for the highest, lowest and middle classes (legend rows). Middle class format requires both {high} and {low}, highest only {low} and lowest only {high}
+            highest: '{low} <',
+            middle:  '{low} – {high}',
+            lowest: '< {high}',
+        },       
 
         style: {
             fillColor: 'orange',
@@ -60,6 +65,7 @@ L.DataClassification = L.GeoJSON.extend({
     _linecolor: '',
     _lineweight: '',
     _legendPos: '',
+    _legendTemplate: {},
 
     // value evaluators to match classes
     /**
@@ -324,14 +330,57 @@ L.DataClassification = L.GeoJSON.extend({
         return;         
     },
 
+    _legendRowFormatter(low, high, i, asc) {
+        // solve row based on the 3 row templates
+        switch (asc) {
+            case true:
+                if (i == classes.length-1) {
+                    // highest
+                    let solved_high = template.highest.replace(/({high})/i, high)
+                    solved_high = solved_high.replace(/({low})/i, low)
+                    return solved_high;
+                } else if (i == 0) {
+                    // lowest
+                    let solved_low = template.lowest.replace(/({high})/i, high)
+                    solved_low = solved_low.replace(/({low})/i, low)
+                    return solved_low;
+                } else {
+                    // middle
+                    let solved_mid = template.middle.replace(/({high})/i, high)
+                    solved_mid = solved_mid.replace(/({low})/i, low)
+                    return solved_mid;
+                };
+            case false:
+                if (i == classes.length) {
+                    // highest
+                    let solved_high = template.highest.replace(/({high})/i, high)
+                    solved_high = solved_high.replace(/({low})/i, low)
+                    return solved_high;
+                } else if (i == 1) {
+                    // lowest
+                    let solved_low = template.lowest.replace(/({high})/i, high)
+                    solved_low = solved_low.replace(/({low})/i, low)
+                    return solved_low;
+                } else {
+                    // middle
+                    let solved_mid = template.middle.replace(/({high})/i, high)
+                    solved_mid = solved_mid.replace(/({low})/i, low)
+                    return solved_mid;
+                };
+        }   
+    },
+
     _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures, pfc) {
         svgCreator = this._svgCreator;
         legendPP_unitMod = this._legendPostProc_unitModifier;
+        legendRowFormatter = this._legendRowFormatter;
         unitMod_options = this._unitMod;
         position = this._legendPos;
         ps = this._pointShape;
         lc = this._linecolor;
         lw = this._lineweight;
+
+        template = this._legendTemplate;
 
         // unitModifier process:
         if (unitMod_options != null) {
@@ -373,7 +422,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, color: colors[i]})+
-                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -386,7 +435,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, size: radiuses[i], color: pfc})+
-                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -404,20 +453,22 @@ L.DataClassification = L.GeoJSON.extend({
                                     container +=
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, color: colors[i-1]})+
-                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 break;
                             case 'size':
                             // size (radius) based categories
                                 for (var i = classes.length; i > 0; i--) {
-                                    /*console.log('Legend: building line', i)*/
+                                    // decide low and high boundary values for current legend row (class)
                                     let low = classes[i-1];
                                     let high = classes[i];
-                                    container +=
+                                    
+                                    // generate row with symbol
+                                    container += 
                                         '<div style="display: flex; flex-direction: row; align-items: center">'+
                                             svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
-                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -441,7 +492,7 @@ L.DataClassification = L.GeoJSON.extend({
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i]+';"/>'+
                                             '</svg>' +
-                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -456,7 +507,7 @@ L.DataClassification = L.GeoJSON.extend({
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
-                                            '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 break;
@@ -476,7 +527,7 @@ L.DataClassification = L.GeoJSON.extend({
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
                                             '</svg>' +
-                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>'
                                 }
                                 break;
@@ -491,7 +542,7 @@ L.DataClassification = L.GeoJSON.extend({
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
-                                            '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>'
                                 }
                                 break;
@@ -510,7 +561,7 @@ L.DataClassification = L.GeoJSON.extend({
                             container +=
                                 '<div style="display: flex; flex-direction: row; align-items: center">'+
                                     '<i style="background: ' + colors[i] + '"></i> ' +
-                                    '<div>'+ (i == 0 ? '< ' + high : (!high ? low + ' <' : low + ' &ndash; ' + high)) +'</div>'+
+                                    '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                 '</div>';
                         }
                         break;
@@ -523,7 +574,7 @@ L.DataClassification = L.GeoJSON.extend({
                             container +=
                                 '<div style="display: flex; flex-direction: row; align-items: center">'+
                                     '<i style="background: ' + colors[i-1] + '"></i>' +
-                                    '<div>'+ (!high ? low + ' <' : (i != 1 ? low + ' &ndash; ' + high : '< ' + high))+'</div>'+
+                                    '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                 '</div>'
                         }
                         break;
@@ -652,6 +703,11 @@ L.DataClassification = L.GeoJSON.extend({
         var pointfillcolor = this.options.style.fillColor;
         this._unitMod = this.options.unitModifier;
         this._legendPos = this.options.legendPosition;
+        this._legendTemplate = this.options.legendTemplate;
+        // fallback to default when user only specified one of the three custom templates
+        if (!this._legendTemplate.hasOwnProperty('highest')) {this._legendTemplate.highest = '{low} <'};
+        if (!this._legendTemplate.hasOwnProperty('middle')) {this._legendTemplate.middle = '{low} – {high}'};
+        if (!this._legendTemplate.hasOwnProperty('lowest')) {this._legendTemplate.lowest = '< {high}'};
 
         // classification process
         var success = false;
