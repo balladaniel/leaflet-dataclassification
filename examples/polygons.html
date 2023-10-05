@@ -31,7 +31,12 @@
 				bottom: 0;
 				left: 0;
 				right: 0;
-			}						
+			}	
+			
+			/* Overriding Chrome's built-in CSS rules to avoid focus rectangle on clicking polygons on a Leaflet map */
+			path.leaflet-interactive:focus {
+				outline: none;
+			}					
 		</style>
 	</head>
 	<body>		
@@ -80,6 +85,27 @@
 				}).addTo(map);
 				map.fitBounds([[-48, 165], [-33, 179]]);
 			});
+
+			var infopanel = L.control({position: 'bottomright'});
+			infopanel.onAdd = function (map) {
+				var div = L.DomUtil.create('div', 'info');
+				div.innerHTML += 
+					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center;">' +
+						'<div style="font-weight: bold; margin-bottom: 5px;">' + 
+							'Leaflet-dataclassification plugin demo page: "polygons"' + 
+						'</div>'+ 
+						'<div style="justify-content: center; ">' +
+							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>. '+
+							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of attribute values used. '+
+							'<br><br>'+
+							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
+							'<br><br>'+
+							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'
+						'</div>'+ 
+					'</div>';
+				return div;
+			}
+			infopanel.addTo(map);
 
 		</script>	
 	</body>

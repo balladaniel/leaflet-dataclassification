@@ -31,7 +31,12 @@
 				bottom: 0;
 				left: 0;
 				right: 0;
-			}						
+			}		
+			
+			/* Overriding Chrome's built-in CSS rules to avoid focus rectangle on clicking polygons on a Leaflet map */
+			path.leaflet-interactive:focus {
+				outline: none;
+			}
 		</style>
 	</head>
 	<body>		
@@ -92,20 +97,23 @@
 						layer.on('mousemove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
+					} else {
+						layer.bindTooltip('<b>' + feature.properties.name + '</b><br> No data');
+						layer.on('mousemove',e=>{
+							e.target.getTooltip().setLatLng(e.latlng);
+						});
 					}
-				}
-				function onEachFeature(feature, layer) {
-					layer.bindPopup(feature.properties.name);
 				}
 				window.testdata = L.dataClassification(d, {
 					mode: 'quantile',
 					classes: 5,
 					field: 'density',
 					colorRamp: 'YlGnBu',
+					noDataColor: '#505050',
 					legendAscending: false,
 					reverseColorRamp: false,
 					legendTitle: 'Density (pop/mi²)',
-					classRounding: 1,						
+					classRounding: 1,
 					onEachFeature: tooltip,
 					// polygon outline styling example (standard L.Path styling options):
 					style: {
@@ -149,7 +157,29 @@
 			});
 			//testdata3.bringToFront();
 			
-			map.fitBounds([[17, -170],[68, -65]]);
+			map.fitBounds([[17, -150],[68, -65]]);
+
+			var infopanel = L.control({position: 'bottomright'});
+			infopanel.onAdd = function (map) {
+				var div = L.DomUtil.create('div', 'info');
+				div.innerHTML += 
+					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center;">' +
+						'<div style="font-weight: bold; margin-bottom: 5px;">' + 
+							'Leaflet-dataclassification plugin demo page: "combined"' + 
+						'</div>'+ 
+						'<div style="justify-content: center; ">' +
+							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i> for three layers simultaneously. '+
+							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of attribute values used. '+
+							'<br><i>Note: population density for North Dakota has been manually removed to showcase handling of Null data (nodata) in feature attributes.</i>'+
+							'<br><br>'+
+							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
+							'<br><br>'+
+							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'
+						'</div>'+ 
+					'</div>';
+				return div;
+			}
+			infopanel.addTo(map);
 
 		</script>	
 	</body>

@@ -13,6 +13,7 @@
 
 L.DataClassification = L.GeoJSON.extend({
     options: {
+        // NOTE: documentation in this object might not be up to date. Please always refer to the documentation on GitHub.
         // default options
         mode: 'quantile',							// classification method: jenks, quantile, equalinterval
         classes: 5,									// desired number of classes (min: 3, max: 10 or featurecount, whichever is lower)
@@ -28,6 +29,8 @@ L.DataClassification = L.GeoJSON.extend({
                                                     // (examples for yellow: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', 
                                                     // chroma('yellow').alpha(0.5). For more, see: https://gka.github.io/chroma.js/)
                                                     // Custom colors override colorRamp.
+        noDataColor: '#606060',                     // fill/stroke color to use for features with null/nodata attribute values, in polygon, point/color and line/color modes  (default: '#606060')
+        noDataIgnore: false,                        // if true, features with null attribute values are not shown on the map. This also means the legend will not have a nodata classs (default: false)
         legendAscending: false,						// true = values in legend will be ascending (low first, high last) (default: false)
         reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. (default: false)
                                                     // Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
@@ -38,10 +41,11 @@ L.DataClassification = L.GeoJSON.extend({
         classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
         unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
         legendPosition: 'bottomleft',               // Legend position (L.control option: 'topleft', 'topright', 'bottomleft' or 'bottomright')
-        legendTemplate: {                           // Legend row template for custom formatting using {high} and {low} placeholders (interpreted as high/low value in the context of a given class). Distinct formatting for the highest, lowest and middle classes (legend rows). Middle class format requires both {high} and {low}, highest only {low} and lowest only {high}
+        legendTemplate: {                           // Legend row template for custom formatting using {high} and {low} placeholders (interpreted as high/low value in the context of a given class). Distinct formatting for the highest, lowest and middle classes (legend rows). Middle class format requires both {high} and {low}, highest only {low} and lowest only {high}. Also format nodata row.
             highest: '{low} <',
             middle:  '{low} – {high}',
             lowest: '< {high}',
+            nodata: 'No data'
         },       
 
         style: {
@@ -66,6 +70,9 @@ L.DataClassification = L.GeoJSON.extend({
     _lineweight: '',
     _legendPos: '',
     _legendTemplate: {},
+    _noDataFound: false,
+    _noDataIgnore: false,
+    _noDataColor: '',
 
     // value evaluators to match classes
     /**
@@ -118,13 +125,13 @@ L.DataClassification = L.GeoJSON.extend({
      */
     _stylePoint_color(value){
         return {
-            fillColor: getColor(value),
+            fillColor: (value != null ? getColor(value) : options.noDataColor),
             fillOpacity: 1,
             color: "black",
             weight: 1,
             shape: "circle",
             radius: 8
-        };			
+        };
     },
 
     /**
@@ -141,7 +148,7 @@ L.DataClassification = L.GeoJSON.extend({
             weight: 1,
             shape: "circle",
             radius: getRadius(value)
-        };			
+        };
     },
 
     /**
@@ -151,8 +158,8 @@ L.DataClassification = L.GeoJSON.extend({
      */
     _styleLine_color(value){
         return {
-            color: getColor(value)
-        };			
+            color: (value != null ? getColor(value) : options.noDataColor)
+        };
     },
 
     /**
@@ -163,7 +170,7 @@ L.DataClassification = L.GeoJSON.extend({
     _styleLine_width(value){
         return {
             weight: getWeight(value)
-        };			
+        };
     },
 
     /**
@@ -171,13 +178,13 @@ L.DataClassification = L.GeoJSON.extend({
      * @param {float} value - Attribute (number), based on which we classify the feature
      * @returns {object} Final symbol style of the feature
      */
-    _stylePolygon(value){
+    _stylePolygon(value, options){
         return {
-            fillColor: getColor(value),
+            fillColor: (value != null ? getColor(value) : options.noDataColor),
             fillOpacity: 0.7,
             /*color: 'white',*/
             /*weight: 2*/
-        };			
+        };
     },
     
     // get n categories of point radiuses, line widths for symbology
@@ -379,6 +386,10 @@ L.DataClassification = L.GeoJSON.extend({
         ps = this._pointShape;
         lc = this._linecolor;
         lw = this._lineweight;
+        nodata = this._noDataFound;
+        nodatacolor = this._noDataColor;
+        nodataignore = this._noDataIgnore;
+        lt = this._legendTemplate;
 
         template = this._legendTemplate;
 
@@ -420,10 +431,17 @@ L.DataClassification = L.GeoJSON.extend({
                                     let low = classes[i];
                                     let high = classes[i+1];
                                     container +=
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             svgCreator({shape: ps, color: colors[i]})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
+                                }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        svgCreator({shape: ps, color: nodatacolor})+
+                                        '<div>No data</div>'+
+                                    '</div>'
                                 }
                                 break;
                             case 'size':
@@ -433,7 +451,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     let high = classes[i+1];
                                     /*console.log('Legend: building line', i+1)*/
                                     container +=
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             svgCreator({shape: ps, size: radiuses[i], color: pfc})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
@@ -451,10 +469,17 @@ L.DataClassification = L.GeoJSON.extend({
                                     let low = classes[i-1];
                                     let high = classes[i];
                                     container +=
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             svgCreator({shape: ps, color: colors[i-1]})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
+                                }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        svgCreator({shape: ps, color: nodatacolor})+
+                                        '<div>No data</div>'+
+                                    '</div>'
                                 }
                                 break;
                             case 'size':
@@ -466,7 +491,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     
                                     // generate row with symbol
                                     container += 
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
@@ -488,12 +513,21 @@ L.DataClassification = L.GeoJSON.extend({
                                     let low = classes[i];
                                     let high = classes[i+1];
                                     container +=
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i]+';"/>'+
                                             '</svg>' +
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
+                                }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                        '</svg>' +
+                                        '<div>No data</div>'+
+                                    '</div>'
                                 }
                                 break;
                             case 'width':
@@ -503,7 +537,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     let low = classes[i];
                                     let high = classes[i+1];
                                     container +=
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
@@ -523,12 +557,21 @@ L.DataClassification = L.GeoJSON.extend({
                                     let low = classes[i-1];
                                     let high = classes[i];
                                     container +=
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
                                             '</svg>' +
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>'
+                                }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                        '</svg>' +
+                                        '<div>No data</div>'+
+                                    '</div>'
                                 }
                                 break;
                             case 'width':
@@ -538,7 +581,7 @@ L.DataClassification = L.GeoJSON.extend({
                                     let low = classes[i-1];
                                     let high = classes[i];
                                     container +=
-                                        '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                        '<div class="legendDataRow">'+
                                             '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
@@ -564,6 +607,13 @@ L.DataClassification = L.GeoJSON.extend({
                                     '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                 '</div>';
                         }
+                        if (nodata && !nodataignore) {
+                            container +=
+                            '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                '<i style="background: ' + nodatacolor + '"></i>' +
+                                '<div>No data</div>'+
+                            '</div>'
+                        }
                         break;
                     case false:
                     // descending legend
@@ -576,6 +626,13 @@ L.DataClassification = L.GeoJSON.extend({
                                     '<i style="background: ' + colors[i-1] + '"></i>' +
                                     '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                 '</div>'
+                        }
+                        if (nodata && !nodataignore) {
+                            container +=
+                            '<div style="display: flex; flex-direction: row; align-items: center">'+
+                                '<i style="background: ' + nodatacolor + '"></i>' +
+                                '<div>'+lt.nodata+'</div>'+
+                            '</div>'
                         }
                         break;
                 }
@@ -593,6 +650,7 @@ L.DataClassification = L.GeoJSON.extend({
 
     onAdd(map) {
         // DEBUG FLAG - enable for development
+        //var DEBUG = true;
         var DEBUG = false;
         if(!DEBUG){
             if(!window.console) window.console = {};
@@ -611,6 +669,8 @@ L.DataClassification = L.GeoJSON.extend({
 
     _classify(map) {
         _field=this.options.field;
+        _nodata=this._noDataFound;
+        _nodataignore=this.options.noDataIgnore;
         var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
         var typeOfFeatures = 'unknown';
         values = [];
@@ -639,13 +699,22 @@ L.DataClassification = L.GeoJSON.extend({
                     features_info.Unknown += 1;
             };
             // feature attribute value extraction to array
+            if (!layer.feature.properties.hasOwnProperty(this._field)) {
+                console.error('Attribute field "'+this._field+'" does not exist in given GeoJSON. Please note that attribute field input is case-sensitve.');
+                return;
+            } 
             if (layer.feature.properties[this._field] != null) {
                 values.push(layer.feature.properties[this._field]);
             } else {
-                console.error('Attribute field "'+this._field+'" does not exist, or is NULL in given GeoJSON. Please note that attribute field input is case-sensitve.')
-                return;
+                _nodata = true;
+                if (!_nodataignore) {
+                    // we add null values to main array
+                    values.push(layer.feature.properties[this._field]);
+                }
+                console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning. Null found in feature: ', layer.feature)
             };
         })
+        this._noDataFound = _nodata;
         this._values = values;
         console.log('Loaded values from GeoJSON (field: '+this._field+'):', this._values);	
         console.log('Feature types in GeoJSON:', features_info)
@@ -708,20 +777,23 @@ L.DataClassification = L.GeoJSON.extend({
         if (!this._legendTemplate.hasOwnProperty('highest')) {this._legendTemplate.highest = '{low} <'};
         if (!this._legendTemplate.hasOwnProperty('middle')) {this._legendTemplate.middle = '{low} – {high}'};
         if (!this._legendTemplate.hasOwnProperty('lowest')) {this._legendTemplate.lowest = '< {high}'};
+        if (!this._legendTemplate.hasOwnProperty('nodata')) {this._legendTemplate.nodata = 'No data'};
+        this._noDataColor = this.options.noDataColor;
+        this._noDataIgnore = this.options.noDataIgnore;
 
         // classification process
         var success = false;
         if (classnum > 2 && classnum < this._values.length) {				
             switch (mode) {
                 case 'jenks':	
-                    classes = ss.jenks(values, classnum);
+                    classes = ss.jenks(values.filter((value) => value != null), classnum);
                     classes.pop(); // remove last, since its the max value
                     console.log('Jenks classes: ', classes);
                     success = true;
                     break;
                 case 'equalinterval':
                     classes = [];
-                    var minmax = ss.extent(values);
+                    var minmax = ss.extent(values.filter((value) => value != null));
                     console.log('min:', minmax[0], ', max:', minmax[1])
                     var range = minmax[1]-minmax[0];
                     console.log('data range:', range)
@@ -738,7 +810,7 @@ L.DataClassification = L.GeoJSON.extend({
                     classes = [];
                     for (var i = 0; i<classnum; i++) {
                         var currentq = (1/classnum)*i;
-                        classes.push(ss.quantile(values, currentq));
+                        classes.push(ss.quantile(values.filter((value) => value != null), currentq));
                     }				
                     console.warn('Quantile classes at the middle might be different, compared to GIS SW');		
                     console.log('Quantile classes: ', classes);	
@@ -747,7 +819,7 @@ L.DataClassification = L.GeoJSON.extend({
                 // EXPERIMENTAL LOG
                 case 'logarithmic':
                     classes = [];
-                    var minmax = ss.extent(values);
+                    var minmax = ss.extent(values.filter((value) => value != null));
                     console.log('min:', minmax[0], ', max:', minmax[1])							
                     for (var i = 0; i<classnum; i++) {
                         var x = Math.pow(10, i);
@@ -800,31 +872,35 @@ L.DataClassification = L.GeoJSON.extend({
         getWeight = this._getWeight;
         pointMarkers = this._pointMarkers;
         options = this.options;
+        nodataignore = this._noDataIgnore;
 
         currentmarker = null;
 
         // apply symbology to features
         this.eachLayer(function(layer) {
-            if (layer.feature.geometry.type == "Point" || layer.feature.geometry.type == "MultiPoint") {
-                var coords = layer.feature.geometry.coordinates;
-                var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
-                style.shape = ps;
+            if (layer.feature.properties[this._field] == null && nodataignore) {
+                layer.remove()
+            } else {
+                if (layer.feature.geometry.type == "Point" || layer.feature.geometry.type == "MultiPoint") {
+                    var coords = layer.feature.geometry.coordinates;
+                    var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
+                    style.shape = ps;
 
-                const svgIcon = L.divIcon({
-                    html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
-                    className: "",
-                    iconSize: [25, 25],
-                    iconAnchor: [17, 25/2],
-                });                
-                layer.setIcon(svgIcon);
-            }
-            if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-                layer.setStyle((mode_line == "width" ? styleLine_width(layer.feature.properties[this._field]) : styleLine_color(layer.feature.properties[this._field])))/*.addTo(map)*/;
-            }
-            if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
-                layer.setStyle(stylePolygon(layer.feature.properties[this._field]))/*.addTo(map)*/;
-            }
-            
+                    const svgIcon = L.divIcon({
+                        html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
+                        className: "",
+                        iconSize: [25, 25],
+                        iconAnchor: [17, 25/2],
+                    });                
+                    layer.setIcon(svgIcon);
+                }
+                if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
+                    layer.setStyle((mode_line == "width" ? styleLine_width(layer.feature.properties[this._field]) : styleLine_color(layer.feature.properties[this._field])))/*.addTo(map)*/;
+                }
+                if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
+                    layer.setStyle(stylePolygon(layer.feature.properties[this._field], this.options))/*.addTo(map)*/;
+                }   
+            }       
         });
 
         this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, pointfillcolor);  // generate legend
