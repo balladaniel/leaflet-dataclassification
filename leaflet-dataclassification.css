@@ -20,5 +20,6 @@
 .legendDataRow {
     display: flex; 
     flex-direction: row; 
-    align-items: center
+    align-items: center;
+    margin-right: 4px;
 }

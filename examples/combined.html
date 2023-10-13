@@ -84,7 +84,12 @@
 					legendTitle: 'Population of capitals',
     				attribution: "US Capitals: <a href='https://mangomap.com/examples/data/7986d760_1129_11e6_8e77_22000bb3a3a1/us-state-capitals' target='_blank'>Mangomap (2018)</a>",
         			pane: 'front',
-					legendTemplate: {highest: '{low}+'},
+					legendTemplate: {
+						highest: '{low}+ [{count}]',
+						middle:  '{low} – {high} [{count}]',
+						lowest: '< {high} [{count}]',
+						nodata: 'No data [{count}]'
+					},
 					onEachFeature: tooltip
 				}).addTo(map);
 			});

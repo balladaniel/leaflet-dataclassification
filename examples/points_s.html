@@ -72,6 +72,12 @@
 					legendTitle: 'Population',
 					pointShape: 'diamond',
 					style: {fillColor: '#B136E3'},
+					legendTemplate: {
+						highest: '{low} < [{count}]',
+						middle:  '{low} – {high} [{count}]',
+						lowest: '< {high} [{count}]',
+						nodata: 'No data [{count}]'
+					},
 					onEachFeature: tooltip
 				}).addTo(map);
 				map.fitBounds(testdata.getBounds());
