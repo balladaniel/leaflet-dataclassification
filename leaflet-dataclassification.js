@@ -15,7 +15,7 @@ L.DataClassification = L.GeoJSON.extend({
     options: {
         // NOTE: documentation in this object might not be up to date. Please always refer to the documentation on GitHub.
         // default options
-        mode: 'quantile',							// classification method: jenks, quantile, equalinterval
+        mode: 'quantile',							// classification method: jenks, quantile, equalinterval, manual (when using manual, `classes` must be an array!)
         classes: 5,									// desired number of classes (min: 3, max: 10 or featurecount, whichever is lower)
         pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
         pointSize: {min: 2, max: 10},               // POINT FEATURES: when pointMode: "size", define min/max point circle radius (default min: 2, default max: 10, recommended max: 12)
@@ -76,7 +76,7 @@ L.DataClassification = L.GeoJSON.extend({
 
     // value evaluators to match classes
     /**
-     * Value evaluator to match a color class.
+     * Value evaluator to match a color class. While evaluating, also counts the number of features in given class.
      * @param {float} d - Number to match a class to
      * @returns {string} Symbol color of the class
      */
@@ -95,7 +95,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     /**
-     * Value evaluator to match a line width class.
+     * Value evaluator to match a line width class. While evaluating, also counts the number of features in given class.
      * @param {float} d - Number to match a class to
      * @returns {float} Symbol width of the class
      */
@@ -114,7 +114,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     /**
-     * Value evaluator to match a point symbol size class.
+     * Value evaluator to match a point symbol size class. While evaluating, also counts the number of features in given class.
      * @param {float} d - Number to match a class to
      * @returns {float} Symbol radius of the class
      */
@@ -205,9 +205,9 @@ L.DataClassification = L.GeoJSON.extend({
     // get n categories of point radiuses, line widths for symbology
     /**
      * Generates a range of symbol sizes for point/size mode. Fills up global array `radiuses[]`.
-     * @param {Object} sizes Symbol size information
-     * @param {float} sizes.min Minimum symbol size, radius (symbol of the lowest class)
-     * @param {float} sizes.max Maximum symbol size, radius (symbol of the highest class)
+     * @param {Object} sizes - Symbol size information
+     * @param {float} sizes.min - Minimum symbol size, radius (symbol of the lowest class)
+     * @param {float} sizes.max - Maximum symbol size, radius (symbol of the highest class)
      */
     _pointMode_size_radiuses(sizes){
         radiuses = [];
@@ -221,9 +221,9 @@ L.DataClassification = L.GeoJSON.extend({
     },
     /**
      * Generates a range of symbol sizes for line/width mode. Fills up global array `widths[]`.
-     * @param {Object} sizes Symbol size information
-     * @param {float} sizes.min Minimum symbol size, width (symbol of the lowest class)
-     * @param {float} sizes.max Maximum symbol size, width (symbol of the highest class)
+     * @param {Object} sizes - Symbol size information
+     * @param {float} sizes.min - Minimum symbol size, width (symbol of the lowest class)
+     * @param {float} sizes.max - Maximum symbol size, width (symbol of the highest class)
      */
     _lineMode_width(sizes){
         widths = [];
@@ -275,6 +275,9 @@ L.DataClassification = L.GeoJSON.extend({
         return svg;
     },
 
+    /**
+     * Does a one-time conversion of classes array to an array of objects (from now on, access class boundary value by classes[i].value).
+     */
     _convertClassesToObjects() {
         classes = classes.map(function(element, idx) {
             return {
@@ -285,6 +288,11 @@ L.DataClassification = L.GeoJSON.extend({
         console.debug('Global array of class boundaries has been converted to an array of objects (access class boundary value by classes[i].value) and features were counted! New classes: ', classes)
     },
 
+    /**
+     * Recommends an optimal "classRounding" parameter in a console message, when it was set too high. Basically the reverse of function _classPostProc_rounding().
+     * @param {integer} num - "classRounding" parameter set by user
+     * @returns {integer} Optimal "classRounding" parameter to use. Goes out in a console warning later.
+     */
     _classPostProc_roundinghelper(num) {
         // This recommends an optimal "classRounding" parameter in a console message, when it was set too high. Basically the reverse of function _classPostProc_rounding().
         var i = 1;
@@ -358,7 +366,7 @@ L.DataClassification = L.GeoJSON.extend({
                 }
                 break;
             default:
-                console.error('Invalid action for "unitModifier". Choose one of: "multiply", "divide".')
+                console.error('Invalid action for "unitModifier". Choose one of the following: "multiply", "divide".')
         }
         return;         
     },
@@ -440,7 +448,7 @@ L.DataClassification = L.GeoJSON.extend({
 
         // make sure legendPosition option is valid, if not, revert to default
         if(!['topleft', 'topright', 'bottomleft', 'bottomright'].includes(position)) {
-            console.error('Invalid legendPosition. Choose one of: "bottomleft", "bottomright", "topleft", "topright". Overriding with default ("bottomleft").');
+            console.error('Invalid legendPosition. Choose one of the following: "bottomleft", "bottomright", "topleft", "topright". Overriding with default ("bottomleft").');
             position = 'bottomleft';
         }
 
@@ -808,6 +816,25 @@ L.DataClassification = L.GeoJSON.extend({
 
         // classification process
         var success = false;
+        if (mode == 'manual') {
+            console.debug('Mode: ', mode);
+            console.debug('Value for option "classes": ', classnum);
+            if (!Array.isArray(classnum)) {
+                console.error('When using `mode`: "manual", `classes` must be an array of class boundary values you wish to classify features into (for example `classes`: [50, 150, 300]). ');
+                console.error('Classification error, stopped process.');
+                return;
+            } else {
+                classnum.sort();
+                classes = classnum;
+                classnum = classes.length;
+            }
+        } else {
+            if (Array.isArray(classnum)) {
+                console.error('When using a classification `mode` other than "manual", `classes` option must be an integer, based on how many classes you want to generate (for example `classes`: 5). ');
+                console.error('Classification error, stopped process.');
+                return;
+            }
+        }
         if (classnum > 2 && classnum < this._values.length) {				
             switch (mode) {
                 case 'jenks':	
@@ -844,6 +871,12 @@ L.DataClassification = L.GeoJSON.extend({
                     this._convertClassesToObjects();
                     success = true;
                     break;
+                case 'manual':
+					classnum = classes.length;
+                    console.debug('Manually defined classes: ', classes);	
+                    this._convertClassesToObjects();
+                    success = true;
+                    break;
                 // EXPERIMENTAL LOG
                 case 'logarithmic':
                     classes = [];
@@ -858,7 +891,7 @@ L.DataClassification = L.GeoJSON.extend({
                     success = true;
                     break;
                 default:
-                    console.error('wrong classification type (choose from "jenks", "equalinterval", "quantile")')
+                    console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "manual" - when manual, `classes` must be an array!)')
             }
             if (success) {
                 try {

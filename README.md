@@ -10,11 +10,12 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 - Classification and styling of:
     - Point features based on color and size (graduated symbol sizes)
     - Line features based on line color and width (graduated line widths)
-    - Polygon features based on fill color
-- Supported classification methods (thanks to [simple-statistics.js](https://github.com/simple-statistics/simple-statistics)):
+    - Polygon features based on fill color (choropleth map)
+- Supported classification methods (mostly thanks to [simple-statistics.js](https://github.com/simple-statistics/simple-statistics)):
     - natural breaks (Jenks)
-    - quantile
+    - quantile (equal count)
     - equal interval
+    - manual
 - Supports ColorBrewer2 color ramps and custom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
 - Various SVG shapes/symbols for Point features
 - For size/width based symbology, min and max values can be adjusted to create a telling visualization with distinguishable classes
@@ -87,8 +88,8 @@ const layer = L.dataClassification(data, {
 ```
 
 ### Required options 
-- `mode <string>`: ['jenks'|'quantile'|'equalinterval'] classification method: jenks, quantile, equalinterval
-- `classes <integer>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.)
+- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'manual'] classification method: jenks, quantile, equalinterval, manual. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
+- `classes <integer|array>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.). If `mode` is manual, this must be an array of numbers (for example [50, 150, 200] would yield the following three classes: below 150, 150-200, above 200). 
 - `field <string>`: target attribute field name to base classification on. Case-sensitive!
 
 ### Additional options (in addition to the standard L.geoJSON options)
