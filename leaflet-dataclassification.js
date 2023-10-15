@@ -217,7 +217,7 @@ L.DataClassification = L.GeoJSON.extend({
             var curr = sizes.min + (step * i);
             radiuses.push(curr);
         }
-        console.log('points: radius categories:', radiuses)
+        console.debug('points: radius categories:', radiuses)
     },
     /**
      * Generates a range of symbol sizes for line/width mode. Fills up global array `widths[]`.
@@ -232,7 +232,7 @@ L.DataClassification = L.GeoJSON.extend({
         for (var i = 0; i < classes.length; i++) {
             widths.push(sizes.min + (step * i));
         }
-        console.log('lines: width categories:', widths)
+        console.debug('lines: width categories:', widths)
     },
 
     /**
@@ -276,15 +276,13 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     _convertClassesToObjects() {
-        console.log('before: ', classes)
         classes = classes.map(function(element, idx) {
             return {
                 value: element,
                 featureCount: 0
             }
         });
-        console.log('Global array of class boundaries has been converted to an array of objects (access class boundary value by classes[i].value)!')
-        console.log('after: ',classes)
+        console.debug('Global array of class boundaries has been converted to an array of objects (access class boundary value by classes[i].value) and features were counted! New classes: ', classes)
     },
 
     _classPostProc_roundinghelper(num) {
@@ -305,7 +303,7 @@ L.DataClassification = L.GeoJSON.extend({
                 classes[i].value = +classes[i].value.toFixed(n);
                 classes[i].valueFormattedString = classes[i].value.toFixed(n);
             }
-            console.log('Class interval boundary values have been rounded to', n, 'decimals.')
+            console.debug('Class interval boundary values have been rounded to', n, 'decimals. New classes:', classes)
         } else {
             // rounding up/down to 10s, 100s, 1000s etc.
             if (Math.max.apply(Math, classes.map(item => item.value)) < Math.pow(10,Math.abs(n))) {
@@ -330,7 +328,7 @@ L.DataClassification = L.GeoJSON.extend({
                     }
                 } else if (i == 1) {
                     // lowest class, round up
-                    if (n >= this._classPostProc_roundinghelper(classes[3].value) ) {
+                    if (n >= this._classPostProc_roundinghelper(classes[classes.length-1].value) ) {
                         classes[i].value = Math.ceil(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
                     }
                 } else {
@@ -338,7 +336,7 @@ L.DataClassification = L.GeoJSON.extend({
                     classes[i].value = Math.round(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); // round(number/100)*100 to round up/down to nearest 100 value
                 }
             }
-            console.log('Class interval boundary values have been rounded to the nearest', Math.pow(10,Math.abs(n)), 'values.')
+            console.debug('Class interval boundary values have been rounded to the nearest', Math.pow(10,Math.abs(n)), 'values. New class boundary values:', classes)
         }
     },
 
@@ -349,13 +347,13 @@ L.DataClassification = L.GeoJSON.extend({
         switch (options.action) {
             case 'multiply':
                 for (var i = 0; i<classes.length; i++) {
-                    console.log('MULTIPLY', classes[i].value,' by', options.by)
+                    console.debug('MULTIPLY', classes[i].value,' by', options.by)
                     classes[i].value = classes[i].value * options.by;
                 }
                 break;
             case 'divide':
                 for (var i = 0; i<classes.length; i++) {
-                    console.log('DIVIDE', classes[i].value,' by', options.by)  
+                    console.debug('DIVIDE', classes[i].value,' by', options.by)  
                     classes[i].value = classes[i].value / options.by;                  
                 }
                 break;
@@ -465,7 +463,7 @@ L.DataClassification = L.GeoJSON.extend({
                             case 'color':
                             // color based categories
                                 for (var i = 0; i < classes.length; i++) {
-                                    /*console.log('Legend: building line', i+1)*/
+                                    /*console.debug('Legend: building line', i+1)*/
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
                                     container +=
@@ -487,7 +485,7 @@ L.DataClassification = L.GeoJSON.extend({
                                 for (var i = 0; i < classes.length; i++) {
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    /*console.log('Legend: building line', i+1)*/
+                                    /*console.debug('Legend: building line', i+1)*/
                                     container +=
                                         '<div class="legendDataRow">'+
                                             svgCreator({shape: ps, size: radiuses[i], color: pfc})+
@@ -503,7 +501,7 @@ L.DataClassification = L.GeoJSON.extend({
                             case 'color':
                             // color based categories
                                 for (var i = classes.length; i > 0; i--) {
-                                    /*console.log('Legend: building line', i)*/
+                                    /*console.debug('Legend: building line', i)*/
                                     let low = classes[i-1].value;
                                     let high = (classes[i] != null ? classes[i].value : '');
                                     container +=
@@ -547,7 +545,7 @@ L.DataClassification = L.GeoJSON.extend({
                             case 'color':
                             // color based categories
                                 for (var i = 0; i < classes.length; i++) {
-                                    /*console.log('Legend: building line', i+1)*/
+                                    /*console.debug('Legend: building line', i+1)*/
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
                                     container +=
@@ -571,7 +569,7 @@ L.DataClassification = L.GeoJSON.extend({
                             case 'width':
                             // width based categories
                                 for (var i = 0; i < classes.length; i++) {
-                                    /*console.log('Legend: building line', i+1)*/
+                                    /*console.debug('Legend: building line', i+1)*/
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
                                     container +=
@@ -591,7 +589,7 @@ L.DataClassification = L.GeoJSON.extend({
                             case 'color':
                             // color based categories
                                 for (var i = classes.length; i > 0; i--) {
-                                    /*console.log('Legend: building line', i)*/
+                                    /*console.debug('Legend: building line', i)*/
                                     let low = classes[i-1].value;
                                     let high = (classes[i] != null ? classes[i].value : '');
                                     container +=
@@ -615,7 +613,7 @@ L.DataClassification = L.GeoJSON.extend({
                             case 'width':
                             // width based categories
                                 for (var i = classes.length; i > 0; i--) {
-                                    /*console.log('Legend: building line', i)*/
+                                    /*console.debug('Legend: building line', i)*/
                                     let low = classes[i-1].value;
                                     let high = (classes[i] != null ? classes[i].value : '');
                                     container +=
@@ -636,7 +634,7 @@ L.DataClassification = L.GeoJSON.extend({
                     case true:
                     // ascending legend
                         for (var i = 0; i < classes.length; i++) {
-                            /*console.log('Legend: building line', i+1)*/
+                            /*console.debug('Legend: building line', i+1)*/
                             let low = classes[i].value;
                             let high = (classes[i+1] != null ? classes[i+1].value : '');
                             container +=
@@ -656,7 +654,7 @@ L.DataClassification = L.GeoJSON.extend({
                     case false:
                     // descending legend
                         for (var i = classes.length; i > 0; i--) {
-                            /*console.log('Legend: building line', i)*/
+                            /*console.debug('Legend: building line', i)*/
                             let low = classes[i-1].value;
                             let high = (classes[i] != null ? classes[i].value : '');
                             container +=
@@ -682,24 +680,13 @@ L.DataClassification = L.GeoJSON.extend({
 
         legend.id = this._leaflet_id;
         this._legends.push(legend);
-        console.log('Legend generated:', title);
+        console.debug('Legend generated:', title);
         legend.addTo(map);
     },
 
     onAdd(map) {
-        // DEBUG FLAG - enable for development
-        //var DEBUG = true;
-        var DEBUG = false;
-        if(!DEBUG){
-            if(!window.console) window.console = {};
-            var methods = ["log"];
-            for(var i=0;i<methods.length;i++){
-                console[methods[i]] = function(){};
-            }
-        }
-
-        console.log('L.dataClassification: Classifying...')
-        console.log('L.dataClassification: options:', this.options)
+        console.debug('L.dataClassification: Classifying...')
+        console.debug('L.dataClassification: options:', this.options)
         this._field=this.options.field
         L.GeoJSON.prototype.onAdd.call(this, map);
         this._classify(map);
@@ -754,10 +741,10 @@ L.DataClassification = L.GeoJSON.extend({
         })
         this._noDataFound = _nodata;
         this._values = values;
-        console.log('Loaded values from GeoJSON (field: '+this._field+'):', this._values);	
-        console.log('Feature types in GeoJSON:', features_info)
+        console.debug('Loaded values from GeoJSON (field: '+this._field+'):', this._values);	
+        console.debug('Feature types in GeoJSON:', features_info)
         typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
-        console.log('Dominant feature type in GeoJSON:', typeOfFeatures)
+        console.debug('Dominant feature type in GeoJSON:', typeOfFeatures)
 
         // if line color is overridden with L.Path style options, reflect that in Legend too
         if ((typeOfFeatures == 'LineString' || typeOfFeatures == 'MultiLineString')) {
@@ -826,23 +813,23 @@ L.DataClassification = L.GeoJSON.extend({
                 case 'jenks':	
                     classes = ss.jenks(values.filter((value) => value != null), classnum);
                     classes.pop(); // remove last, since its the max value
-                    console.log('Jenks classes: ', classes);
+                    console.debug('Jenks classes: ', classes);
                     this._convertClassesToObjects();
                     success = true;
                     break;
                 case 'equalinterval':
                     classes = [];
                     var minmax = ss.extent(values.filter((value) => value != null));
-                    console.log('min:', minmax[0], ', max:', minmax[1])
+                    console.debug('min:', minmax[0], ', max:', minmax[1])
                     var range = minmax[1]-minmax[0];
-                    console.log('data range:', range)
+                    console.debug('data range:', range)
                     var oneclass = range/classnum;
-                    console.log('one class:', oneclass);
+                    console.debug('one class:', oneclass);
                     for (var i=minmax[0]; i<minmax[1];) {
                         classes.push(i);
                         i = i + oneclass;
                     }
-                    console.log('EI classes: ', classes);
+                    console.debug('EI classes: ', classes);
                     this._convertClassesToObjects();
                     success = true;
                     break;
@@ -853,7 +840,7 @@ L.DataClassification = L.GeoJSON.extend({
                         classes.push(ss.quantile(values.filter((value) => value != null), currentq));
                     }				
                     console.warn('Quantile classes at the middle might be different, compared to GIS SW');		
-                    console.log('Quantile classes: ', classes);	
+                    console.debug('Quantile classes: ', classes);	
                     this._convertClassesToObjects();
                     success = true;
                     break;
@@ -861,12 +848,12 @@ L.DataClassification = L.GeoJSON.extend({
                 case 'logarithmic':
                     classes = [];
                     var minmax = ss.extent(values.filter((value) => value != null));
-                    console.log('min:', minmax[0], ', max:', minmax[1])							
+                    console.debug('min:', minmax[0], ', max:', minmax[1])							
                     for (var i = 0; i<classnum; i++) {
                         var x = Math.pow(10, i);
                         classes.push(x);
                     }					
-                    console.log('Logarithmic classes: ', classes);	
+                    console.debug('Logarithmic classes: ', classes);	
                     this._convertClassesToObjects();
                     success = true;
                     break;
@@ -882,7 +869,7 @@ L.DataClassification = L.GeoJSON.extend({
                     return;
                 }
                 if (colorramp_rev) {
-                    console.log('reversing colorramp')
+                    console.debug('reversing colorramp')
                     colors.reverse(); 
                 };
             }
@@ -893,7 +880,7 @@ L.DataClassification = L.GeoJSON.extend({
                 this._lineMode_width(lineWidth);
             }
             if (middlepoint != null && classes.length % 2 == 0) {
-                console.log('Adjusting middle classes to value: ', middlepoint);
+                console.debug('Adjusting middle classes to value: ', middlepoint);
                 classes[classes.length / 2].value = middlepoint;
             }
             if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
@@ -956,8 +943,8 @@ L.DataClassification = L.GeoJSON.extend({
 
         this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, pointfillcolor);  // generate legend
 
-        console.log('L.dataClassification: Finished!')
-        console.log('------------------------------------')
+        console.debug('L.dataClassification: Finished!')
+        console.debug('------------------------------------')
     },
 
     classify() {
@@ -965,15 +952,15 @@ L.DataClassification = L.GeoJSON.extend({
     },
     
     onRemove(map) {
-        console.log('Removing Layer..........')
+        console.debug('Removing Layer..........')
         // remove legend
         legend = this._legends.find(item => item.id === this._leaflet_id);
-        console.log('Removing Legend with id:', legend.id, legend)
+        console.debug('Removing Legend with id:', legend.id, legend)
         legend.remove();
-        console.log('Legend Removed.')
+        console.debug('Legend Removed.')
         // remove layer
 		this.eachLayer(map.removeLayer, map);
-        console.log('Layer Removed.')
+        console.debug('Layer Removed.')
 	}
 });
 
