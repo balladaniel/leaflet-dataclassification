@@ -17,7 +17,7 @@ Please include a small sample GeoJSON dataset and the construction code (with al
 A clear and concise description of what you expected to happen.
 
 **Screenshots**
-If applicable, add screenshots to help explain your problem.
+If applicable, add screenshots to help explain your problem. Please make sure to include a screenshot of your console output (set up for Verbose logging) to help faster debugging.
 
 **Environment (please complete the following information):**
  - Desktop/Mobile
