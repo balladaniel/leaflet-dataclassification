@@ -157,12 +157,12 @@ L.DataClassification = L.GeoJSON.extend({
      */
     _stylePoint_size(value, options){
         return {
-            fillColor: options.style.fillColor,
+            fillColor: (value != null ? options.style.fillColor : options.noDataColor),
             fillOpacity: 1,
             color: "black",
             weight: 1,
             shape: "circle",
-            radius: getRadius(value)
+            radius: (value != null ? getRadius(value) : Math.min.apply(Math, radiuses))
         };
     },
 
@@ -184,7 +184,8 @@ L.DataClassification = L.GeoJSON.extend({
      */
     _styleLine_width(value){
         return {
-            weight: getWeight(value)
+            weight: (value != null ? getWeight(value) : Math.min.apply(Math, widths)),
+            color: (value != null ? options.style.color : options.noDataColor)
         };
     },
 
@@ -500,6 +501,13 @@ L.DataClassification = L.GeoJSON.extend({
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
+                                        '<div>'+lt_formattedNoData+'</div>'+
+                                    '</div>'
+                                }
                                 break;
                         }
                         break;
@@ -539,6 +547,13 @@ L.DataClassification = L.GeoJSON.extend({
                                             svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
+                                }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
+                                        '<div>'+lt_formattedNoData+'</div>'+
+                                    '</div>'
                                 }
                                 break;
                         }
@@ -588,6 +603,15 @@ L.DataClassification = L.GeoJSON.extend({
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                        '</svg>' +
+                                        '<div>'+lt_formattedNoData+'</div>'+
+                                    '</div>'
+                                }
                                 break;
                         }
                         break;
@@ -631,6 +655,15 @@ L.DataClassification = L.GeoJSON.extend({
                                             '</svg>'+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>'
+                                }
+                                if (nodata && !nodataignore) {
+                                    container +=
+                                    '<div class="legendDataRow">'+
+                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                        '</svg>' +
+                                        '<div>'+lt_formattedNoData+'</div>'+
+                                    '</div>'
                                 }
                                 break;
                         }
