@@ -83,6 +83,7 @@ const layer = L.dataClassification(data, {
         fillColor: 'purple',    // marker fill color in point/size mode
         color: '#aabbcc',       // line stroke color in line/width mode
         weight: 5,              // line stroke weight in line/color mode
+        fillOpacity: 0.7,       // polygon fill opacity in polygon mode
     }
 }.addTo(map);
 ```
@@ -109,6 +110,10 @@ const layer = L.dataClassification(data, {
 - `style <object>`: custom styling
     - `color <string>`: line stroke color, use only in width mode (default: blue, the L.path default)
     - `weight <float>`: line stroke weight, use only in color mode (default: 3, the L.path default)
+#### Specific for Polygon features
+- `style <object>`: custom styling
+    - `fillOpacity <float>`: polygon fill opacity, use only polygon mode (default: 0.7)
+
 #### General options
 - `colorRamp <string>`: color ramp to use for symbology. Based on ColorBrewer2 color ramps (https://colorbrewer2.org/), included in Chroma.js. Custom colors (`colorCustom`) override this. (default: 'PuRd')
 - `colorCustom <array<string>>`: custom color ramp defined as an array, colors in formats supported by Chroma.js, with opacity support. A minimum of two colors are required. If defined, custom colors override `colorRamp`. Example: ['rgba(210,255,178,1)', '#fec44f', 'f95f0eff']. Examples for yellow in different color formats: '#ffff00', 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', chroma('yellow').alpha(0.5). For more formats, see: https://gka.github.io/chroma.js/. For an interactive color palette helper, see: https://gka.github.io/palettes/.

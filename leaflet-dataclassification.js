@@ -50,6 +50,7 @@ L.DataClassification = L.GeoJSON.extend({
 
         style: {
             fillColor: 'orange',
+            fillOpacity: 0.7,
             color: L.Path.prototype.options.color,
             weight: L.Path.prototype.options.weight
         }
@@ -192,14 +193,15 @@ L.DataClassification = L.GeoJSON.extend({
     /**
      * Feature styler for polygons.
      * @param {float} value - Attribute (number), based on which we classify the feature
+     * @param {object} options - Custom styling (see the `style` option)
      * @returns {object} Final symbol style of the feature
      */
     _stylePolygon(value, options){
         return {
             fillColor: (value != null ? getColor(value) : options.noDataColor),
-            fillOpacity: 0.7,
-            /*color: 'white',*/
-            /*weight: 2*/
+            fillOpacity: (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7),
+            /*color: 'white',
+            weight: 2*/
         };
     },
     
@@ -670,6 +672,7 @@ L.DataClassification = L.GeoJSON.extend({
                         break;
                 }
             } else {
+                let opacity = (options.style.fillOpacity ? options.style.fillOpacity : 0.7);
                 // polygons
                 switch (asc) {
                     case true:
@@ -680,14 +683,14 @@ L.DataClassification = L.GeoJSON.extend({
                             let high = (classes[i+1] != null ? classes[i+1].value : '');
                             container +=
                                 '<div class="legendDataRow">'+
-                                    '<i style="background: ' + colors[i] + '"></i> ' +
+                                    '<i style="background: ' + colors[i] + '; opacity: ' + opacity + '"></i>' +
                                     '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                 '</div>';
                         }
                         if (nodata && !nodataignore) {
                             container +=
                             '<div class="legendDataRow">'+
-                                '<i style="background: ' + nodatacolor + '"></i>' +
+                            '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
                                 '<div>'+lt_formattedNoData+'</div>'+
                             '</div>'
                         }
@@ -700,14 +703,14 @@ L.DataClassification = L.GeoJSON.extend({
                             let high = (classes[i] != null ? classes[i].value : '');
                             container +=
                                 '<div class="legendDataRow">'+
-                                    '<i style="background: ' + colors[i-1] + '"></i>' +
+                                    '<i style="background: ' + colors[i-1] + '; opacity: ' + opacity + '"></i>' +
                                     '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                 '</div>'
                         }
                         if (nodata && !nodataignore) {
                             container +=
                             '<div class="legendDataRow">'+
-                                '<i style="background: ' + nodatacolor + '"></i>' +
+                                '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
                                 '<div>'+lt_formattedNoData+'</div>'+
                             '</div>'
                         }
@@ -857,7 +860,9 @@ L.DataClassification = L.GeoJSON.extend({
                 console.error('Classification error, stopped process.');
                 return;
             } else {
-                classnum.sort();
+                classnum.sort(function(a, b) {
+                    return a - b;
+                  });
                 classes = classnum;
                 classnum = classes.length;
             }
