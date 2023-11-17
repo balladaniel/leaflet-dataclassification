@@ -73,7 +73,7 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = L.map('map', {layers: [OSM]}).setView([0,0], 3); 
+			var map = L.map('map', {layers: [cartodb_positron]}).setView([0,0], 3); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
@@ -85,15 +85,15 @@
 					}
 				}
 				window.testdata = L.dataClassification(d, {
-					mode: 'quantile',
-					classes: 4,
+					mode: 'jenks',
+					classes: 3,
 					field: 'Shape_Leng',
 					lineMode: 'width',
 					lineWidth: {
-						min: 4,
-						max: 13
+						min: 2,
+						max: 10
 					},
-					classRounding: -3,
+					classRounding: -5,
 					unitModifier: {action: 'divide', by: 1000},
 					legendAscending: false,
 					legendTitle: 'Length (km)',

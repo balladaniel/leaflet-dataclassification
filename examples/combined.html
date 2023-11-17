@@ -73,7 +73,7 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = L.map('map', {layers: [OSM]}).setView([0,0], 3); 
+			var map = L.map('map', {layers: [cartodb_voyager]}).setView([0,0], 3); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			map.createPane('front');
 			map.getPane('front').style.zIndex = 450;

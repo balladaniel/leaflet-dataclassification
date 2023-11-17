@@ -22,6 +22,14 @@ L.DataClassification = L.GeoJSON.extend({
         pointShape: 'circle',						// POINT FEATURES: shape of points: 'circle', 'square', 'diamond' (default: 'circle')
         lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
         lineWidth: {min: 3, max: 15},				// LINE FEATURES: when lineMode: "width", define min/max stroke width as object (default min: 1, default max: 15, recommended max: 20)
+        polygonMode: 'color',                       // POLYGON FEATURES: fill "color" or "hatch" (default: color)
+        polygonHatch: {                             // POLYGON FEATURES: when polygonMode: "hatch", define hatch stroke colors and min/max widths to alternate between for individual classes.
+            strokeColors: ['darkred', 'none'],      // POLYGON HATCHING: stroke colors
+            strokeWidth: {min: 2, max: 10},         // POLYGON HATCHING: stroke widths
+            distinctionMode: 'both',                // POLYGON HATCHING: resulting symbol distinction type between classes. width/angle/both
+            angle: 45,                              // POLYGON HATCHING: initial angle
+            alternateAngle: 45                     // POLYGON HATCHING: value to increment angle with between all hatch fill symbols
+        },                           
         colorRamp: 'purd',							// color ramp to use in symbology. Based on ColorBrewer2 color ramps, included in Chroma.js: https://colorbrewer2.org/. (default: PuRd)
         /*colorCustom: [	'rgba(210,255,178,1)', 
                         '#fec44fff', 
@@ -46,13 +54,15 @@ L.DataClassification = L.GeoJSON.extend({
             middle:  '{low} – {high}',
             lowest: '< {high}',
             nodata: 'No data'
-        },       
+        },
+        legendRowGap: null,       
 
         style: {
             fillColor: 'orange',
             fillOpacity: 0.7,
             color: L.Path.prototype.options.color,
-            weight: L.Path.prototype.options.weight
+            weight: L.Path.prototype.options.weight,
+            raidus: 8
         }
     },
 
@@ -77,7 +87,7 @@ L.DataClassification = L.GeoJSON.extend({
 
     // value evaluators to match classes
     /**
-     * Value evaluator to match a color class. While evaluating, also counts the number of features in given class.
+     * Value evaluator to match a color class (POINTS/COLOR, LINES/COLOR, POLYGON/COLOR modes). While evaluating, also counts the number of features in given class.
      * @param {float} d - Number to match a class to
      * @returns {string} Symbol color of the class
      */
@@ -96,7 +106,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     /**
-     * Value evaluator to match a line width class. While evaluating, also counts the number of features in given class.
+     * Value evaluator to match a line width class (LINES/WIDTH mode). While evaluating, also counts the number of features in given class.
      * @param {float} d - Number to match a class to
      * @returns {float} Symbol width of the class
      */
@@ -115,7 +125,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     /**
-     * Value evaluator to match a point symbol size class. While evaluating, also counts the number of features in given class.
+     * Value evaluator to match a point symbol size class (POINTS/SIZE mode). While evaluating, also counts the number of features in given class.
      * @param {float} d - Number to match a class to
      * @returns {float} Symbol radius of the class
      */
@@ -133,6 +143,25 @@ L.DataClassification = L.GeoJSON.extend({
         return radiuses.at(-1);
     },
 
+    /**
+     * Value evaluator to match a polygon hatch fill symbol class (POLYGONS/HATCH mode). While evaluating, also counts the number of features in given class.
+     * @param {float} d - Number to match a class to
+     * @returns {string} Symbol hatch fill pattern CSS class name
+     */
+    _getHatch(d) {
+        for (var i = 0; i<classes.length; i++) {
+            if (classes[i+1] != null) {
+                if (d < classes[i+1].value) {
+                    ++classes[i].featureCount;
+                    return hatchclasses[i];
+                }
+            }
+        }
+        // highest group
+        ++classes[classes.length-1].featureCount;
+        return hatchclasses.at(-1);
+    },
+
     // stylers
     /**
      * Feature styler for point/color mode.
@@ -146,7 +175,7 @@ L.DataClassification = L.GeoJSON.extend({
             color: "black",
             weight: 1,
             shape: "circle",
-            radius: 8
+            radius: (options.style.radius != null ? options.style.radius : 8)
         };
     },
 
@@ -191,18 +220,33 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     /**
-     * Feature styler for polygons.
+     * Feature styler for polygon/color mode.
      * @param {float} value - Attribute (number), based on which we classify the feature
      * @param {object} options - Custom styling (see the `style` option)
      * @returns {object} Final symbol style of the feature
      */
-    _stylePolygon(value, options){
+    _stylePolygon_color(value, options){
         return {
             fillColor: (value != null ? getColor(value) : options.noDataColor),
             fillOpacity: (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7),
             /*color: 'white',
             weight: 2*/
         };
+    },
+
+    /**
+     * Feature styler for polygon/hatch mode. Different to the other feature styler, since this returns a formatted string which is then used for the `fill` CSS property.
+     * @param {float} value - Attribute (number), based on which we classify the feature
+     * @returns {string} Final symbol style of the feature (as a string, which is used for CSS-`fill` later.)
+     */
+    _stylePolygon_hatch(value, options){
+        var style;
+        if (value != null) {
+            style = 'url(#' + getHatch(value) + ')';
+        } else {
+            style = options.noDataColor;
+        }
+        return style;
     },
     
     // get n categories of point radiuses, line widths for symbology
@@ -238,6 +282,74 @@ L.DataClassification = L.GeoJSON.extend({
         console.debug('lines: width categories:', widths)
     },
 
+    _polygonMode_hatch(options){
+        if (options.strokeColors.length != 2) {
+            console.error('Currently, polygonMode "hatch" requires exactly two colors to alternate lines between. Check the polygonHatch/strokeColors property. Working example: ["red", "orange"] or ["red", "none"]')
+            return;
+        }
+        hatchclasses = [];
+        var swMin, swMax, angle, altAng;
+        // defaults
+        if (options.strokeWidth != null) {
+            if (options.strokeWidth.min == null){
+                swMin = 2;
+            } else {
+                swMin = options.strokeWidth.min; 
+            }
+            if (options.strokeWidth.max == null) {
+                swMax = 10;
+            } else {
+                swMax = options.strokeWidth.max;
+            }
+        } else {
+            swMin = 2;
+            swMax = 10;
+        };
+        (options.angle != null ? angle = options.angle : angle = 45);
+        (options.alternateAngle != null ? altAng = options.alternateAngle : altAng = 45);
+        var step = (swMax - swMin) / (classes.length - 1);
+
+        switch (options.distinctionMode) {
+            case 'width':
+                console.debug('hatch distinction mode: `width`');
+                for (var i = 0; i < classes.length; i++) {
+                    console.debug('current hatch class line widths: swMin:', swMin, 'swMax:', swMax);
+                    hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, angle));
+                    swMin += step;
+                    swMax -= step;
+                }
+                break;
+            case 'angle':
+                console.debug('hatch distinction mode: `angle`');
+                if (altAng == 0) {
+                    console.warn('You are using hatch distinction mode: `angle`. Since this mode is supposed to only alter hatch stroke angle between class symbols, and option `alternateAngle` was set to 0, you will not be able to distinguish them. Overridden value with 45.');
+                    altAng = 45;
+                }
+                if (95 >= altAng && altAng >= 85 || 185 >= altAng && altAng >= 175 || 275 >= altAng && altAng >= 265) {
+                    console.warn('In this mode (`angle`), alternating angles around pi/2 (90), pi (180), 3pi/2 (270) result in very similar or same hatch fill symbols. Consider adjusting hatch angle to ~45°.');
+                }
+                for (var i = 0; i < classes.length; i++) {
+                    hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
+                }
+                break;
+            case 'both':
+                console.debug('hatch distinction mode: `both`');
+                if (altAng == 0) {
+                    console.warn("You are using hatch distinction mode: `both`. Since this mode is supposed to alter both hatch stroke angle and width between class symbols, and option `alternateAngle` was set to 0, you wouldn't see any difference in stroke angle (and therefore could just simply use mode `width`). Overridden value with 45.");
+                    altAng = 45;
+                }
+                for (var i = 0; i < classes.length; i++) {
+                    console.debug('current hatch class line widths: swMin:', swMin, 'swMax:', swMax);
+                    hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
+                    swMin += step;
+                    swMax -= step;
+                }
+                break;
+        }
+        hatchclasses.reverse();
+        console.debug('polygons: hatchclasses:', hatchclasses)
+    },
+
     /**
      * SVG creator. This creates symbols for the point/size and point/color modes.
      * @param {Object} options Options for the SVG to be created
@@ -252,22 +364,22 @@ L.DataClassification = L.GeoJSON.extend({
         var svg;
         switch (options.shape) {
             case 'circle':
-                svg = '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                svg = '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
                             '<circle cx="12.5" cy="12.5" r="'+options.size+'" style="stroke: black; fill: '+options.color+';"/>'+
                         '</svg>'
                 break;
             case 'square':
-                svg = '<svg width="25" height="25"  style="margin-left: 4px; margin-right: 10px">'+
+                svg = '<svg width="25" height="25"  style="margin-left: 4px;">'+
                             '<rect x="'+(25-(options.size*2))/2+'" y="'+(25-(options.size*2))/2+'" height="'+options.size*2+'" width="'+options.size*2+'" style="stroke: black; fill: '+options.color+';"/>'+
                         '</svg>'
                 break;
             case 'diamond':
-                svg = '<svg width="30" height="30" style="margin-left: 4px; margin-right: 10px">'+
+                svg = '<svg width="30" height="30" style="margin-left: 4px;">'+
                             '<path d="M -'+options.size*1.4+' 0 L 0 -'+options.size*1.4+' L '+options.size*1.4+' 0 L 0 '+options.size*1.4+' Z" style="fill: '+options.color+'; stroke: black; transform: translateX(15px) translateY(15px);"/>'+
                         '</svg>'
                 break;
             /*case 'triangle':
-                svg = '<svg width="30" height="30" style="margin-left: 4px; margin-right: 10px; scale: '+options.size/7.5+'; stroke: black; ">'+
+                svg = '<svg width="30" height="30" style="margin-left: 4px; scale: '+options.size/7.5+'; stroke: black; ">'+
                             '<polygon points="50 15, 100 100, 0 100" style="fill: '+options.color+'; scale: 0.2; transform: translateX(30px) translateY(15px)"/>'+
                         '</svg>'
                 break;*/
@@ -432,11 +544,13 @@ L.DataClassification = L.GeoJSON.extend({
         nodata = this._noDataFound;
         nodatacolor = this._noDataColor;
         nodataignore = this._noDataIgnore;
+        rowgap = this.options.legendRowGap;
         lt = this._legendTemplate;
         // format nodata row. Necessary for supporting {count} in that legend class row.
         if (classes.nodataFeatureCount > 0) {
             lt_formattedNoData = lt.nodata.replace(/({count})/i, classes.nodataFeatureCount);
         };
+        var prad = (options.style.radius != null ? options.style.radius : 8);
 
         template = this._legendTemplate;
 
@@ -460,11 +574,24 @@ L.DataClassification = L.GeoJSON.extend({
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'info legend');
             // legend title:
-            div.innerHTML += '<div style="font-weight: bold; display: flex; justify-content: center; margin-bottom: 5px; max-width: 170px;">' + title + '</div>';
-            // legenditems container
-            var container = '';
+            var titlediv = L.DomUtil.create('div', 'legendtitle');
+            titlediv.id = 'legendtitlediv';
+            titlediv.innerHTML += title;
+            // legenditems container (symbology)
+            var container = L.DomUtil.create('div', 'symbology');
+            container.id = 'legendsymbologydiv';
+            if (rowgap != null) {
+                if (typeof rowgap === 'number') {
+                    container.style['row-gap'] = rowgap+'px';
+                } else {
+                    container.style['row-gap'] = rowgap;
+                }
+                (rowgap > 5 ? titlediv.style['margin-bottom'] = rowgap+'px' : '');  // If symbology row-gap is higher than 5, it looks better if title gets linearly distanced as well. Title div margin-bottom is 5 by default, we don't go lower than that. 
+            };
+            // append title first:
+            div.appendChild(titlediv);
             
-            // type of features
+            // symbology div fillup:
             if (typeOfFeatures == "MultiPoint" || typeOfFeatures == "Point") {
                 // points
                 switch (asc) {
@@ -477,18 +604,18 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.debug('Legend: building line', i+1)*/
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container +=
+                                    container.innerHTML +=
                                         '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, color: colors[i]})+
+                                            svgCreator({shape: ps, color: colors[i], size: prad})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        svgCreator({shape: ps, color: nodatacolor})+
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            svgCreator({shape: ps, color: nodatacolor, size: prad})+
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                             case 'size':
@@ -497,18 +624,18 @@ L.DataClassification = L.GeoJSON.extend({
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
                                     /*console.debug('Legend: building line', i+1)*/
-                                    container +=
+                                    container.innerHTML +=
                                         '<div class="legendDataRow">'+
                                             svgCreator({shape: ps, size: radiuses[i], color: pfc})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                         }
@@ -522,18 +649,18 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.debug('Legend: building line', i)*/
                                     let low = classes[i-1].value;
                                     let high = (classes[i] != null ? classes[i].value : '');
-                                    container +=
+                                    container.innerHTML +=
                                         '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, color: colors[i-1]})+
+                                            svgCreator({shape: ps, color: colors[i-1], size: prad})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        svgCreator({shape: ps, color: nodatacolor})+
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            svgCreator({shape: ps, color: nodatacolor, size: prad})+
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                             case 'size':
@@ -544,18 +671,18 @@ L.DataClassification = L.GeoJSON.extend({
                                     let high = (classes[i] != null ? classes[i].value : '');
                                     
                                     // generate row with symbol
-                                    container += 
+                                    container.innerHTML += 
                                         '<div class="legendDataRow">'+
                                             svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                         }
@@ -573,22 +700,22 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.debug('Legend: building line', i+1)*/
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container +=
+                                    container.innerHTML +=
                                         '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i]+';"/>'+
                                             '</svg>' +
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                        '</svg>' +
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                            '</svg>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                             case 'width':
@@ -597,22 +724,22 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.debug('Legend: building line', i+1)*/
                                     let low = classes[i].value;
                                     let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container +=
+                                    container.innerHTML +=
                                         '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>';
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                        '</svg>' +
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                            '</svg>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                         }
@@ -626,22 +753,22 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.debug('Legend: building line', i)*/
                                     let low = classes[i-1].value;
                                     let high = (classes[i] != null ? classes[i].value : '');
-                                    container +=
+                                    container.innerHTML +=
                                         '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
                                             '</svg>' +
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>'
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                        '</svg>' +
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                            '</svg>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                             case 'width':
@@ -650,22 +777,22 @@ L.DataClassification = L.GeoJSON.extend({
                                     /*console.debug('Legend: building line', i)*/
                                     let low = classes[i-1].value;
                                     let high = (classes[i] != null ? classes[i].value : '');
-                                    container +=
+                                    container.innerHTML +=
                                         '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
                                                 '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
                                             '</svg>'+
                                             '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
                                         '</div>'
                                 }
                                 if (nodata && !nodataignore) {
-                                    container +=
-                                    '<div class="legendDataRow">'+
-                                        '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px; margin-right: 10px">'+
-                                            '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                        '</svg>' +
-                                        '<div>'+lt_formattedNoData+'</div>'+
-                                    '</div>'
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                            '</svg>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
                                 }
                                 break;
                         }
@@ -677,48 +804,95 @@ L.DataClassification = L.GeoJSON.extend({
                 switch (asc) {
                     case true:
                     // ascending legend
-                        for (var i = 0; i < classes.length; i++) {
-                            /*console.debug('Legend: building line', i+1)*/
-                            let low = classes[i].value;
-                            let high = (classes[i+1] != null ? classes[i+1].value : '');
-                            container +=
-                                '<div class="legendDataRow">'+
-                                    '<i style="background: ' + colors[i] + '; opacity: ' + opacity + '"></i>' +
-                                    '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                '</div>';
-                        }
-                        if (nodata && !nodataignore) {
-                            container +=
-                            '<div class="legendDataRow">'+
-                            '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
-                                '<div>'+lt_formattedNoData+'</div>'+
-                            '</div>'
+                        switch (mode_polygon) {
+                            case 'color':
+                                for (var i = 0; i < classes.length; i++) {
+                                    /*console.debug('Legend: building line', i+1)*/
+                                    let low = classes[i].value;
+                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<i style="background: ' + colors[i] + '; opacity: ' + opacity + '"></i>' +
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
+                                        '</div>';
+                                }
+                                if (nodata && !nodataignore) {
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                        '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
+                                }
+                                break;
+                            case 'hatch':
+                                for (var i = 0; i < classes.length; i++) {
+                                    /*console.debug('Legend: building line', i)*/
+                                    let low = classes[i].value;
+                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg class="hatchPatch"><rect fill="url(#'+hatchclasses[i]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
+                                        '</div>'
+                                }
+                                if (nodata && !nodataignore) {
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg class="hatchPatch"><rect fill="'+ nodatacolor + '" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
+                                }
+                                break;
                         }
                         break;
                     case false:
                     // descending legend
-                        for (var i = classes.length; i > 0; i--) {
-                            /*console.debug('Legend: building line', i)*/
-                            let low = classes[i-1].value;
-                            let high = (classes[i] != null ? classes[i].value : '');
-                            container +=
-                                '<div class="legendDataRow">'+
-                                    '<i style="background: ' + colors[i-1] + '; opacity: ' + opacity + '"></i>' +
-                                    '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                '</div>'
-                        }
-                        if (nodata && !nodataignore) {
-                            container +=
-                            '<div class="legendDataRow">'+
-                                '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
-                                '<div>'+lt_formattedNoData+'</div>'+
-                            '</div>'
+                        switch (mode_polygon) {
+                            case 'color':
+                                for (var i = classes.length; i > 0; i--) {
+                                    /*console.debug('Legend: building line', i)*/
+                                    let low = classes[i-1].value;
+                                    let high = (classes[i] != null ? classes[i].value : '');
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<i style="background: ' + colors[i-1] + '; opacity: ' + opacity + '"></i>' +
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
+                                        '</div>'
+                                }
+                                if (nodata && !nodataignore) {
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
+                                }
+                                break;
+                            case 'hatch':
+                                for (var i = classes.length; i > 0; i--) {
+                                    /*console.debug('Legend: building line', i)*/
+                                    let low = classes[i-1].value;
+                                    let high = (classes[i] != null ? classes[i].value : '');
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg class="hatchPatch"><rect fill="url(#'+hatchclasses[i-1]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
+                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
+                                        '</div>'
+                                }
+                                if (nodata && !nodataignore) {
+                                    container.innerHTML +=
+                                        '<div class="legendDataRow">'+
+                                            '<svg class="hatchPatch"><rect fill="'+ nodatacolor + '" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>' +
+                                            '<div>'+lt_formattedNoData+'</div>'+
+                                        '</div>'
+                                }
+                                break;
                         }
                         break;
                 }
             }
             
-            div.innerHTML += container;
+            // append symbology content
+            div.appendChild(container);
             return div;
         };
 
@@ -780,7 +954,7 @@ L.DataClassification = L.GeoJSON.extend({
                     // we add null values to main array
                     values.push(layer.feature.properties[this._field]);
                 }
-                console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning. Null found in feature: ', layer.feature)
+                console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
             };
         })
         this._noDataFound = _nodata;
@@ -813,7 +987,9 @@ L.DataClassification = L.GeoJSON.extend({
         pointSize = this.options.pointSize;
 		this._pointShape = this.options.pointShape;
         mode_line = this.options.lineMode;
+        mode_polygon = this.options.polygonMode;
         lineWidth = this.options.lineWidth;
+        polygonHatch = this.options.polygonHatch;
         colorramp = this.options.colorRamp;
         colorramp_rev = this.options.reverseColorRamp;
         colorramp_custom = this.options.colorCustom;
@@ -904,7 +1080,7 @@ L.DataClassification = L.GeoJSON.extend({
                         var currentq = (1/classnum)*i;
                         classes.push(ss.quantile(values.filter((value) => value != null), currentq));
                     }				
-                    console.warn('Quantile classes at the middle might be different, compared to GIS SW');		
+                    console.warn('Quantile classes at the middle might be slightly different compared to GIS SW');		
                     console.debug('Quantile classes: ', classes);	
                     this._convertClassesToObjects();
                     success = true;
@@ -931,6 +1107,7 @@ L.DataClassification = L.GeoJSON.extend({
                 default:
                     console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "manual" - when manual, `classes` must be an array!)')
             }
+            // Classification success, proceed with generating colors
             if (success) {
                 try {
                     colors = chroma.scale(colorramp).colors(classes.length);
@@ -944,16 +1121,22 @@ L.DataClassification = L.GeoJSON.extend({
                     colors.reverse(); 
                 };
             }
+            // Generate symbol property ranges (size/width/hatch classes):
             if (mode_point == "size") {
                 this._pointMode_size_radiuses(pointSize);
             }
             if (mode_line == "width") {
                 this._lineMode_width(lineWidth);
             }
+            if (mode_polygon == "hatch") {
+                this._polygonMode_hatch(polygonHatch);
+            }
+            // Middlepoint value handling:
             if (middlepoint != null && classes.length % 2 == 0) {
                 console.debug('Adjusting middle classes to value: ', middlepoint);
                 classes[classes.length / 2].value = middlepoint;
             }
+            // Class rounding handling:
             if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
         } else {
             console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
@@ -966,8 +1149,10 @@ L.DataClassification = L.GeoJSON.extend({
         stylePoint_size = this._stylePoint_size;
         styleLine_color = this._styleLine_color;
         styleLine_width = this._styleLine_width;
-        stylePolygon = this._stylePolygon;
+        stylePolygon_color = this._stylePolygon_color;
+        stylePolygon_hatch = this._stylePolygon_hatch;
         getColor = this._getColor;
+        getHatch= this._getHatch;
         getRadius = this._getRadius;
         getWeight = this._getWeight;
         pointMarkers = this._pointMarkers;
@@ -998,7 +1183,12 @@ L.DataClassification = L.GeoJSON.extend({
                     layer.setStyle((mode_line == "width" ? styleLine_width(layer.feature.properties[this._field]) : styleLine_color(layer.feature.properties[this._field])))/*.addTo(map)*/;
                 }
                 if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
-                    layer.setStyle(stylePolygon(layer.feature.properties[this._field], this.options))/*.addTo(map)*/;
+                    if (mode_polygon == "hatch") {
+                        layer._path.style['fill'] = stylePolygon_hatch(layer.feature.properties[this._field], this.options); // this messy workaround is needed due to Leaflet ignoring `className` in layer.setStyle(). See https://github.com/leaflet/leaflet/issues/2662.
+                        layer._path.style['fill-opacity'] = (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7); 
+                    } else {
+                        layer.setStyle(stylePolygon_color(layer.feature.properties[this._field], this.options))/*.addTo(map)*/;
+                    }
                 }   
             }       
         });

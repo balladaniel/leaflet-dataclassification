@@ -68,11 +68,11 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = L.map('map', {layers: [OSM]}); 
+			var map = L.map('map', {layers: [cartodb_voyager]}); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
-			// Point features example. Attribute to test with: 'samplenumber'
+			// Point features example. Attribute to test with: 'price_gazole'
 			fetch('data/points_gas.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.price_gazole) {
@@ -80,14 +80,14 @@
 					}
 				}
 				window.testdata = L.dataClassification(d, {
-					style: {radius: 2},
+					style: {radius: 7},
 					mode: 'jenks',
 					classes: 5,
 					field: 'price_gazole',
 					pointMode: 'color',
 					colorRamp: 'YlOrRd',
 					classRounding: 2,
-					legendTitle: 'Diesel prices (€/l)<br>on 7-Jul-2023 ',
+					legendTitle: 'Diesel prices (€/l)<br>as of 7-Jul-2023 ',
 					legendPosition: 'bottomright',
 					legendTemplate: {highest: '{low} and above', lowest: 'under {high}'},
     				attribution: "Diesel prices (7-Jul-2023): <a href='https://www.prix-carburants.gouv.fr/rubrique/opendata/'>Ministère de l'Economie, de l'Industrie et du Numérique</a>",

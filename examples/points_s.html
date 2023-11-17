@@ -72,7 +72,7 @@
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
-			// Point features example. Attribute to test with: 'samplenumber'
+			// Point features example. Attribute to test with: 'population'
 			fetch('data/points_lux_pop_osm.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.population) {

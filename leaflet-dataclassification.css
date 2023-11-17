@@ -10,15 +10,33 @@
     line-height: 18px;
     color: #555;
 }
-.legend i {
-    width: 18px;
-    height: 18px;
-    float: left;
-    margin-right: 8px;
+.legendtitle {
+    display: flex; 
+    font-weight: bold; 
+    justify-content: center; 
+    margin-bottom: 5px; 
 }
 .legendDataRow {
     display: flex; 
     flex-direction: row; 
     align-items: center;
     margin-right: 4px;
+}
+.legend i {
+    width: 18px;
+    height: 18px;
+    float: left;
+    margin-right: 8px;
+}
+.legend svg {
+    margin-right: 10px;
+}
+.legend .hatchPatch {
+    width: 36px;
+    height: 18px;
+}
+.legend .symbology {
+    display: flex;
+    flex-direction: column;
+    row-gap: 3px;
 }

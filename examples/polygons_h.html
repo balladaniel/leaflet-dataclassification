@@ -9,19 +9,21 @@
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-		<!-- plugin: -->	
+		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
-		<link rel="stylesheet" href="../leaflet-dataclassification.css" />				
-		<!-- dependencies locally: -->
-		<script src="../lib/simple-statistics.min.js"></script>
-		<script src="../lib/chroma.min.js"></script>
+		<link rel="stylesheet" href="../leaflet-dataclassification.css" />	
+
+		<!-- dependencies: -->
+		<script src="../lib/simple-statistics.min.js"></script>		<!-- https://github.com/simple-statistics/simple-statistics -->
+		<script src="../lib/chroma.min.js"></script>				<!-- https://github.com/gka/chroma.js -->
+		<script src="../lib/leaflet-hatchclass.js"></script> 		<!-- https://github.com/samanbey/leaflet-hatchclass -->
 		
 		<style>
 			html, body {
 				height: 100%;
 				margin: 0;
 				font-family: 'Open Sans', 'OpenSans-Local';
-				font-style: normal;	
+				font-style: normal;				
 			}
 			
 			#map {
@@ -31,18 +33,18 @@
 				bottom: 0;
 				left: 0;
 				right: 0;
-			}
-
+			}	
+			
 			/* Overriding Chrome's built-in CSS rules to avoid focus rectangle on clicking polygons on a Leaflet map */
 			path.leaflet-interactive:focus {
 				outline: none;
-			}
+			}					
 		</style>
 	</head>
 	<body>		
-		<div id="map"></div>
+		<div id="map"></div>				
 		<script>
-			
+		
 			// base maps
 			var OSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
@@ -77,26 +79,46 @@
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
-			// Line features example. Attribute to test with: 'AADT'
-			fetch('data/lines_c_wsdot_aadt.geojson').then(r => r.json()).then(d => {
+			// Polygon features example. Attribute to test with: 'time_2018_MEAN'
+			fetch('data/polygons_hatch_eu_lifeexp_2018.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
-					if (feature.properties.AADT) {
-						layer.bindTooltip(String(feature.properties.AADT));
+					if (feature.properties.NUTS_NAME && feature.properties.time_2018_MEAN) {
+						layer.bindTooltip('<b>' + feature.properties.NUTS_NAME + ' (' + feature.properties.CNTR_CODE + ')</b><br>' + String(Math.round((feature.properties.time_2018_MEAN + Number.EPSILON) * 10) / 10)+' years');
+						layer.on('mousemove',e=>{
+							e.target.getTooltip().setLatLng(e.latlng);
+						});
+					} else {
+						layer.bindTooltip('<b>' + feature.properties.NUTS_NAME + ' (' + feature.properties.CNTR_CODE + ')</b><br> No data');
+						layer.on('mousemove',e=>{
+							e.target.getTooltip().setLatLng(e.latlng);
+						});
 					}
 				}
+
 				window.testdata = L.dataClassification(d, {
+					style: {color: "white", weight: 0.8},
 					mode: 'jenks',
-					classes: 5,
-					field: 'AADT',
-					lineMode: 'color',
-					colorCustom: ['green', 'yellow', 'red'],
-					legendTitle: 'Annual average<br>daily traffic (2022)',
-					attribution: 'Traffic data: <a href="https://gisdata-wsdot.opendata.arcgis.com/datasets/WSDOT::wsdot-traffic-sections-aadt-current/about" target="_blank">Washington State Department of Transportation (2022)</a>',
+					classes: 4,
+					field: 'time_2018_MEAN',
+					polygonMode: 'hatch',
+					noDataColor: 'lightgrey',
+					classRounding: 0,
+					legendTitle: '2018 Life expectancy<br>at birth (years)',
+    				attribution: "<a href='https://ec.europa.eu/eurostat/web/products-datasets/-/tgs00101' target='_blank'>Data: Life expectancy at birth (NUTS 2), Eurostat</a>",
 					onEachFeature: tooltip,
-					style: {weight: 5}
+					polygonHatch: {
+						strokeColors: ['lightgreen', '#fff8b5'], 
+						strokeWidth: {min: -1, max: 13},
+						distinctionMode: 'width',	// width/angle/both
+						angle: 45,
+						alternateAngle: 45
+					},  
+					legendRowGap: 5
 				}).addTo(map);
-				map.fitBounds(testdata.getBounds());
+				map.fitBounds([[40, -20], [60, 50]]);
+				//map.fitBounds([[56.76476752576022, 42.12158203125001], [43.29320031385285, 17.907714843750004]]);
 			});
+
 
 			var infopanel = L.control({position: 'bottomright'});
 			infopanel.onAdd = function (map) {
@@ -104,7 +126,7 @@
 				div.innerHTML += 
 					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center;">' +
 						'<div style="font-weight: bold; margin-bottom: 5px;">' + 
-							'Leaflet-dataclassification plugin demo page: "lines_color"' + 
+							'Leaflet-dataclassification plugin demo page: "polygons_hatch"' + 
 						'</div>'+ 
 						'<div style="justify-content: center; ">' +
 							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>. '+

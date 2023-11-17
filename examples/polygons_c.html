@@ -77,7 +77,7 @@
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
-			// Point features example. Attribute to test with: 'samplenumber'
+			// Polygon features example. Attribute to test with: 'density2022'
 			fetch('data/polygons_nz_regions.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.name_1 && feature.properties.density2022) {
@@ -93,7 +93,6 @@
 					mode: 'jenks',
 					classes: 5,
 					field: 'density2022',
-					pointMode: 'color',
 					colorRamp: 'Greens',
 					classRounding: 2,
 					legendTitle: 'Population density<br>(pop/km²)',
