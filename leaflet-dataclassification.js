@@ -1164,32 +1164,51 @@ L.DataClassification = L.GeoJSON.extend({
         // apply symbology to features
         this.eachLayer(function(layer) {
             if (layer.feature.properties[this._field] == null && nodataignore) {
-                layer.remove()
+                layer.remove();
             } else {
-                if (layer.feature.geometry.type == "Point" || layer.feature.geometry.type == "MultiPoint") {
-                    var coords = layer.feature.geometry.coordinates;
-                    var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
-                    style.shape = ps;
-
-                    const svgIcon = L.divIcon({
-                        html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
-                        className: "",
-                        iconSize: [25, 25],
-                        iconAnchor: [17, 25/2],
-                    });                
-                    layer.setIcon(svgIcon);
+                switch (layer.feature.geometry.type) {
+                    case "Point":
+                        var coords = layer.feature.geometry.coordinates;
+                        var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
+                        style.shape = ps;
+    
+                        const svgIcon = L.divIcon({
+                            html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
+                            className: "",
+                            iconSize: [25, 25],
+                            iconAnchor: [17, 25/2],
+                        });                
+                        layer.setIcon(svgIcon);
+                        break;
+                    case "MultiPoint":
+                        var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
+                        var mpfeatures = layer._layers;
+                        for (const property in mpfeatures) {
+                            mpfeatures[property].setIcon(L.divIcon({
+                                html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
+                                className: "",
+                                iconSize: [25, 25],
+                                iconAnchor: [17, 25/2],
+                            }));
+                        }
+                        break;
+                    case "LineString":
+                    case "MultiLineString":
+                        layer.setStyle((mode_line == "width" ? styleLine_width(layer.feature.properties[this._field]) : styleLine_color(layer.feature.properties[this._field])))/*.addTo(map)*/;
+                        break;
+                    case "Polygon":
+                    case "MultiPolygon":
+                        if (mode_polygon == "hatch") {
+                            layer._path.style['fill'] = stylePolygon_hatch(layer.feature.properties[this._field], this.options); // this messy workaround is needed due to Leaflet ignoring `className` in layer.setStyle(). See https://github.com/leaflet/leaflet/issues/2662.
+                            layer._path.style['fill-opacity'] = (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7); 
+                        } else {
+                            layer.setStyle(stylePolygon_color(layer.feature.properties[this._field], this.options))/*.addTo(map)*/;
+                        }
+                        break;
+                    default:
+                        console.error('Error: Unknown feature type: ', layer.feature.geometry.type, layer.feature)
+                        break;
                 }
-                if (layer.feature.geometry.type == "LineString" || layer.feature.geometry.type == "MultiLineString") {
-                    layer.setStyle((mode_line == "width" ? styleLine_width(layer.feature.properties[this._field]) : styleLine_color(layer.feature.properties[this._field])))/*.addTo(map)*/;
-                }
-                if (layer.feature.geometry.type == "Polygon" || layer.feature.geometry.type == "MultiPolygon") {
-                    if (mode_polygon == "hatch") {
-                        layer._path.style['fill'] = stylePolygon_hatch(layer.feature.properties[this._field], this.options); // this messy workaround is needed due to Leaflet ignoring `className` in layer.setStyle(). See https://github.com/leaflet/leaflet/issues/2662.
-                        layer._path.style['fill-opacity'] = (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7); 
-                    } else {
-                        layer.setStyle(stylePolygon_color(layer.feature.properties[this._field], this.options))/*.addTo(map)*/;
-                    }
-                }   
             }       
         });
 
