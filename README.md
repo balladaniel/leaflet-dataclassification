@@ -125,7 +125,7 @@ const layer = L.dataClassification(data, {
     - `color <string>`: line stroke color, use only in width mode (default: blue, the L.path default)
     - `weight <float>`: line stroke weight, use only in color mode (default: 3, the L.path default)
 #### Specific for Polygon features
-- `polygonMode <string>`: ['color`|`hatch`] fill "color" or "hatch" (default: 'color')
+- `polygonMode <string>`: ['color'|'hatch'] fill "color" or "hatch" (default: 'color')
 - `polygonHatch <object>`: when polygonMode: "hatch", customize hatch fill pattern
     - `distinctionMode <string>`: ['width'|'angle'|'both'] symbol distinction type between classes (default: 'both')
     - `strokeColors <array<string>>`: stroke colors (default: ['darkred', 'none'])

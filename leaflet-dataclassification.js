@@ -486,50 +486,27 @@ L.DataClassification = L.GeoJSON.extend({
         return;         
     },
 
-    _legendRowFormatter(low, high, i, asc) {
+    _legendRowFormatter(low, high, i) {
         // solve row based on the 3 row templates
-        switch (asc) {
-            case true:
-                if (i == classes.length-1) {
-                    // highest
-                    let solved_high = template.highest.replace(/({high})/i, high)
-                    solved_high = solved_high.replace(/({low})/i, low)
-                    solved_high = solved_high.replace(/({count})/i, classes[classes.length-1].featureCount)
-                    return solved_high;
-                } else if (i == 0) {
-                    // lowest
-                    let solved_low = template.lowest.replace(/({high})/i, high)
-                    solved_low = solved_low.replace(/({low})/i, low)
-                    solved_low = solved_low.replace(/({count})/i, classes[i].featureCount)
-                    return solved_low;
-                } else {
-                    // middle
-                    let solved_mid = template.middle.replace(/({high})/i, high)
-                    solved_mid = solved_mid.replace(/({low})/i, low)
-                    solved_mid = solved_mid.replace(/({count})/i, classes[i].featureCount)
-                    return solved_mid;
-                };
-            case false:
-                if (i == classes.length) {
-                    // highest
-                    let solved_high = template.highest.replace(/({high})/i, high)
-                    solved_high = solved_high.replace(/({low})/i, low)
-                    solved_high = solved_high.replace(/({count})/i, classes[classes.length-1].featureCount)
-                    return solved_high;
-                } else if (i == 1) {
-                    // lowest
-                    let solved_low = template.lowest.replace(/({high})/i, high)
-                    solved_low = solved_low.replace(/({low})/i, low)
-                    solved_low = solved_low.replace(/({count})/i, classes[i-1].featureCount)
-                    return solved_low;
-                } else {
-                    // middle
-                    let solved_mid = template.middle.replace(/({high})/i, high)
-                    solved_mid = solved_mid.replace(/({low})/i, low)
-                    solved_mid = solved_mid.replace(/({count})/i, classes[i-1].featureCount)
-                    return solved_mid;
-                };
-        }   
+        if (i == classes.length) {
+            // highest
+            let solved_high = template.highest.replace(/({high})/i, high)
+            solved_high = solved_high.replace(/({low})/i, low)
+            solved_high = solved_high.replace(/({count})/i, classes[classes.length-1].featureCount)
+            return solved_high;
+        } else if (i == 1) {
+            // lowest
+            let solved_low = template.lowest.replace(/({high})/i, high)
+            solved_low = solved_low.replace(/({low})/i, low)
+            solved_low = solved_low.replace(/({count})/i, classes[i-1].featureCount)
+            return solved_low;
+        } else {
+            // middle
+            let solved_mid = template.middle.replace(/({high})/i, high)
+            solved_mid = solved_mid.replace(/({low})/i, low)
+            solved_mid = solved_mid.replace(/({count})/i, classes[i-1].featureCount)
+            return solved_mid;
+        };
     },
 
     _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures, pfc) {
@@ -559,7 +536,7 @@ L.DataClassification = L.GeoJSON.extend({
             if (unitMod_options.hasOwnProperty('action') && unitMod_options.action != null && typeof unitMod_options.action == "string" && unitMod_options.hasOwnProperty('by') && unitMod_options.by != null && typeof unitMod_options.by == "number") { 
                 legendPP_unitMod(unitMod_options)
             } else {
-                console.error('Missing/invalid options for "unitModifier". Try `unitModifier: {action: "multiply", number: 1000}`.')
+                console.error('Missing/invalid options for "unitModifier". Try `unitModifier: {action: "multiply", number: 1000}`. Classe values in legend were not affected.')
             };
         }
 
@@ -594,303 +571,152 @@ L.DataClassification = L.GeoJSON.extend({
             // symbology div fillup:
             if (typeOfFeatures == "MultiPoint" || typeOfFeatures == "Point") {
                 // points
-                switch (asc) {
-                    // ascending legend
-                    case true:
-                        switch (mode_point) {
-                            case 'color':
-                            // color based categories
-                                for (var i = 0; i < classes.length; i++) {
-                                    /*console.debug('Legend: building line', i+1)*/
-                                    let low = classes[i].value;
-                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, color: colors[i], size: prad})+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>';
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, color: nodatacolor, size: prad})+
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
-                            case 'size':
-                            // size (radius) based categories
-                                for (var i = 0; i < classes.length; i++) {
-                                    let low = classes[i].value;
-                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    /*console.debug('Legend: building line', i+1)*/
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, size: radiuses[i], color: pfc})+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>';
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
+                switch (mode_point) {
+                    case 'color':
+                    // color based categories
+                        for (var i = classes.length; i > 0; i--) {
+                            /*console.debug('Legend: building line', i)*/
+                            let low = classes[i-1].value;
+                            let high = (classes[i] != null ? classes[i].value : '');
+                            container.innerHTML +=
+                                '<div class="legendDataRow">'+
+                                    svgCreator({shape: ps, color: colors[i-1], size: prad})+
+                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                '</div>';
+                        }
+                        if (nodata && !nodataignore) {
+                            container.innerHTML +=
+                                '<div id="nodatarow" class="legendDataRow">'+
+                                    svgCreator({shape: ps, color: nodatacolor, size: prad})+
+                                    '<div>'+lt_formattedNoData+'</div>'+
+                                '</div>'
                         }
                         break;
-                    // descending legend
-                    case false:
-                        switch (mode_point) {
-                            case 'color':
-                            // color based categories
-                                for (var i = classes.length; i > 0; i--) {
-                                    /*console.debug('Legend: building line', i)*/
-                                    let low = classes[i-1].value;
-                                    let high = (classes[i] != null ? classes[i].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, color: colors[i-1], size: prad})+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>';
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, color: nodatacolor, size: prad})+
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
-                            case 'size':
-                            // size (radius) based categories
-                                for (var i = classes.length; i > 0; i--) {
-                                    // decide low and high boundary values for current legend row (class)
-                                    let low = classes[i-1].value;
-                                    let high = (classes[i] != null ? classes[i].value : '');
-                                    
-                                    // generate row with symbol
-                                    container.innerHTML += 
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>';
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
+                    case 'size':
+                    // size (radius) based categories
+                        for (var i = classes.length; i > 0; i--) {
+                            // decide low and high boundary values for current legend row (class)
+                            let low = classes[i-1].value;
+                            let high = (classes[i] != null ? classes[i].value : '');
+                            
+                            // generate row with symbol
+                            container.innerHTML += 
+                                '<div class="legendDataRow">'+
+                                    svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
+                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                '</div>';
+                        }
+                        if (nodata && !nodataignore) {
+                            container.innerHTML +=
+                                '<div id="nodatarow" class="legendDataRow">'+
+                                    svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
+                                    '<div>'+lt_formattedNoData+'</div>'+
+                                '</div>'
                         }
                         break;
                 }
             } else if (typeOfFeatures == "MultiLineString" || typeOfFeatures == "LineString") {
                 // lines
-                switch (asc) {
-                    case true:
-                    // ascending legend
-                        switch (mode_line) {
-                            case 'color':
-                            // color based categories
-                                for (var i = 0; i < classes.length; i++) {
-                                    /*console.debug('Legend: building line', i+1)*/
-                                    let low = classes[i].value;
-                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i]+';"/>'+
-                                            '</svg>' +
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>';
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                            '</svg>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
-                            case 'width':
-                            // width based categories
-                                for (var i = 0; i < classes.length; i++) {
-                                    /*console.debug('Legend: building line', i+1)*/
-                                    let low = classes[i].value;
-                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i]+'; stroke: '+lc+';"/>'+
-                                            '</svg>'+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>';
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                            '</svg>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
+                switch (mode_line) {
+                    case 'color':
+                    // color based categories
+                        for (var i = classes.length; i > 0; i--) {
+                            /*console.debug('Legend: building line', i)*/
+                            let low = classes[i-1].value;
+                            let high = (classes[i] != null ? classes[i].value : '');
+                            container.innerHTML +=
+                                '<div class="legendDataRow">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
+                                    '</svg>' +
+                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                '</div>'
+                        }
+                        if (nodata && !nodataignore) {
+                            container.innerHTML +=
+                                '<div id="nodatarow" class="legendDataRow">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                    '</svg>' +
+                                    '<div>'+lt_formattedNoData+'</div>'+
+                                '</div>'
                         }
                         break;
-                    case false:
-                    // descending legend
-                        switch (mode_line) {
-                            case 'color':
-                            // color based categories
-                                for (var i = classes.length; i > 0; i--) {
-                                    /*console.debug('Legend: building line', i)*/
-                                    let low = classes[i-1].value;
-                                    let high = (classes[i] != null ? classes[i].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
-                                            '</svg>' +
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>'
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                            '</svg>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
-                            case 'width':
-                            // width based categories
-                                for (var i = classes.length; i > 0; i--) {
-                                    /*console.debug('Legend: building line', i)*/
-                                    let low = classes[i-1].value;
-                                    let high = (classes[i] != null ? classes[i].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
-                                            '</svg>'+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>'
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                                                '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                            '</svg>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
+                    case 'width':
+                    // width based categories
+                        for (var i = classes.length; i > 0; i--) {
+                            /*console.debug('Legend: building line', i)*/
+                            let low = classes[i-1].value;
+                            let high = (classes[i] != null ? classes[i].value : '');
+                            container.innerHTML +=
+                                '<div class="legendDataRow">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
+                                    '</svg>'+
+                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                '</div>'
+                        }
+                        if (nodata && !nodataignore) {
+                            container.innerHTML +=
+                                '<div id="nodatarow" class="legendDataRow">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
+                                    '</svg>' +
+                                    '<div>'+lt_formattedNoData+'</div>'+
+                                '</div>'
                         }
                         break;
                 }
             } else {
                 let opacity = (options.style.fillOpacity ? options.style.fillOpacity : 0.7);
                 // polygons
-                switch (asc) {
-                    case true:
-                    // ascending legend
-                        switch (mode_polygon) {
-                            case 'color':
-                                for (var i = 0; i < classes.length; i++) {
-                                    /*console.debug('Legend: building line', i+1)*/
-                                    let low = classes[i].value;
-                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<i style="background: ' + colors[i] + '; opacity: ' + opacity + '"></i>' +
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>';
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                        '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
-                            case 'hatch':
-                                for (var i = 0; i < classes.length; i++) {
-                                    /*console.debug('Legend: building line', i)*/
-                                    let low = classes[i].value;
-                                    let high = (classes[i+1] != null ? classes[i+1].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg class="hatchPatch"><rect fill="url(#'+hatchclasses[i]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>'
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg class="hatchPatch"><rect fill="'+ nodatacolor + '" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
+                switch (mode_polygon) {
+                    case 'color':
+                        for (var i = classes.length; i > 0; i--) {
+                            /*console.debug('Legend: building line', i)*/
+                            let low = classes[i-1].value;
+                            let high = (classes[i] != null ? classes[i].value : '');
+                            container.innerHTML +=
+                                '<div class="legendDataRow">'+
+                                    '<i style="background: ' + colors[i-1] + '; opacity: ' + opacity + '"></i>' +
+                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                '</div>'
+                        }
+                        if (nodata && !nodataignore) {
+                            container.innerHTML +=
+                                '<div id="nodatarow" class="legendDataRow">'+
+                                    '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
+                                    '<div>'+lt_formattedNoData+'</div>'+
+                                '</div>'
                         }
                         break;
-                    case false:
-                    // descending legend
-                        switch (mode_polygon) {
-                            case 'color':
-                                for (var i = classes.length; i > 0; i--) {
-                                    /*console.debug('Legend: building line', i)*/
-                                    let low = classes[i-1].value;
-                                    let high = (classes[i] != null ? classes[i].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<i style="background: ' + colors[i-1] + '; opacity: ' + opacity + '"></i>' +
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>'
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
-                            case 'hatch':
-                                for (var i = classes.length; i > 0; i--) {
-                                    /*console.debug('Legend: building line', i)*/
-                                    let low = classes[i-1].value;
-                                    let high = (classes[i] != null ? classes[i].value : '');
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg class="hatchPatch"><rect fill="url(#'+hatchclasses[i-1]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
-                                            '<div>'+ legendRowFormatter(low, high, i, asc) +'</div>'+
-                                        '</div>'
-                                }
-                                if (nodata && !nodataignore) {
-                                    container.innerHTML +=
-                                        '<div class="legendDataRow">'+
-                                            '<svg class="hatchPatch"><rect fill="'+ nodatacolor + '" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>' +
-                                            '<div>'+lt_formattedNoData+'</div>'+
-                                        '</div>'
-                                }
-                                break;
+                    case 'hatch':
+                        for (var i = classes.length; i > 0; i--) {
+                            /*console.debug('Legend: building line', i)*/
+                            let low = classes[i-1].value;
+                            let high = (classes[i] != null ? classes[i].value : '');
+                            container.innerHTML +=
+                                '<div class="legendDataRow">'+
+                                    '<svg class="hatchPatch"><rect fill="url(#'+hatchclasses[i-1]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
+                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                '</div>'
+                        }
+                        if (nodata && !nodataignore) {
+                            container.innerHTML +=
+                                '<div id="nodatarow" class="legendDataRow">'+
+                                    '<svg class="hatchPatch"><rect fill="'+ nodatacolor + '" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>' +
+                                    '<div>'+lt_formattedNoData+'</div>'+
+                                '</div>'
                         }
                         break;
                 }
             }
-            
+
+            // reverse legend row order in ascending mode by reversing flex-direction
+            if (asc) {
+                L.DomUtil.addClass(container, 'reverseOrder');
+            }
+
             // append symbology content
             div.appendChild(container);
             return div;
@@ -900,6 +726,13 @@ L.DataClassification = L.GeoJSON.extend({
         this._legends.push(legend);
         console.debug('Legend generated:', title);
         legend.addTo(map);
+        
+        // move nodata row to the bottom after legend reversal (in ascending mode)
+        if (asc) {
+            if (document.getElementById('nodatarow')) {
+                document.getElementById('nodatarow').classList.add('legendAscNodata');
+            }
+        } 
     },
 
     onAdd(map) {
@@ -943,7 +776,7 @@ L.DataClassification = L.GeoJSON.extend({
             };
             // feature attribute value extraction to array
             if (!layer.feature.properties.hasOwnProperty(this._field)) {
-                console.error('Attribute field "'+this._field+'" does not exist in given GeoJSON. Please note that attribute field input is case-sensitve.');
+                console.error('Attribute field "'+this._field+'" does not exist in given GeoJSON. Please note that attribute field input is case-sensitve. Available attribute fields: '+JSON.stringify(layer.feature.properties));
                 return;
             } 
             if (layer.feature.properties[this._field] != null) {

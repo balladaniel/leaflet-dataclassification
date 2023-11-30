@@ -40,3 +40,9 @@
     flex-direction: column;
     row-gap: 3px;
 }
+.legend .reverseOrder {
+    flex-direction: column-reverse;
+}
+.legendAscNodata {
+    order: -1
+}
