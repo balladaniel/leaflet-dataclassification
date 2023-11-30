@@ -536,7 +536,7 @@ L.DataClassification = L.GeoJSON.extend({
             if (unitMod_options.hasOwnProperty('action') && unitMod_options.action != null && typeof unitMod_options.action == "string" && unitMod_options.hasOwnProperty('by') && unitMod_options.by != null && typeof unitMod_options.by == "number") { 
                 legendPP_unitMod(unitMod_options)
             } else {
-                console.error('Missing/invalid options for "unitModifier". Try `unitModifier: {action: "multiply", number: 1000}`. Classe values in legend were not affected.')
+                console.error('Missing/invalid options for "unitModifier". Try `unitModifier: {action: "multiply", number: 1000}`. Class values in legend were not affected.')
             };
         }
 
