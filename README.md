@@ -15,6 +15,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
     - natural breaks (Jenks)
     - quantile (equal count)
     - equal interval
+    - standard deviation
     - manual
 - Supports ColorBrewer2 color ramps and custom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
 - Various SVG shapes/symbols for Point features
@@ -102,7 +103,7 @@ const layer = L.dataClassification(data, {
 ```
 
 ### Required options 
-- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'manual'] classification method: jenks, quantile, equalinterval, manual. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
+- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'stddeviation'|'manual'] classification method: natural break (Jenks), equal count (quantile), equal interval, standard deviation, manual. When using standard deviation, option `classes` is ignored. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
 - `classes <integer|array>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.). If `mode` is manual, this must be an array of numbers (for example [0, 150, 200] would yield the following three classes: below 150, 150-200, above 200). 
 - `field <string>`: target attribute field name to base classification on. Case-sensitive!
 

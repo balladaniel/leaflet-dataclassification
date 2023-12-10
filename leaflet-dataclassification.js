@@ -15,7 +15,7 @@ L.DataClassification = L.GeoJSON.extend({
     options: {
         // NOTE: documentation in this object might not be up to date. Please always refer to the documentation on GitHub.
         // default options
-        mode: 'quantile',							// classification method: jenks, quantile, equalinterval, manual (when using manual, `classes` must be an array!)
+        mode: 'quantile',							// classification method: jenks, quantile, equalinterval, stddeviation (when using stddev, `classes` is ignored!), manual (when using manual, `classes` must be an array!)
         classes: 5,									// desired number of classes (min: 3, max: 10 or featurecount, whichever is lower)
         pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
         pointSize: {min: 2, max: 10},               // POINT FEATURES: when pointMode: "size", define min/max point circle radius (default min: 2, default max: 10, recommended max: 12)
@@ -62,7 +62,7 @@ L.DataClassification = L.GeoJSON.extend({
             fillOpacity: 0.7,
             color: L.Path.prototype.options.color,
             weight: L.Path.prototype.options.weight,
-            raidus: 8
+            radius: 8
         }
     },
 
@@ -175,7 +175,7 @@ L.DataClassification = L.GeoJSON.extend({
             color: "black",
             weight: 1,
             shape: "circle",
-            radius: (options.style.radius != null ? options.style.radius : 8)
+            radius: options.style.radius
         };
     },
 
@@ -576,8 +576,17 @@ L.DataClassification = L.GeoJSON.extend({
                     // color based categories
                         for (var i = classes.length; i > 0; i--) {
                             /*console.debug('Legend: building line', i)*/
-                            let low = classes[i-1].value;
-                            let high = (classes[i] != null ? classes[i].value : '');
+                            let low, high;
+                            switch (mode) {
+                                case 'stddeviation':
+                                    low = classes[i-1].stddev_lower;
+                                    high = (classes[i] != null ? classes[i].stddev_lower : '');
+                                    break;
+                                default:
+                                    low = classes[i-1].value;
+                                    high = (classes[i] != null ? classes[i].value : '');
+                                    break;
+                            }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
                                     svgCreator({shape: ps, color: colors[i-1], size: prad})+
@@ -595,9 +604,18 @@ L.DataClassification = L.GeoJSON.extend({
                     case 'size':
                     // size (radius) based categories
                         for (var i = classes.length; i > 0; i--) {
-                            // decide low and high boundary values for current legend row (class)
-                            let low = classes[i-1].value;
-                            let high = (classes[i] != null ? classes[i].value : '');
+                            let low, high;
+                            switch (mode) {
+                                case 'stddeviation':
+                                    low = classes[i-1].stddev_lower;
+                                    high = (classes[i] != null ? classes[i].stddev_lower : '');
+                                    break;
+                                default:
+                                    // decide low and high boundary values for current legend row (class)
+                                    low = classes[i-1].value;
+                                    high = (classes[i] != null ? classes[i].value : '');
+                                    break;
+                            }
                             
                             // generate row with symbol
                             container.innerHTML += 
@@ -621,9 +639,19 @@ L.DataClassification = L.GeoJSON.extend({
                     case 'color':
                     // color based categories
                         for (var i = classes.length; i > 0; i--) {
-                            /*console.debug('Legend: building line', i)*/
-                            let low = classes[i-1].value;
-                            let high = (classes[i] != null ? classes[i].value : '');
+                            let low, high;
+                            switch (mode) {
+                                case 'stddeviation':
+                                    low = classes[i-1].stddev_lower;
+                                    high = (classes[i] != null ? classes[i].stddev_lower : '');
+                                    break;
+                                default:
+                                    /*console.debug('Legend: building line', i)*/
+                                    low = classes[i-1].value;
+                                    high = (classes[i] != null ? classes[i].value : '');
+                                    break;
+                            }
+
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
                                     '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
@@ -646,8 +674,17 @@ L.DataClassification = L.GeoJSON.extend({
                     // width based categories
                         for (var i = classes.length; i > 0; i--) {
                             /*console.debug('Legend: building line', i)*/
-                            let low = classes[i-1].value;
-                            let high = (classes[i] != null ? classes[i].value : '');
+                            let low, high;
+                            switch (mode) {
+                                case 'stddeviation':
+                                    low = classes[i-1].stddev_lower;
+                                    high = (classes[i] != null ? classes[i].stddev_lower : '');
+                                    break;
+                                default:
+                                    low = classes[i-1].value;
+                                    high = (classes[i] != null ? classes[i].value : '');
+                                    break;
+                            }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
                                     '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
@@ -674,8 +711,17 @@ L.DataClassification = L.GeoJSON.extend({
                     case 'color':
                         for (var i = classes.length; i > 0; i--) {
                             /*console.debug('Legend: building line', i)*/
-                            let low = classes[i-1].value;
-                            let high = (classes[i] != null ? classes[i].value : '');
+                            let low, high;
+                            switch (mode) {
+                                case 'stddeviation':
+                                    low = classes[i-1].stddev_lower;
+                                    high = (classes[i] != null ? classes[i].stddev_lower : '');
+                                    break;
+                                default:
+                                    low = classes[i-1].value;
+                                    high = (classes[i] != null ? classes[i].value : '');
+                                    break;
+                            }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
                                     '<i style="background: ' + colors[i-1] + '; opacity: ' + opacity + '"></i>' +
@@ -693,8 +739,17 @@ L.DataClassification = L.GeoJSON.extend({
                     case 'hatch':
                         for (var i = classes.length; i > 0; i--) {
                             /*console.debug('Legend: building line', i)*/
-                            let low = classes[i-1].value;
-                            let high = (classes[i] != null ? classes[i].value : '');
+                            let low, high;
+                            switch (mode) {
+                                case 'stddeviation':
+                                    low = classes[i-1].stddev_lower;
+                                    high = (classes[i] != null ? classes[i].stddev_lower : '');
+                                    break;
+                                default:
+                                    low = classes[i-1].value;
+                                    high = (classes[i] != null ? classes[i].value : '');
+                                    break;
+                            }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
                                     '<svg class="hatchPatch"><rect fill="url(#'+hatchclasses[i-1]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
@@ -922,6 +977,83 @@ L.DataClassification = L.GeoJSON.extend({
 					classnum = classes.length;
                     console.debug('Manually defined classes: ', classes);	
                     this._convertClassesToObjects();
+                    success = true;
+                    break;
+                case 'stddeviation':
+                    // with zScore: (number-average)/standard_deviation
+                    classes = [];
+                    var stddev = ss.standardDeviation(values.filter((value) => value != null))
+                    var mean = ss.mean(values.filter((value) => value != null))
+                    console.debug('stddev:', stddev)
+                    console.debug('mean:', mean)
+                    var extent = ss.extent(values.filter((value) => value != null))
+                    /*console.debug('extent', extent)
+                    var diff = extent[1]-extent[0]
+                    console.debug('diff', diff)
+                    console.debug('number of classes if 1 stddev:', diff/(stddev/1))
+                    console.debug('number of classes if 1 stddev:', Math.round(diff/(stddev/1)))
+                    console.debug('number of classes if 1/2 stddev:', diff/(stddev/2))
+                    console.debug('number of classes if 1/3 stddev:', diff/(stddev/3))*/
+
+                    var halfstddev = stddev/2;
+                    var curr;
+                    var down = 1;
+                    var up = 1;
+                    //var potclassnum = Math.round(diff/(stddev/1));
+                    var valid = true;
+                    classes.push(-999999);
+                    for (var i = 0; valid /*i<potclassnum*/; i++) {
+                            console.debug('downwards', down)
+                            curr = mean-(halfstddev*down);
+                            console.debug('downwards curr', curr)
+                            console.debug(extent[0])
+                            console.debug((curr > extent[0]))
+                            console.debug(halfstddev)
+                            if (curr > extent[0] && down < 7) {
+                                classes.push(curr);
+                                down += 2;
+                            } else {
+                                valid = false;
+                            };
+                    }
+                    
+                    valid = true;
+                    for (var i = 0; valid /*i<potclassnum*/; i++) {
+                        console.debug('upwards', up)
+                        curr = mean+(halfstddev*up);
+                        console.debug('upwards curr', curr)
+                        if (curr < extent[1] && up < 7) {
+                            classes.push(curr);
+                            up += 2;
+                        } else {
+                            valid = false
+                        };
+                    }
+
+                    console.debug(classes);
+                    classes.sort(function(a, b) {
+                        return a - b;
+                    });
+                    console.debug('Sorted Stddev classes: ', classes);	
+                    this._convertClassesToObjects();
+
+                    console.debug('down:', down, 'up:', up)
+                    console.debug('down intervals:', down, 'up intervals:', up)
+                    var interval_lower = (0.5 * -down);
+                    classes.forEach(function (arrayItem) {
+                        if (down > 0) {
+                            console.debug('down =', down, 'up =', up, 'boundary =', interval_lower)
+                            arrayItem.stddev_lower = interval_lower;
+                            interval_lower += 1;
+                            down -= 2;
+                        } else if (down < 0 && up > 0) {
+                            console.debug('down =', down, 'up =', up, 'boundary =', interval_lower)
+                            arrayItem.stddev_lower = interval_lower;
+                            interval_lower += 1;
+                            up -= 2;
+                            
+                        };
+                    });
                     success = true;
                     break;
                 // EXPERIMENTAL LOG

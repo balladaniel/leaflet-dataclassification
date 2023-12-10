@@ -79,25 +79,49 @@
 
 			// Line features example. Attribute to test with: 'Shape_Leng'
 			fetch('data/rivers.geojson').then(r => r.json()).then(d => {
-				function tooltip(feature, layer) {
-					if (feature.properties.Shape_Leng) {
-						layer.bindTooltip(String(feature.properties.Shape_Leng));
+
+				var origstyle;
+
+				function highlight(e) {
+					origstyle = {
+						weight: e.target.options.weight,
+						color: e.target.options.color
 					}
+					e.target.setStyle({
+						color: '#f22',
+					});
 				}
+
+				function resetStyle(e) {
+					e.target.setStyle(origstyle);
+				}
+
+				function oEF(feature, layer) {
+					if (feature.properties.discharge) {
+						layer.bindTooltip('<b>' + String(feature.properties.NAME) + '</b><br>' + String(feature.properties.discharge) + ' m³/s');
+					} else {
+						layer.bindTooltip('<b>' + String(feature.properties.NAME) + '</b><br>' + 'no data');
+					}
+					layer.on({
+						mouseover: highlight,
+						mouseout: resetStyle
+					});
+				}
+
 				window.testdata = L.dataClassification(d, {
 					mode: 'jenks',
-					classes: 3,
-					field: 'Shape_Leng',
+					classes: 4,
+					field: 'discharge',
 					lineMode: 'width',
 					lineWidth: {
 						min: 2,
-						max: 10
+						max: 12
 					},
-					classRounding: -5,
-					unitModifier: {action: 'divide', by: 1000},
+					//classRounding: -2,
+					//unitModifier: {action: 'divide', by: 1000},
 					legendAscending: false,
-					legendTitle: 'Length (km)',
-					onEachFeature: tooltip
+					legendTitle: 'Discharge (m³/s)',
+					onEachFeature: oEF
 				}).addTo(map);
 				map.fitBounds(testdata.getBounds());
 			});
@@ -112,7 +136,7 @@
 						'</div>'+ 
 						'<div style="justify-content: center; ">' +
 							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>. '+
-							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of attribute values used. '+
+							'Feature tooltips on hover and feature highlighting (native features of Leaflet) were added to provide an easy check of attribute values used. '+
 							'<br><br>'+
 							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
 							'<br><br>'+
