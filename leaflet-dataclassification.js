@@ -6,6 +6,8 @@
  * classifies point, line or polygon features by chosen quantitative-type attribute
  * stylizes features on map accordingly
  * generates an appropriate legend for visualized data
+ * 
+ * project page: https://github.com/balladaniel/leaflet-dataclassification 
  *
  * MIT License
  * Copyright (c) 2023 Dániel Balla
@@ -187,7 +189,6 @@ L.DataClassification = L.GeoJSON.extend({
      * @returns {object} Final symbol style of the feature
      */
     _stylePoint_size(value, options){
-        console.log(options)
         return {
             fillColor: (value != null ? (options.style.fillColor != null ? options.style.fillColor : 'orange') : options.noDataColor),
             fillOpacity: 1,
@@ -285,7 +286,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     _polygonMode_hatch(options){
-        if (options.strokeColors.length != 2) {
+        if (options.strokeColors != null && options.strokeColors.length != 2) {
             console.error('Currently, polygonMode "hatch" requires exactly two colors to alternate lines between. Check the polygonHatch/strokeColors property. Working example: ["red", "orange"] or ["red", "none"]')
             return;
         }
@@ -307,6 +308,8 @@ L.DataClassification = L.GeoJSON.extend({
             swMin = 2;
             swMax = 10;
         };
+        (options.distinctionMode != null ? '' : options.distinctionMode = 'both');
+        (options.strokeColors != null ? '' : options.strokeColors = ['darkred', 'none']);
         (options.angle != null ? angle = options.angle : angle = 45);
         (options.alternateAngle != null ? altAng = options.alternateAngle : altAng = 45);
         var step = (swMax - swMin) / (classes.length - 1);
@@ -868,8 +871,6 @@ L.DataClassification = L.GeoJSON.extend({
             } else {
                 arrayItem.finalvalue = arrayItem[this._field];
             }
-            
-            console.log(arrayItem);
         });
 
         this._noDataFound = _nodata;

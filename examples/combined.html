@@ -15,6 +15,7 @@
 		<!-- dependencies locally: -->
 		<script src="../lib/simple-statistics.min.js"></script>
 		<script src="../lib/chroma.min.js"></script>
+		<script src="../lib/leaflet-hatchclass.js"></script>
 		
 		<style>
 			html, body {
@@ -26,7 +27,7 @@
 			
 			#map {
 				position: absolute;
-				margin:  auto;
+				margin: auto;
 				top: 0;
 				bottom: 0;
 				left: 0;
@@ -131,6 +132,7 @@
 					mode: 'quantile',
 					classes: 5,
 					field: 'density',
+					polygonMode: 'color',
 					colorRamp: 'YlGnBu',
 					noDataColor: '#505050',
 					legendAscending: false,
