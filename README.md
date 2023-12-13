@@ -83,7 +83,7 @@ const layer = L.dataClassification(data, {
     classRounding: 2,
     legendTitle: 'Density (pop/km²)',
     legendPosition: 'bottomleft',
-	legendRowGap: 5,
+    legendRowGap: 5,
     legendAscending: false,	
     legendTemplate: {
         highest: '{low} and above [{count}]',

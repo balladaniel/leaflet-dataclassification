@@ -187,8 +187,9 @@ L.DataClassification = L.GeoJSON.extend({
      * @returns {object} Final symbol style of the feature
      */
     _stylePoint_size(value, options){
+        console.log(options)
         return {
-            fillColor: (value != null ? options.style.fillColor : options.noDataColor),
+            fillColor: (value != null ? (options.style.fillColor != null ? options.style.fillColor : 'orange') : options.noDataColor),
             fillOpacity: 1,
             color: "black",
             weight: 1,
@@ -216,7 +217,7 @@ L.DataClassification = L.GeoJSON.extend({
     _styleLine_width(value){
         return {
             weight: (value != null ? getWeight(value) : Math.min.apply(Math, widths)),
-            color: (value != null ? options.style.color : options.noDataColor)
+            color: (value != null ? (options.style.color != null ? options.style.color : L.Path.prototype.options.color) : options.noDataColor)
         };
     },
 
@@ -510,14 +511,14 @@ L.DataClassification = L.GeoJSON.extend({
         };
     },
 
-    _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures, pfc) {
+    _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures) {
         svgCreator = this._svgCreator;
         legendPP_unitMod = this._legendPostProc_unitModifier;
         legendRowFormatter = this._legendRowFormatter;
         unitMod_options = this._unitMod;
         position = this._legendPos;
         ps = this._pointShape;
-        lc = this._linecolor;
+        lc = (this._linecolor != null ? this._linecolor : L.Path.prototype.options.color);
         lw = this._lineweight;
         nodata = this._noDataFound;
         nodatacolor = this._noDataColor;
@@ -529,6 +530,7 @@ L.DataClassification = L.GeoJSON.extend({
             lt_formattedNoData = lt.nodata.replace(/({count})/i, classes.nodataFeatureCount);
         };
         var prad = (options.style.radius != null ? options.style.radius : 8);
+        var pfc = (options.style.fillColor != null ? options.style.fillColor : 'orange');
 
         template = this._legendTemplate;
 
@@ -1097,7 +1099,7 @@ L.DataClassification = L.GeoJSON.extend({
                     success = true;
                     break;
                 default:
-                    console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "manual" - when manual, `classes` must be an array!)')
+                    console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "stddeviation", "manual" - when manual, `classes` must be an array!)')
             }
             // Classification success, proceed with generating colors
             if (success) {
@@ -1203,8 +1205,8 @@ L.DataClassification = L.GeoJSON.extend({
                         console.error('Error: Unknown feature type: ', layer.feature.geometry.type, layer.feature)
                         break;
                 }
+                n += 1;  
             }     
-            n += 1;  
         });
 
         // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
