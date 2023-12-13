@@ -76,6 +76,7 @@ L.DataClassification = L.GeoJSON.extend({
     _pointMarkers: [],
     _unitMod: {},
     _field: '',
+    _normalizeByField: '',
     _pointShape: '',
     _linecolor: '',
     _lineweight: '',
@@ -779,8 +780,8 @@ L.DataClassification = L.GeoJSON.extend({
 
         legend.id = this._leaflet_id;
         this._legends.push(legend);
-        console.debug('Legend generated:', title);
         legend.addTo(map);
+        console.debug('Legend generated:', title);
         
         // move nodata row to the bottom after legend reversal (in ascending mode)
         if (asc) {
@@ -794,17 +795,20 @@ L.DataClassification = L.GeoJSON.extend({
         console.debug('L.dataClassification: Classifying...')
         console.debug('L.dataClassification: options:', this.options)
         this._field=this.options.field
+        this._normalizeByField=this.options.normalizeByField
         L.GeoJSON.prototype.onAdd.call(this, map);
         this._classify(map);
     },
 
     _classify(map) {
         _field=this.options.field;
+        _normalizeByField=this.options.normalizeByField;
         _nodata=this._noDataFound;
         _nodataignore=this.options.noDataIgnore;
         var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
         var typeOfFeatures = 'unknown';
         values = [];
+        features = [];
         this.eachLayer(function (layer) {
             // gather info feature types in geojson 
             switch (layer.feature.geometry.type) {
@@ -834,19 +838,41 @@ L.DataClassification = L.GeoJSON.extend({
                 console.error('Attribute field "'+this._field+'" does not exist in given GeoJSON. Please note that attribute field input is case-sensitve. Available attribute fields: '+JSON.stringify(layer.feature.properties));
                 return;
             } 
+            if (this._normalizeByField != null && !layer.feature.properties.hasOwnProperty(this._normalizeByField)) {
+                console.error('Normalization attribute field "'+this._normalizeByField+'" does not exist in given GeoJSON. Please note that attribute field input is case-sensitve. Either choose one of the available fields, or omit the option `normalizeByField`. Available attribute fields: '+JSON.stringify(layer.feature.properties));
+                return;
+            } 
+            /*if (typeof layer.feature.properties[this._field] != 'number') {
+                console.error('Attribute field "'+this._field+'" does not contain quantitative values in given GeoJSON. Please note that attribute field input is case-sensitve. Available attribute fields: '+JSON.stringify(layer.feature.properties));
+                return;
+            } */
             if (layer.feature.properties[this._field] != null) {
-                values.push(layer.feature.properties[this._field]);
+                //values.push(layer.feature.properties[this._field]);
+                features.push(layer.feature.properties);
             } else {
-                _nodata = true;
+                _nodata = true;     // flag for generateLegend() later
                 if (!_nodataignore) {
                     // we add null values to main array
-                    values.push(layer.feature.properties[this._field]);
+                    //values.push(layer.feature.properties[this._field]);
+                    features.push(layer.feature.properties);
                 }
                 console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
             };
         })
+
+        features.forEach((arrayItem, index) => {
+            if (this._normalizeByField != null && arrayItem[this._field] != null && arrayItem[this._normalizeByField] != null) {
+                arrayItem.finalvalue = arrayItem[this._field]/arrayItem[this._normalizeByField];
+            } else {
+                arrayItem.finalvalue = arrayItem[this._field];
+            }
+            
+            console.log(arrayItem);
+        });
+
         this._noDataFound = _nodata;
         this._values = values;
+        this._features = features;
         console.debug('Loaded values from GeoJSON (field: '+this._field+'):', this._values);	
         console.debug('Feature types in GeoJSON:', features_info)
         typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
@@ -937,7 +963,8 @@ L.DataClassification = L.GeoJSON.extend({
                 return;
             }
         }
-        if (classnum > 2 && classnum < this._values.length) {				
+        if (classnum > 2 && classnum < this._features.length) {	
+            values = features.map(a => a.finalvalue);
             switch (mode) {
                 case 'jenks':	
                     classes = ss.jenks(values.filter((value) => value != null), classnum);
@@ -1126,6 +1153,8 @@ L.DataClassification = L.GeoJSON.extend({
 
         currentmarker = null;
 
+        var n = 0;
+
         // apply symbology to features
         this.eachLayer(function(layer) {
             if (layer.feature.properties[this._field] == null && nodataignore) {
@@ -1134,7 +1163,7 @@ L.DataClassification = L.GeoJSON.extend({
                 switch (layer.feature.geometry.type) {
                     case "Point":
                         var coords = layer.feature.geometry.coordinates;
-                        var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
+                        var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
                         style.shape = ps;
     
                         const svgIcon = L.divIcon({
@@ -1146,7 +1175,7 @@ L.DataClassification = L.GeoJSON.extend({
                         layer.setIcon(svgIcon);
                         break;
                     case "MultiPoint":
-                        var style = (mode_point == "color" ? stylePoint_color(layer.feature.properties[this._field]) : stylePoint_size(layer.feature.properties[this._field], this.options))
+                        var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
                         var mpfeatures = layer._layers;
                         for (const property in mpfeatures) {
                             mpfeatures[property].setIcon(L.divIcon({
@@ -1159,22 +1188,23 @@ L.DataClassification = L.GeoJSON.extend({
                         break;
                     case "LineString":
                     case "MultiLineString":
-                        layer.setStyle((mode_line == "width" ? styleLine_width(layer.feature.properties[this._field]) : styleLine_color(layer.feature.properties[this._field])))/*.addTo(map)*/;
+                        layer.setStyle((mode_line == "width" ? styleLine_width(features[n].finalvalue) : styleLine_color(features[n].finalvalue)))/*.addTo(map)*/;
                         break;
                     case "Polygon":
                     case "MultiPolygon":
                         if (mode_polygon == "hatch") {
-                            layer._path.style['fill'] = stylePolygon_hatch(layer.feature.properties[this._field], this.options); // this messy workaround is needed due to Leaflet ignoring `className` in layer.setStyle(). See https://github.com/leaflet/leaflet/issues/2662.
+                            layer._path.style['fill'] = stylePolygon_hatch(features[n].finalvalue, this.options); // this messy workaround is needed due to Leaflet ignoring `className` in layer.setStyle(). See https://github.com/leaflet/leaflet/issues/2662.
                             layer._path.style['fill-opacity'] = (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7); 
                         } else {
-                            layer.setStyle(stylePolygon_color(layer.feature.properties[this._field], this.options))/*.addTo(map)*/;
+                            layer.setStyle(stylePolygon_color(features[n].finalvalue, this.options))/*.addTo(map)*/;
                         }
                         break;
                     default:
                         console.error('Error: Unknown feature type: ', layer.feature.geometry.type, layer.feature)
                         break;
                 }
-            }       
+            }     
+            n += 1;  
         });
 
         // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
@@ -1182,7 +1212,7 @@ L.DataClassification = L.GeoJSON.extend({
         classes.forEach((element, idx) => {
             validFeatures += element.featureCount;
         });
-        classes.nodataFeatureCount = values.length-validFeatures;
+        classes.nodataFeatureCount = features.length-validFeatures;
 
         //this._convertClassesToObjects();
 

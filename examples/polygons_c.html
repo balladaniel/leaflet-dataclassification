@@ -77,11 +77,11 @@
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
-			// Polygon features example. Attribute to test with: 'density2022'
+			// Polygon features example. Attribute to test with: 'population2022', 'areakm2', 'density2022'
 			fetch('data/polygons_nz_regions.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
-					if (feature.properties.name_1 && feature.properties.density2022) {
-						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>' + String(feature.properties.density2022)+' pop/km²');
+					if (feature.properties.name_1 && feature.properties.population2022) {
+						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>' + String(Math.round(feature.properties.population2022/feature.properties.areakm2 * 100)/100)+' pop/km²');
 						layer.on('mousemove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
@@ -92,7 +92,8 @@
 					style: {color: "white"},
 					mode: 'jenks',
 					classes: 5,
-					field: 'density2022',
+					field: 'population2022',
+					normalizeByField: 'areakm2',
 					colorRamp: 'Greens',
 					classRounding: 2,
 					legendTitle: 'Population density<br>(pop/km²)',
