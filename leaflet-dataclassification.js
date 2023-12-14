@@ -47,6 +47,7 @@ L.DataClassification = L.GeoJSON.extend({
                                                     // (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
         /*middlePointValue: 0,*/					// optional: adjust boundary value of middle classes (only for even classcount), useful for symmetric classification of diverging data around 0 for example. Only use a value within the original middle classes range.
         /*field: '',*/					            // target attribute field name. Case-sensitive!
+        /*normalizeByField: '',*/                   // attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
         legendTitle: '',					        // title for legend (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
         classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
         unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
@@ -69,7 +70,6 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     // variables for plugin scope
-    _values: [],
     _legends: [],
     _classes: [],
     _colors: [],
@@ -812,7 +812,6 @@ L.DataClassification = L.GeoJSON.extend({
         _nodataignore=this.options.noDataIgnore;
         var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
         var typeOfFeatures = 'unknown';
-        values = [];
         features = [];
         this.eachLayer(function (layer) {
             // gather info feature types in geojson 
@@ -864,6 +863,11 @@ L.DataClassification = L.GeoJSON.extend({
                 console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
             };
         })
+        console.debug('Feature types in GeoJSON:', features_info)
+        typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
+        console.debug('Dominant feature type in GeoJSON:', typeOfFeatures)
+
+        console.debug('Loaded values from GeoJSON (field: '+this._field+'):', features.map(a => a[this._field]));
 
         features.forEach((arrayItem, index) => {
             if (this._normalizeByField != null && arrayItem[this._field] != null && arrayItem[this._normalizeByField] != null) {
@@ -874,12 +878,10 @@ L.DataClassification = L.GeoJSON.extend({
         });
 
         this._noDataFound = _nodata;
-        this._values = values;
         this._features = features;
-        console.debug('Loaded values from GeoJSON (field: '+this._field+'):', this._values);	
-        console.debug('Feature types in GeoJSON:', features_info)
-        typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
-        console.debug('Dominant feature type in GeoJSON:', typeOfFeatures)
+        if (this._normalizeByField != null) {
+            console.debug('Loaded values from GeoJSON field: "'+this._field+'", after normalization by field: "'+this._normalizeByField+'"', features.map(a => a.finalvalue));
+        }	
 
         // if line color is overridden with L.Path style options, reflect that in Legend too
         if ((typeOfFeatures == 'LineString' || typeOfFeatures == 'MultiLineString')) {
@@ -966,8 +968,8 @@ L.DataClassification = L.GeoJSON.extend({
                 return;
             }
         }
+        values = features.map(a => a.finalvalue);
         if (classnum > 2 && classnum < this._features.length) {	
-            values = features.map(a => a.finalvalue);
             switch (mode) {
                 case 'jenks':	
                     classes = ss.jenks(values.filter((value) => value != null), classnum);
@@ -1067,7 +1069,6 @@ L.DataClassification = L.GeoJSON.extend({
                     console.debug('Sorted Stddev classes: ', classes);	
                     this._convertClassesToObjects();
 
-                    console.debug('down:', down, 'up:', up)
                     console.debug('down intervals:', down, 'up intervals:', up)
                     var interval_lower = (0.5 * -down);
                     classes.forEach(function (arrayItem) {
