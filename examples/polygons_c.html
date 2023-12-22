@@ -77,11 +77,15 @@
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
 
-			// Polygon features example. Attribute to test with: 'density2022'
+			// Polygon features example. Attribute to test with: 'population2022', 'areakm2', 'density2022'
 			fetch('data/polygons_nz_regions.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
-					if (feature.properties.name_1 && feature.properties.density2022) {
-						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>' + String(feature.properties.density2022)+' pop/km²');
+					if (feature.properties.name_1 && feature.properties.population2022) {
+						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>'+ 
+						'Population: '+feature.properties.population2022+'<br>'+
+						'Area: '+feature.properties.areakm2+' km²<br>'+
+						'<i>Normalized: '+String(Math.round(feature.properties.population2022/feature.properties.areakm2 * 100)/100)+
+						' pop/km²</i>');
 						layer.on('mousemove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
@@ -92,7 +96,8 @@
 					style: {color: "white"},
 					mode: 'jenks',
 					classes: 5,
-					field: 'density2022',
+					field: 'population2022',
+					normalizeByField: 'areakm2',
 					colorRamp: 'Greens',
 					classRounding: 2,
 					legendTitle: 'Population density<br>(pop/km²)',
@@ -106,18 +111,22 @@
 			infopanel.onAdd = function (map) {
 				var div = L.DomUtil.create('div', 'info');
 				div.innerHTML += 
-					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center;">' +
-						'<div style="font-weight: bold; margin-bottom: 5px;">' + 
-							'Leaflet-dataclassification plugin demo page: "polygons"' + 
+					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center; row-gap: 8px"">' +
+						'<div style="font-weight: bold;">' + 
+							'Leaflet-dataclassification plugin demo page: "polygons_color"' + 
 						'</div>'+ 
-						'<div style="justify-content: center; ">' +
+						'<div style="text-align: justify">' +
 							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>. '+
-							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of attribute values used. '+
+							'The attribute values are normalized on-the-go by an other field, based on which the classification is done. '+
+							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of both source and normalized values. '+
 							'<br><br>'+
+						'</div>'+ 
+						'<div>'+ 
 							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
 							'<br><br>'+
-							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'
+							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'+
 						'</div>'+ 
+							'<a href="https://github.com/balladaniel/leaflet-dataclassification"><img src="banner.png" style="max-width: 100%;"></img></a>'+
 					'</div>';
 				return div;
 			}

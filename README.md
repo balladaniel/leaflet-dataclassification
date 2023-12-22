@@ -20,12 +20,13 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 - Supports ColorBrewer2 color ramps and custom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
 - Various SVG shapes/symbols for Point features
 - For size/width based symbology, min and max values can be adjusted to create a telling visualization with distinguishable classes
+- Normalization by another attribute field
+- Rounding of class boundary values to *n* decimals or up/down to the nearest 10, 100, 1000 etc. numbers
 - Handling of null/nodata feature attributes
 - Legend generation with options for:
     - class order (ascending/descending)
     - legend header (title)
     - custom HTML templating of legend rows, including the display of feature counts in classes
-    - rounding of class boundary values to n decimals or up/down to the nearest 10, 100, 1000 etc. numbers
     - modifying class boundary values in legend by dividing/multiplying by a number (to easily change unit of measurement from m to km for example)
     - positioning (L.control options)
     - row gap adjustments
@@ -59,7 +60,7 @@ const layer = L.dataClassification(data, {
     // required:
     mode: 'quantile',
     classes: 4,
-    field: 'density',
+    field: 'population',
     // optional:					
     pointMode: 'size',
     pointSize: {min: 2, max: 10},
@@ -81,9 +82,10 @@ const layer = L.dataClassification(data, {
     reverseColorRamp: false,
     middlePointValue: 0,
     classRounding: 2,
+    normalizeByField: 'areakm2',
     legendTitle: 'Density (pop/km²)',
     legendPosition: 'bottomleft',
-	legendRowGap: 5,
+    legendRowGap: 5,
     legendAscending: false,	
     legendTemplate: {
         highest: '{low} and above [{count}]',
@@ -148,6 +150,7 @@ const layer = L.dataClassification(data, {
 - `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful when you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
 - `middlePointValue <number>`: adjust boundary value of middle classes (only when classifying into even classes). Useful for symmetric classification of diverging data around 0. Only use a value within the range of the two middle classes.    
 - `classRounding <integer>`: class boundary value rounding. When positive numbers are used for this option, class boundary values are rounded to x decimals, zero will round to whole numbers, while negative numbers will round values to the nearest 10, 100, 1000, etc. Example: with a setting of "1", a value of 254777.253 will get rounded up to 254777.3, with "0" it will be 254777, with "-2" it will become 254800. (default: null - no rounding happens, values are used as-is)
+- `normalizeByField <string>`: attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
 - `legendPosition <string>`: ['topleft'|'topright'|'bottomleft'|'bottomright'] legend position, L.control option. (default: 'bottomleft')
 - `legendRowGap <number>`: legend symbology row gap in pixels. You can also alter this in the attached CSS file. (default: 3)

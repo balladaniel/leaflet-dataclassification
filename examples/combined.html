@@ -26,7 +26,7 @@
 			
 			#map {
 				position: absolute;
-				margin:  auto;
+				margin: auto;
 				top: 0;
 				bottom: 0;
 				left: 0;
@@ -131,6 +131,7 @@
 					mode: 'quantile',
 					classes: 5,
 					field: 'density',
+					polygonMode: 'color',
 					colorRamp: 'YlGnBu',
 					noDataColor: '#505050',
 					legendAscending: false,
@@ -149,36 +150,51 @@
 			// Line features example. Attribute to test with: 'length'
 			fetch('data/rivers_yukon.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
-					layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + String(feature.properties.length)+' m');
+					layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + String(feature.properties.discharge)+' m³/s<br>'+ String(Math.round(feature.properties.discharge*35.3147))+' cuft/s');
 					layer.on('mousemove',e=>{
 						e.target.getTooltip().setLatLng(e.latlng);
 					});
+
+					// line highlighting
+					var origstyle;
+					function highlight(e) {
+						origstyle = {
+							weight: e.target.options.weight,
+							color: e.target.options.color
+						}
+						e.target.setStyle({
+							color: '#f22',
+						});
+					}
+					function resetStyle(e) {
+						e.target.setStyle(origstyle);
+					}
+					layer.on({
+						mouseover: highlight,
+						mouseout: resetStyle
+					});
+					// line highlighting end
 				}
 				window.testdata3 = L.dataClassification(d, {
 					mode: 'quantile',
 					classes: 4,
-					field: 'length',
+					field: 'discharge',
 					lineMode: 'width',
 					lineWidth: {
-						min: 3,
-						max: 10
+						min: 2,
+						max: 11
 					},
-					classRounding: -4,
-					legendTitle: 'River length (km)',
-					unitModifier: {
-						action: 'divide',
-						by: 1000
-					},
+					classRounding: -2,
+					legendTitle: 'Mean river discharge (m³/s)',
 					legendTemplate: {
 						highest: '{low} and above',
 						lowest: 'under {high}'
 					},
-    				attribution: "Rivers (10m scale): <a href='https://www.naturalearthdata.com/' target='_blank'>Natural Earth</a>",
+    				attribution: "Rivers (10m scale): <a href='https://www.naturalearthdata.com/' target='_blank'>Natural Earth</a>, Discharge data: <a href='https://www.usgs.gov/' target='_blank'>USGS</a>",
         			pane: 'front',			
 					onEachFeature: tooltip
 				}).addTo(map);
 			});
-			//testdata3.bringToFront();
 			
 			map.fitBounds([[17, -150],[68, -65]]);
 
@@ -186,19 +202,22 @@
 			infopanel.onAdd = function (map) {
 				var div = L.DomUtil.create('div', 'info');
 				div.innerHTML += 
-					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center;">' +
+					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center; row-gap: 8px">' +
 						'<div style="font-weight: bold; margin-bottom: 5px;">' + 
 							'Leaflet-dataclassification plugin demo page: "combined"' + 
 						'</div>'+ 
-						'<div style="justify-content: center; ">' +
+						'<div style="text-align: justify">' +
 							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i> for three layers simultaneously. '+
 							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of attribute values used. '+
 							'<br><i>Note: population density for North Dakota has been manually removed to showcase handling of Null data (nodata) in feature attributes.</i>'+
 							'<br><br>'+
+						'</div>'+ 
+						'<div>'+ 
 							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
 							'<br><br>'+
-							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'
+							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'+
 						'</div>'+ 
+							'<a href="https://github.com/balladaniel/leaflet-dataclassification" target="_blank"><img src="banner.png" style="max-width: 100%;"></img></a>'+
 					'</div>';
 				return div;
 			}

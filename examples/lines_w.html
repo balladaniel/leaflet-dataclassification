@@ -117,7 +117,7 @@
 						min: 2,
 						max: 12
 					},
-					//classRounding: -2,
+					classRounding: -2,
 					//unitModifier: {action: 'divide', by: 1000},
 					legendAscending: false,
 					legendTitle: 'Discharge (m³/s)',
@@ -130,18 +130,21 @@
 			infopanel.onAdd = function (map) {
 				var div = L.DomUtil.create('div', 'info');
 				div.innerHTML += 
-					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center;">' +
-						'<div style="font-weight: bold; margin-bottom: 5px;">' + 
+					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center; row-gap: 8px">' +
+						'<div style="font-weight: bold">' + 
 							'Leaflet-dataclassification plugin demo page: "lines_width"' + 
 						'</div>'+ 
-						'<div style="justify-content: center; ">' +
+						'<div style="text-align: justify">' +
 							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>. '+
 							'Feature tooltips on hover and feature highlighting (native features of Leaflet) were added to provide an easy check of attribute values used. '+
 							'<br><br>'+
+						'</div>'+ 
+						'<div>'+ 
 							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
 							'<br><br>'+
-							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'
+							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'+
 						'</div>'+ 
+							'<a href="https://github.com/balladaniel/leaflet-dataclassification"><img src="banner.png" style="max-width: 100%;"></img></a>'+
 					'</div>';
 				return div;
 			}
