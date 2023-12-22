@@ -21,12 +21,12 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 - Various SVG shapes/symbols for Point features
 - For size/width based symbology, min and max values can be adjusted to create a telling visualization with distinguishable classes
 - Normalization by another attribute field
+- Rounding of class boundary values to *n* decimals or up/down to the nearest 10, 100, 1000 etc. numbers
 - Handling of null/nodata feature attributes
 - Legend generation with options for:
     - class order (ascending/descending)
     - legend header (title)
     - custom HTML templating of legend rows, including the display of feature counts in classes
-    - rounding of class boundary values to n decimals or up/down to the nearest 10, 100, 1000 etc. numbers
     - modifying class boundary values in legend by dividing/multiplying by a number (to easily change unit of measurement from m to km for example)
     - positioning (L.control options)
     - row gap adjustments

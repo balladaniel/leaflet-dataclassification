@@ -81,7 +81,11 @@
 			fetch('data/polygons_nz_regions.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.name_1 && feature.properties.population2022) {
-						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>' + String(Math.round(feature.properties.population2022/feature.properties.areakm2 * 100)/100)+' pop/km²');
+						layer.bindTooltip('<b>' + feature.properties.name_1 + '</b><br>'+ 
+						'Population: '+feature.properties.population2022+'<br>'+
+						'Area: '+feature.properties.areakm2+' km²<br>'+
+						'<i>Normalized: '+String(Math.round(feature.properties.population2022/feature.properties.areakm2 * 100)/100)+
+						' pop/km²</i>');
 						layer.on('mousemove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
@@ -113,7 +117,8 @@
 						'</div>'+ 
 						'<div style="justify-content: center; ">' +
 							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>. '+
-							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of attribute values used. '+
+							'The attribute values are normalized on-the-go by an other field, based on which the classification is done. '+
+							'Feature tooltips on hover (native feature of Leaflet) were added to provide an easy check of both source and normalized values. '+
 							'<br><br>'+
 							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
 							'<br><br>'+
