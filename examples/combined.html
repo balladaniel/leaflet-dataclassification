@@ -154,6 +154,26 @@
 					layer.on('mousemove',e=>{
 						e.target.getTooltip().setLatLng(e.latlng);
 					});
+
+					// line highlighting
+					var origstyle;
+					function highlight(e) {
+						origstyle = {
+							weight: e.target.options.weight,
+							color: e.target.options.color
+						}
+						e.target.setStyle({
+							color: '#f22',
+						});
+					}
+					function resetStyle(e) {
+						e.target.setStyle(origstyle);
+					}
+					layer.on({
+						mouseover: highlight,
+						mouseout: resetStyle
+					});
+					// line highlighting end
 				}
 				window.testdata3 = L.dataClassification(d, {
 					mode: 'quantile',
