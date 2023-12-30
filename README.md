@@ -18,7 +18,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
     - standard deviation
     - logarithmic scale
     - manual
-- Supports ColorBrewer2 color ramps and c ustom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
+- Supports ColorBrewer2 color ramps and custom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
 - Various SVG shapes/symbols for Point features
 - For size/width based symbology, min and max values can be adjusted to create a telling visualization with distinguishable classes
 - Normalization by another attribute field
