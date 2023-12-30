@@ -46,3 +46,10 @@
 .legendAscNodata {
     order: -1
 }
+.legendfooter {
+    display: flex; 
+    font-size: 12px;
+    font-style: italic; 
+    justify-content: center; 
+    margin-top: 5px; 
+}

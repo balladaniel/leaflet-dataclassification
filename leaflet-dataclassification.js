@@ -17,7 +17,7 @@ L.DataClassification = L.GeoJSON.extend({
     options: {
         // NOTE: documentation in this object might not be up to date. Please always refer to the documentation on GitHub.
         // default options
-        mode: 'quantile',							// classification method: jenks, quantile, equalinterval, stddeviation (when using stddev, `classes` is ignored!), manual (when using manual, `classes` must be an array!)
+        mode: 'quantile',							// classification method: jenks, quantile, equalinterval, logarithmic, stddeviation (when using stddev, `classes` is ignored!), manual (when using manual, `classes` must be an array!)
         classes: 5,									// desired number of classes (min: 3, max: 10 or featurecount, whichever is lower)
         pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
         pointSize: {min: 2, max: 10},               // POINT FEATURES: when pointMode: "size", define min/max point circle radius (default min: 2, default max: 10, recommended max: 12)
@@ -49,6 +49,7 @@ L.DataClassification = L.GeoJSON.extend({
         /*field: '',*/					            // target attribute field name. Case-sensitive!
         /*normalizeByField: '',*/                   // attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
         legendTitle: '',					        // title for legend (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
+        legendFooter: null,					        // legend footer, italic and a smaller font by default (see attached css - .legendFooter class). HTML-markdown and CSS styling allowed. Hidden by default. (default: null)
         classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
         unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
         legendPosition: 'bottomleft',               // Legend position (L.control option: 'topleft', 'topright', 'bottomleft' or 'bottomright')
@@ -409,7 +410,7 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     /**
-     * Recommends an optimal "classRounding" parameter in a console message, when it was set too high. Basically the reverse of function _classPostProc_rounding().
+     * Recommends an optimal "classRounding" parameter in a console message, when it was set too extreme. Basically the reverse of function _classPostProc_rounding().
      * @param {integer} num - "classRounding" parameter set by user
      * @returns {integer} Optimal "classRounding" parameter to use. Goes out in a console warning later.
      */
@@ -436,7 +437,7 @@ L.DataClassification = L.GeoJSON.extend({
             // rounding up/down to 10s, 100s, 1000s etc.
             if (Math.max.apply(Math, classes.map(item => item.value)) < Math.pow(10,Math.abs(n))) {
                 // check if the highest class boundary value is higher than the requested nearest value 
-                // (requested -3, so 1000, while the highest class is 386.2 - this would yield useless rounded values for classes, with ~all classes between 0 and 0.)
+                // (requested -3, so 1000, while the maximum value is 386.2 - this would yield useless rounded values for classes, with ~all classes between 0 and 0.)
                 console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
                 ') is larger than the highest class boundary value (' + Math.max.apply(Math, classes.map(item => item.value)) + '). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
                 + this._classPostProc_roundinghelper(Math.max.apply(Math, classes.map(item => item.value))) + ' (optimal).');                
@@ -446,18 +447,43 @@ L.DataClassification = L.GeoJSON.extend({
                 // the highest class boundary value vs. requested nearest value being high enough might cause problems (lowest class does not belong to any features etc.).
                 console.warn('Class interval boundary rounding warning: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + ') might result in weird class boundaries and/or in the lowest class not belonging to any features on the map (class empty). Make sure the visualized data is correct on the map, otherwise, fix this by adjusting the "classRounding" option to ' + parseInt(n+1) + '.')
             }
+            if (Math.round(classes[1].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)) == Math.round(classes[2].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n))) {
+                // check if the lowest and lowest+1 class boundary would be the same after rounding
+                // (requested -1, so 10, with lowest class boundaries being 7.32 and 10.4 - since these both would get rounded to 10, this would yield a class that is defined between 10 and 10.)
+                console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
+                ') might yield empty classes or classes with the same boundaries after rounding. Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
+                + parseInt(this._classPostProc_roundinghelper(classes[1].value)-1) + ' (optimal).');       
+                return;
+            }
+            if (classes[1].value < Math.pow(10,Math.abs(n+1))) {
+                // check if the lowest class boundary value is smaller than the requested nearest value 
+                // (requested -2, so 100, while the upper value of the lowest class boundary is 7.32 - since this would get rounded to 0, this would yield useless rounded values for classes, with classes between 0 and 0 and similar.)
+                console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
+                ') is larger than the lowest class boundary value (' + classes[1].value + '). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
+                + parseInt(this._classPostProc_roundinghelper(classes[1].value)-2) + ' (optimal).');       
+                return;
+            }
             for (var i=1; i<classes.length; i++) {
                 // Lowest/highest class boundary value gets rounded up/down here, respectively. Done to avoid features with extreme attr. values
                 // (which should fall in the lowest/highest classes) falling in the 2nd lowest/highest class upon rounding.
                 if (i+1 == classes.length) {
-                    // highest class, round down
+                    // highest class, round down at all times
                     if (n >= this._classPostProc_roundinghelper(Math.max.apply(Math, classes.map(item => item.value))) ) {
                         classes[i].value = Math.floor(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
                     }
                 } else if (i == 1) {
-                    // lowest class, round up
                     if (n >= this._classPostProc_roundinghelper(classes[classes.length-1].value) ) {
-                        classes[i].value = Math.ceil(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                        // lowest class handling to make sure it does not stay empty or same as lowest+1, after rounding
+                        var rounded_round = Math.round(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                        var rounded_ip1_round = Math.round(classes[i+1].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                        if (rounded_round <= classes[0].value || rounded_round == rounded_ip1_round){
+                            console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
+                            ') might yield empty classes or classes with the same boundaries after rounding the lowest two class boundaries (' + classes[1].value + ' and ' + classes[2].value+'). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
+                            + parseInt(this._classPostProc_roundinghelper(classes[1].value)-1) + ' (optimal).'); 
+                            return;
+                        } else {   
+                            classes[i].value = rounded_round; 
+                        }
                     }
                 } else {
                     // midway classes
@@ -514,7 +540,7 @@ L.DataClassification = L.GeoJSON.extend({
         };
     },
 
-    _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures) {
+    _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures, footer) {
         svgCreator = this._svgCreator;
         legendPP_unitMod = this._legendPostProc_unitModifier;
         legendRowFormatter = this._legendRowFormatter;
@@ -556,10 +582,15 @@ L.DataClassification = L.GeoJSON.extend({
         
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'info legend');
+
             // legend title:
-            var titlediv = L.DomUtil.create('div', 'legendtitle');
-            titlediv.id = 'legendtitlediv';
-            titlediv.innerHTML += title;
+            if (title != null && title != '') {
+                var titlediv = L.DomUtil.create('div', 'legendtitle');
+                titlediv.id = 'legendtitlediv';
+                titlediv.innerHTML += title;
+                div.appendChild(titlediv);
+            }
+
             // legenditems container (symbology)
             var container = L.DomUtil.create('div', 'symbology');
             container.id = 'legendsymbologydiv';
@@ -569,10 +600,8 @@ L.DataClassification = L.GeoJSON.extend({
                 } else {
                     container.style['row-gap'] = rowgap;
                 }
-                (rowgap > 5 ? titlediv.style['margin-bottom'] = rowgap+'px' : '');  // If symbology row-gap is higher than 5, it looks better if title gets linearly distanced as well. Title div margin-bottom is 5 by default, we don't go lower than that. 
+                (rowgap > 5 && titlediv != null ? container.style['margin-top'] = rowgap+'px' : '');  // If symbology row-gap is higher than 5, it looks better if title gets linearly distanced as well. Title div margin-bottom is 5 by default, we don't go lower than that. 
             };
-            // append title first:
-            div.appendChild(titlediv);
             
             // symbology div fillup:
             if (typeOfFeatures == "MultiPoint" || typeOfFeatures == "Point") {
@@ -772,14 +801,21 @@ L.DataClassification = L.GeoJSON.extend({
                         break;
                 }
             }
-
             // reverse legend row order in ascending mode by reversing flex-direction
             if (asc) {
                 L.DomUtil.addClass(container, 'reverseOrder');
             }
-
             // append symbology content
             div.appendChild(container);
+
+            // legend footer (note):
+            if (footer != null && footer != '') {
+                var footerdiv = L.DomUtil.create('div', 'legendfooter');
+                footerdiv.id = 'legendfooterdiv';
+                footerdiv.innerHTML += footer;
+                div.appendChild(footerdiv);
+            }
+
             return div;
         };
 
@@ -926,7 +962,13 @@ L.DataClassification = L.GeoJSON.extend({
         if (this.options.legendTitle == 'hidden') {
             legendtitle = '';                    
         } else {
-            (this.options.legendTitle == '' ? legendtitle = this._field :legendtitle = this.options.legendTitle )
+            (this.options.legendTitle == '' ? legendtitle = this._field : legendtitle = this.options.legendTitle )
+        }; 	
+        var legendfooter;
+        if (this.options.legendFooter == 'hidden' || this.options.legendFooter == '') {
+            legendfooter = null;                    
+        } else {
+            legendfooter = this.options.legendFooter;
         }; 	
         var classrounding = this.options.classRounding;
         if (classrounding > 10) { // over 10
@@ -1087,24 +1129,40 @@ L.DataClassification = L.GeoJSON.extend({
                     });
                     success = true;
                     break;
-                // EXPERIMENTAL LOG
                 case 'logarithmic':
                     classes = [];
                     var minmax = ss.extent(values.filter((value) => value != null));
-                    console.debug('min:', minmax[0], ', max:', minmax[1])							
-                    for (var i = 0; i<classnum; i++) {
-                        var x = Math.pow(10, i);
-                        classes.push(x);
-                    }					
+                    console.debug('min:', minmax[0], ', max:', minmax[1])	
+
+                    var logdiff = Math.log(minmax[1]) - Math.log(minmax[0])
+                    if (Number.isNaN(logdiff)) {
+                        console.error('Logarithmic scale does not support negative values yet. (dataset minimum: '+minmax[0]+', maximum: '+minmax[1]+') Please use a different classification method for this dataset, or choose an other data attribute field that has no negative values. Classification failed, map was not generated properly.');
+                        return;
+                    };
+                    var logdiff_divided = logdiff / classnum;
+                    console.debug('logdiff', Math.log(minmax[1]) - Math.log(minmax[0]))
+                    console.debug('logdiff divided by classnum', logdiff_divided)
+                    var factor = Math.exp(logdiff_divided);
+                    console.debug('factor Math.exp(logdiff_divided):', factor)
+                    classes.push(minmax[0])
+                    for (var i = 1; i < classnum; i++) {
+                        classes.push(classes[classes.length - 1] * factor);
+                    }
+
+                    // round interval boundary values by default, since with logarithmic classes we get high precision floats
+                    if (classrounding == null) { classrounding = 2;}
+
                     console.debug('Logarithmic classes: ', classes);	
                     this._convertClassesToObjects();
                     success = true;
                     break;
                 default:
-                    console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "stddeviation", "manual" - when manual, `classes` must be an array!)')
+                    console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "stddeviation", "logarithmic", "manual" - when manual, `classes` must be an array!)')
             }
             // Classification success, proceed with generating colors
             if (success) {
+                console.debug('Classification success.');
+                console.debug('Generating color- and symbol property ranges for '+classes.length+' classes.');
                 try {
                     colors = chroma.scale(colorramp).colors(classes.length);
                 } catch (error) {
@@ -1159,6 +1217,7 @@ L.DataClassification = L.GeoJSON.extend({
 
         var n = 0;
 
+        console.debug('Applying symbology to map features.');
         // apply symbology to features
         this.eachLayer(function(layer) {
             if (layer.feature.properties[this._field] == null && nodataignore) {
@@ -1220,7 +1279,7 @@ L.DataClassification = L.GeoJSON.extend({
 
         //this._convertClassesToObjects();
 
-        this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, pointfillcolor);  // generate legend
+        this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, legendfooter);  // generate legend
 
         console.debug('L.dataClassification: Finished!')
         console.debug('------------------------------------')

@@ -16,8 +16,9 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
     - quantile (equal count)
     - equal interval
     - standard deviation
+    - logarithmic scale
     - manual
-- Supports ColorBrewer2 color ramps and custom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
+- Supports ColorBrewer2 color ramps and c ustom color ramps (thanks to [chroma.js](https://github.com/gka/chroma.js))
 - Various SVG shapes/symbols for Point features
 - For size/width based symbology, min and max values can be adjusted to create a telling visualization with distinguishable classes
 - Normalization by another attribute field
@@ -25,7 +26,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 - Handling of null/nodata feature attributes
 - Legend generation with options for:
     - class order (ascending/descending)
-    - legend header (title)
+    - legend header (title), footer
     - custom HTML templating of legend rows, including the display of feature counts in classes
     - modifying class boundary values in legend by dividing/multiplying by a number (to easily change unit of measurement from m to km for example)
     - positioning (L.control options)
@@ -84,6 +85,7 @@ const layer = L.dataClassification(data, {
     classRounding: 2,
     normalizeByField: 'areakm2',
     legendTitle: 'Density (pop/km²)',
+    legendFooter: '(additional info in footer)',
     legendPosition: 'bottomleft',
     legendRowGap: 5,
     legendAscending: false,	
@@ -105,7 +107,7 @@ const layer = L.dataClassification(data, {
 ```
 
 ### Required options 
-- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'stddeviation'|'manual'] classification method: natural break (Jenks), equal count (quantile), equal interval, standard deviation, manual. When using standard deviation, option `classes` is ignored. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
+- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'logarithmic'|'stddeviation'|'manual'] classification method: natural break (Jenks), equal count (quantile), equal interval, logarithmic scale, standard deviation, manual. When using standard deviation, option `classes` is ignored. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
 - `classes <integer|array>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.). If `mode` is manual, this must be an array of numbers (for example [0, 150, 200] would yield the following three classes: below 150, 150-200, above 200). 
 - `field <string>`: target attribute field name to base classification on. Case-sensitive!
 
@@ -152,6 +154,7 @@ const layer = L.dataClassification(data, {
 - `classRounding <integer>`: class boundary value rounding. When positive numbers are used for this option, class boundary values are rounded to x decimals, zero will round to whole numbers, while negative numbers will round values to the nearest 10, 100, 1000, etc. Example: with a setting of "1", a value of 254777.253 will get rounded up to 254777.3, with "0" it will be 254777, with "-2" it will become 254800. (default: null - no rounding happens, values are used as-is)
 - `normalizeByField <string>`: attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
+- `legendFooter <string>`: legend footer, centered, using a smaller italic font by default (customizble in CSS - .legendFooter class). HTML-markdown and CSS styling allowed. Hidden by default. (default: null)
 - `legendPosition <string>`: ['topleft'|'topright'|'bottomleft'|'bottomright'] legend position, L.control option. (default: 'bottomleft')
 - `legendRowGap <number>`: legend symbology row gap in pixels. You can also alter this in the attached CSS file. (default: 3)
 - `legendAscending <boolean>`: if true, value classes in legend will be ascending (low first, high last) (default: false)

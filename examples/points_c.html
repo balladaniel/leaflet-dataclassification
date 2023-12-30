@@ -88,11 +88,13 @@
 					pointMode: 'color',
 					colorRamp: 'YlOrRd',
 					classRounding: 2,
-					legendTitle: 'Diesel prices (€/l)<br>as of 7-Jul-2023 ',
+					legendTitle: 'Diesel prices (€/l)',
+					legendFooter: '(as of 7 July 2023)',
 					legendPosition: 'bottomright',
 					legendTemplate: {highest: '{low} and above', lowest: 'under {high}'},
     				attribution: "Diesel prices (7-Jul-2023): <a href='https://www.prix-carburants.gouv.fr/rubrique/opendata/'>Ministère de l'Economie, de l'Industrie et du Numérique</a>",
-					onEachFeature: tooltip
+					onEachFeature: tooltip,
+					legendRowGap: 2
 				}).addTo(map);
 				map.fitBounds(testdata.getBounds());
 			});
