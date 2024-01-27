@@ -29,6 +29,7 @@
     margin-right: 8px;
 }
 .legend svg {
+    margin-left: 4px;
     margin-right: 10px;
 }
 .legend .hatchPatch {

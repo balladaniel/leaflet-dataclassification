@@ -370,17 +370,17 @@ L.DataClassification = L.GeoJSON.extend({
         var svg;
         switch (options.shape) {
             case 'circle':
-                svg = '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                svg = '<svg width="25" height="25" viewBox="0 0 25 25">'+
                             '<circle cx="12.5" cy="12.5" r="'+options.size+'" style="stroke: black; fill: '+options.color+';"/>'+
                         '</svg>'
                 break;
             case 'square':
-                svg = '<svg width="25" height="25"  style="margin-left: 4px;">'+
+                svg = '<svg width="25" height="25">'+
                             '<rect x="'+(25-(options.size*2))/2+'" y="'+(25-(options.size*2))/2+'" height="'+options.size*2+'" width="'+options.size*2+'" style="stroke: black; fill: '+options.color+';"/>'+
                         '</svg>'
                 break;
             case 'diamond':
-                svg = '<svg width="30" height="30" style="margin-left: 4px;">'+
+                svg = '<svg width="30" height="30">'+
                             '<path d="M -'+options.size*1.4+' 0 L 0 -'+options.size*1.4+' L '+options.size*1.4+' 0 L 0 '+options.size*1.4+' Z" style="fill: '+options.color+'; stroke: black; transform: translateX(15px) translateY(15px);"/>'+
                         '</svg>'
                 break;
@@ -1228,24 +1228,29 @@ L.DataClassification = L.GeoJSON.extend({
                         var coords = layer.feature.geometry.coordinates;
                         var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
                         style.shape = ps;
-    
+                        var iconW = iconH = 25;
+                        (style.shape == 'diamond' ? iconW = iconH = 30 : '');   // 'diamond' has a 30x30px svg element in _svgCreator()
+
                         const svgIcon = L.divIcon({
                             html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
                             className: "",
-                            iconSize: [25, 25],
-                            iconAnchor: [17, 25/2],
+                            iconSize: [iconW, iconH],
+                            iconAnchor: [iconW/2, iconH/2],
                         });                
                         layer.setIcon(svgIcon);
                         break;
                     case "MultiPoint":
                         var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
+                        var iconW = iconH = 25;
+                        (style.shape == 'diamond' ? iconW = iconH = 30 : '');   // 'diamond' has a 30x30px svg element in _svgCreator()
+
                         var mpfeatures = layer._layers;
                         for (const property in mpfeatures) {
                             mpfeatures[property].setIcon(L.divIcon({
                                 html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
                                 className: "",
-                                iconSize: [25, 25],
-                                iconAnchor: [17, 25/2],
+                                iconSize: [iconW, iconH],
+                                iconAnchor: [iconW/2, iconH/2],
                             }));
                         }
                         break;
