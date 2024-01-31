@@ -379,8 +379,6 @@ L.DataClassification = L.GeoJSON.extend({
                 circle.setAttribute('cx', (options.size+strokeWidth));
                 circle.setAttribute('cy', (options.size+strokeWidth));
                 circle.setAttribute('r', options.size);
-                //circle.setAttribute('stroke', 'black');
-                //circle.setAttribute('stroke-width', '5');
                 circle.setAttribute('fill', options.color);
                 svg.appendChild(circle);
                 break;
@@ -391,8 +389,6 @@ L.DataClassification = L.GeoJSON.extend({
                 rect.setAttribute('y', strokeWidth);
                 rect.setAttribute('height', options.size*2);
                 rect.setAttribute('width', options.size*2);
-                //rect.setAttribute('stroke', 'black');
-                //rect.setAttribute('stroke-width', '5');
                 rect.setAttribute('fill', options.color);
                 svg.appendChild(rect);
                 break;
