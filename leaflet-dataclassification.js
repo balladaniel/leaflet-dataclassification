@@ -367,22 +367,40 @@ L.DataClassification = L.GeoJSON.extend({
     _svgCreator(options){
         (options.shape == null ? options.shape = 'circle' : '');			// default shape
         (options.size == null ? options.size = 8 : '');						// default size
-        var svg;
+        var strokeWidth = 1;
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('width', Math.ceil((options.size+strokeWidth)*2));
+        svg.setAttribute('height', Math.ceil((options.size+strokeWidth)*2));
+        svg.setAttribute('stroke', 'black');
+        svg.setAttribute('stroke-width', strokeWidth);
         switch (options.shape) {
             case 'circle':
-                svg = '<svg width="25" height="25" viewBox="0 0 25 25">'+
-                            '<circle cx="12.5" cy="12.5" r="'+options.size+'" style="stroke: black; fill: '+options.color+';"/>'+
-                        '</svg>'
+                var circle = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+                circle.setAttribute('cx', (options.size+strokeWidth));
+                circle.setAttribute('cy', (options.size+strokeWidth));
+                circle.setAttribute('r', options.size);
+                //circle.setAttribute('stroke', 'black');
+                //circle.setAttribute('stroke-width', '5');
+                circle.setAttribute('fill', options.color);
+                svg.appendChild(circle);
                 break;
             case 'square':
-                svg = '<svg width="25" height="25">'+
-                            '<rect x="'+(25-(options.size*2))/2+'" y="'+(25-(options.size*2))/2+'" height="'+options.size*2+'" width="'+options.size*2+'" style="stroke: black; fill: '+options.color+';"/>'+
-                        '</svg>'
+                svg.setAttribute('shape-rendering', 'crispEdges');
+                var rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+                rect.setAttribute('x', strokeWidth);
+                rect.setAttribute('y', strokeWidth);
+                rect.setAttribute('height', options.size*2);
+                rect.setAttribute('width', options.size*2);
+                //rect.setAttribute('stroke', 'black');
+                //rect.setAttribute('stroke-width', '5');
+                rect.setAttribute('fill', options.color);
+                svg.appendChild(rect);
                 break;
             case 'diamond':
-                svg = '<svg width="30" height="30">'+
-                            '<path d="M -'+options.size*1.4+' 0 L 0 -'+options.size*1.4+' L '+options.size*1.4+' 0 L 0 '+options.size*1.4+' Z" style="fill: '+options.color+'; stroke: black; transform: translateX(15px) translateY(15px);"/>'+
-                        '</svg>'
+                var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+                path.setAttribute('d', 'M '+strokeWidth+' '+parseFloat(options.size+strokeWidth)+' L '+parseFloat(options.size+strokeWidth)+' '+strokeWidth+' L '+parseFloat(options.size*2+strokeWidth)+' '+parseFloat(options.size+strokeWidth)+' L '+parseFloat(options.size+strokeWidth)+' '+parseFloat(options.size*2+strokeWidth)+' Z');
+                path.setAttribute('fill', options.color);
+                svg.appendChild(path);
                 break;
             /*case 'triangle':
                 svg = '<svg width="30" height="30" style="margin-left: 4px; scale: '+options.size/7.5+'; stroke: black; ">'+
@@ -623,15 +641,15 @@ L.DataClassification = L.GeoJSON.extend({
                                     break;
                             }
                             container.innerHTML +=
-                                '<div class="legendDataRow">'+
-                                    svgCreator({shape: ps, color: colors[i-1], size: prad})+
+                                '<div class="legendDataRow legendVarSizeDataRow">'+
+                                    svgCreator({shape: ps, color: colors[i-1], size: prad}).outerHTML+
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>';
                         }
                         if (nodata && !nodataignore) {
                             container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    svgCreator({shape: ps, color: nodatacolor, size: prad})+
+                                '<div id="nodatarow" class="legendDataRow legendVarSizeDataRow">'+
+                                    svgCreator({shape: ps, color: nodatacolor, size: prad}).outerHTML+
                                     '<div>'+lt_formattedNoData+'</div>'+
                                 '</div>'
                         }
@@ -652,17 +670,37 @@ L.DataClassification = L.GeoJSON.extend({
                                     break;
                             }
                             
+                            // Changed in v1.6.1, since the symbol SVGs no longer have a fixed 25x25/30x30 svg size,
+                            // but only a size that encapsulates the symbol itself (therefore those SVGs no longer can be insert as they are).
+                            // The following X/Y shift is only for use in the legend, creating a uniform 30x30 svg canvas for legend symbols:
+                            var symbol = svgCreator({shape: ps, size: radiuses[i-1], color: pfc});
+                            var origHeight = symbol.getAttribute('height');
+                            var origWidth = symbol.getAttribute('width');
+                            var shiftX = (30-origWidth)/2;
+                            var shiftY = (30-origHeight)/2;
+                            symbol.setAttribute('height', 30);
+                            symbol.setAttribute('width', 30);
+                            symbol.children[0].setAttribute('style', 'transform: translateX('+shiftX+'px) translateY('+shiftY+'px)');
+
                             // generate row with symbol
                             container.innerHTML += 
-                                '<div class="legendDataRow">'+
-                                    svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
+                                '<div class="legendDataRow legendVarSizeDataRow">'+
+                                    symbol.outerHTML+
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>';
                         }
                         if (nodata && !nodataignore) {
+                            var NDsymbol = svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor});
+                            var origHeight = NDsymbol.getAttribute('height');
+                            var origWidth = NDsymbol.getAttribute('width');
+                            var shiftX = (30-origWidth)/2;
+                            var shiftY = (30-origHeight)/2;
+                            NDsymbol.setAttribute('height', 30);
+                            NDsymbol.setAttribute('width', 30);
+                            NDsymbol.children[0].setAttribute('style', 'transform: translateX('+shiftX+'px) translateY('+shiftY+'px)');
                             container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
+                                '<div id="nodatarow" class="legendDataRow legendVarSizeDataRow">'+
+                                    NDsymbol.outerHTML+
                                     '<div>'+lt_formattedNoData+'</div>'+
                                 '</div>'
                         }
@@ -689,7 +727,7 @@ L.DataClassification = L.GeoJSON.extend({
 
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
                                     '</svg>' +
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
@@ -698,7 +736,7 @@ L.DataClassification = L.GeoJSON.extend({
                         if (nodata && !nodataignore) {
                             container.innerHTML +=
                                 '<div id="nodatarow" class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
                                     '</svg>' +
                                     '<div>'+lt_formattedNoData+'</div>'+
@@ -722,7 +760,7 @@ L.DataClassification = L.GeoJSON.extend({
                             }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
                                     '</svg>'+
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
@@ -731,7 +769,7 @@ L.DataClassification = L.GeoJSON.extend({
                         if (nodata && !nodataignore) {
                             container.innerHTML +=
                                 '<div id="nodatarow" class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
                                     '</svg>' +
                                     '<div>'+lt_formattedNoData+'</div>'+
@@ -1228,11 +1266,12 @@ L.DataClassification = L.GeoJSON.extend({
                         var coords = layer.feature.geometry.coordinates;
                         var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
                         style.shape = ps;
-                        var iconW = iconH = 25;
-                        (style.shape == 'diamond' ? iconW = iconH = 30 : '');   // 'diamond' has a 30x30px svg element in _svgCreator()
+                        var finalSymbol = svgCreator({shape: style.shape, size: style.radius, color: style.fillColor});
+                        iconW = finalSymbol.getAttribute('width');
+                        iconH = finalSymbol.getAttribute('height');
 
                         const svgIcon = L.divIcon({
-                            html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
+                            html: finalSymbol,
                             className: "",
                             iconSize: [iconW, iconH],
                             iconAnchor: [iconW/2, iconH/2],
@@ -1241,13 +1280,15 @@ L.DataClassification = L.GeoJSON.extend({
                         break;
                     case "MultiPoint":
                         var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
-                        var iconW = iconH = 25;
-                        (style.shape == 'diamond' ? iconW = iconH = 30 : '');   // 'diamond' has a 30x30px svg element in _svgCreator()
+                        style.shape = ps;
+                        var finalSymbol2 = svgCreator({shape: style.shape, size: style.radius, color: style.fillColor});
+                        iconW = finalSymbol2.getAttribute('width');
+                        iconH = finalSymbol2.getAttribute('height');
 
                         var mpfeatures = layer._layers;
                         for (const property in mpfeatures) {
                             mpfeatures[property].setIcon(L.divIcon({
-                                html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
+                                html: finalSymbol2.outerHTML,
                                 className: "",
                                 iconSize: [iconW, iconH],
                                 iconAnchor: [iconW/2, iconH/2],

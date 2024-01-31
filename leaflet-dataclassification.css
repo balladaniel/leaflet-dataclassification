@@ -22,6 +22,9 @@
     align-items: center;
     margin-right: 4px;
 }
+.legendVarSizeDataRow {
+    flex-basis: 26px;
+}
 .legend i {
     width: 18px;
     height: 18px;

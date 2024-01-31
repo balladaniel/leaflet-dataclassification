@@ -85,9 +85,6 @@
 				function tooltip(feature, layer) {
 					if (feature.properties.name && feature.properties.population) {
 						layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + parseInt(feature.properties.population));
-						layer.on('mousemove',e=>{
-							e.target.getTooltip().setLatLng(e.latlng);
-						});
 					}
 				}
 				window.testdata2 = L.dataClassification(d, {
@@ -96,8 +93,8 @@
 					field: 'population',
 					pointMode: 'size',
 					pointSize: {
-						min: 3.7,
-						max: 12
+						min: 3.5,
+						max: 14
 					},
 					classRounding: -4,
 					legendTitle: 'Population of capitals',
