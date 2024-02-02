@@ -369,6 +369,7 @@ L.DataClassification = L.GeoJSON.extend({
         (options.size == null ? options.size = 8 : '');						// default size
         var strokeWidth = 1;
         var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('style', 'display: block'); // affects only svgs less than 14x14px in size, otherwise those are misplaced on marker: https://stackoverflow.com/questions/75342672/leaflet-small-divicons-less-than-14px-do-not-align-at-center-of-point
         svg.setAttribute('width', Math.ceil((options.size+strokeWidth)*2));
         svg.setAttribute('height', Math.ceil((options.size+strokeWidth)*2));
         svg.setAttribute('stroke', 'black');
@@ -876,6 +877,8 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     _classify(map) {
+        var timerGlobalStart = Date.now();
+
         _field=this.options.field;
         _normalizeByField=this.options.normalizeByField;
         _nodata=this._noDataFound;
@@ -883,6 +886,8 @@ L.DataClassification = L.GeoJSON.extend({
         var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
         var typeOfFeatures = 'unknown';
         features = [];
+
+        var timerLoadValuesStart = Date.now();
         this.eachLayer(function (layer) {
             // gather info feature types in geojson 
             switch (layer.feature.geometry.type) {
@@ -933,12 +938,14 @@ L.DataClassification = L.GeoJSON.extend({
                 console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
             };
         })
+        var timerLoadValuesEnd = Date.now();
         console.debug('Feature types in GeoJSON:', features_info)
         typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
         console.debug('Dominant feature type in GeoJSON:', typeOfFeatures)
 
         console.debug('Loaded values from GeoJSON (field: '+this._field+'):', features.map(a => a[this._field]));
 
+        var timerNormalizationStart = Date.now();
         features.forEach((arrayItem, index) => {
             if (this._normalizeByField != null && arrayItem[this._field] != null && arrayItem[this._normalizeByField] != null) {
                 arrayItem.finalvalue = arrayItem[this._field]/arrayItem[this._normalizeByField];
@@ -946,6 +953,7 @@ L.DataClassification = L.GeoJSON.extend({
                 arrayItem.finalvalue = arrayItem[this._field];
             }
         });
+        var timerNormalizationEnd = Date.now();
 
         this._noDataFound = _nodata;
         this._features = features;
@@ -1021,6 +1029,7 @@ L.DataClassification = L.GeoJSON.extend({
         this._noDataColor = this.options.noDataColor;
         this._noDataIgnore = this.options.noDataIgnore;
 
+        var timerClsfStart = Date.now();
         // classification process
         var success = false;
         if (mode == 'manual') {
@@ -1193,6 +1202,9 @@ L.DataClassification = L.GeoJSON.extend({
                 default:
                     console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "stddeviation", "logarithmic", "manual" - when manual, `classes` must be an array!)')
             }
+            var timerClsfEnd = Date.now();
+
+            var timerGenColorsStart = Date.now();
             // Classification success, proceed with generating colors
             if (success) {
                 console.debug('Classification success.');
@@ -1209,6 +1221,8 @@ L.DataClassification = L.GeoJSON.extend({
                     colors.reverse(); 
                 };
             }
+            var timerGenColorsEnd = Date.now();
+            var timerGenRangesStart = Date.now();
             // Generate symbol property ranges (size/width/hatch classes):
             if (mode_point == "size") {
                 this._pointMode_size_radiuses(pointSize);
@@ -1219,6 +1233,7 @@ L.DataClassification = L.GeoJSON.extend({
             if (mode_polygon == "hatch") {
                 this._polygonMode_hatch(polygonHatch);
             }
+            var timerGenRangesEnd = Date.now();
             // Middlepoint value handling:
             if (middlepoint != null && classes.length % 2 == 0) {
                 console.debug('Adjusting middle classes to value: ', middlepoint);
@@ -1230,6 +1245,7 @@ L.DataClassification = L.GeoJSON.extend({
             console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
             return;
         };
+
         this._classes = classes;
         svgCreator = this._svgCreator;
         ps = this._pointShape;
@@ -1251,6 +1267,7 @@ L.DataClassification = L.GeoJSON.extend({
 
         var n = 0;
 
+        var timerSymbologyStart = Date.now();
         console.debug('Applying symbology to map features.');
         // apply symbology to features
         this.eachLayer(function(layer) {
@@ -1311,6 +1328,7 @@ L.DataClassification = L.GeoJSON.extend({
                 n += 1;  
             }     
         });
+        var timerSymbologyEnd = Date.now();
 
         // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
         var validFeatures = 0;
@@ -1321,9 +1339,29 @@ L.DataClassification = L.GeoJSON.extend({
 
         //this._convertClassesToObjects();
 
+        var timerLegendStart = Date.now();
         this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, legendfooter);  // generate legend
+        var timerLegendEnd = Date.now();
 
         console.debug('L.dataClassification: Finished!')
+        var timerGlobalEnd = Date.now();
+
+        var showTimeBreakdown = false;
+        if (showTimeBreakdown) {
+            // timing breakdown (ms)
+            console.group('Processing time breakdown (ms):')
+            console.table({
+                'Loading values': (timerLoadValuesEnd - timerLoadValuesStart),
+                'Data normalization': (timerNormalizationEnd - timerNormalizationStart),
+                'Generating classes': (timerClsfEnd - timerClsfStart),
+                'Generating colors': (timerGenColorsEnd - timerGenColorsStart),
+                'Generating symbol size ranges': (timerGenRangesEnd - timerGenRangesStart),
+                'Applying symbology based on classes': (timerSymbologyEnd - timerSymbologyStart),
+                'Generating legend': (timerLegendEnd - timerLegendStart),
+                'TOTAL PROCESS TIME for this layer': (timerGlobalEnd - timerGlobalStart)
+            });
+            console.groupEnd()
+        }
         console.debug('------------------------------------')
     },
 
