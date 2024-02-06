@@ -35,19 +35,20 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
 ## Demo
 All features in the examples listed here have binded tooltips (a default Leaflet feature) for an easier check of attribute values.
 - combined (three layers): [./examples/combined.html](https://balladaniel.github.io/leaflet-dataclassification/examples/combined.html)
-- points (color): [./examples/points_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_c.html)
-- points (size, with diamond-shaped symbols): [./examples/points_s.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_s.html)
-- lines (color): [./examples/lines_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_c.html)
-- lines (width): [./examples/lines_w.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_w.html)
-- polygons (color): [./examples/polygons_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c.html)
-- polygons (hatch fill, with both width/angle as distinction): [./examples/polygons_h.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_h.html)
+- points (color, 92 points): [./examples/points_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_c.html)
+- points (size, 471 points with diamond-shaped symbols): [./examples/points_s.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_s.html)
+- lines (color, 4879 lines): [./examples/lines_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_c.html)
+- lines (width, 109 lines): [./examples/lines_w.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_w.html)
+- polygons (color, 16 polygons): [./examples/polygons_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c.html)
+- polygons (color 2, 3220 polygons): [./examples/polygons_c2.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c2.html)
+- polygons (hatch fill, with both width/angle as distinction, 334 polygons): [./examples/polygons_h.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_h.html)
 
 ## Requirements
 - [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v1.9.4)
 ### External dependencies
 - [simple-statistics.js](https://github.com/simple-statistics/simple-statistics) (tested with v7.8.0)
 - [chroma.js](https://github.com/gka/chroma.js) (tested with v2.4.0)
-- [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass)
+- [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass) (only if you intend to use hatch pattern fills for polygons)
 
 Include dependencies plus `leaflet-dataclassification.css` and `leaflet-dataclassification.js` in your code. You can also link them through GitHub Pages:
 ``` html

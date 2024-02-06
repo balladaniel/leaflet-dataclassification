@@ -105,6 +105,7 @@
 					noDataColor: 'lightgrey',
 					classRounding: 0,
 					legendTitle: '2018 Life expectancy<br>at birth (years)',
+					legendFooter: 'NUTS 2 regions',
     				attribution: "<a href='https://ec.europa.eu/eurostat/web/products-datasets/-/tgs00101' target='_blank'>Data: Life expectancy at birth (NUTS 2), Eurostat</a>",
 					onEachFeature: tooltip,
 					polygonHatch: {
@@ -125,7 +126,7 @@
 			infopanel.onAdd = function (map) {
 				var div = L.DomUtil.create('div', 'info');
 				div.innerHTML += 
-					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center; row-gap: 8px">' +
+					'<div style="display: flex; flex-direction: column; max-width: 505px; text-align: center; row-gap: 8px">' +
 						'<div style="font-weight: bold;">' + 
 							'Leaflet-dataclassification plugin demo page: "polygons_hatch"' + 
 						'</div>'+ 
@@ -137,7 +138,9 @@
 						'<div>'+
 							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
 							'<br><br>'+
-							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'+
+							'Demos: <a href="./combined.html">combined</a>, <a href="./points_c.html">points_c</a>, <a href="./points_s.html">points_s</a>, <a href="./lines_c.html">lines_c</a>, <a href="./lines_w.html">lines_w</a>, <a href="./polygons_c.html">polygons_c</a>, <a href="./polygons_c2.html">polygons_c2</a>'+
+							'<br><br>'+
+							'Project page: <b><a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a></b>'+
 						'</div>'+ 
 						'<a href="https://github.com/balladaniel/leaflet-dataclassification"><img src="banner.png" style="max-width: 100%;"></img></a>'+
 					'</div>';

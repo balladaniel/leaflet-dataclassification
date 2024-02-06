@@ -367,22 +367,37 @@ L.DataClassification = L.GeoJSON.extend({
     _svgCreator(options){
         (options.shape == null ? options.shape = 'circle' : '');			// default shape
         (options.size == null ? options.size = 8 : '');						// default size
-        var svg;
+        var strokeWidth = 1;
+        var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute('style', 'display: block'); // affects only svgs less than 14x14px in size, otherwise those are misplaced on marker: https://stackoverflow.com/questions/75342672/leaflet-small-divicons-less-than-14px-do-not-align-at-center-of-point
+        svg.setAttribute('width', Math.ceil((options.size+strokeWidth)*2));
+        svg.setAttribute('height', Math.ceil((options.size+strokeWidth)*2));
+        svg.setAttribute('stroke', 'black');
+        svg.setAttribute('stroke-width', strokeWidth);
         switch (options.shape) {
             case 'circle':
-                svg = '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
-                            '<circle cx="12.5" cy="12.5" r="'+options.size+'" style="stroke: black; fill: '+options.color+';"/>'+
-                        '</svg>'
+                var circle = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+                circle.setAttribute('cx', (options.size+strokeWidth));
+                circle.setAttribute('cy', (options.size+strokeWidth));
+                circle.setAttribute('r', options.size);
+                circle.setAttribute('fill', options.color);
+                svg.appendChild(circle);
                 break;
             case 'square':
-                svg = '<svg width="25" height="25"  style="margin-left: 4px;">'+
-                            '<rect x="'+(25-(options.size*2))/2+'" y="'+(25-(options.size*2))/2+'" height="'+options.size*2+'" width="'+options.size*2+'" style="stroke: black; fill: '+options.color+';"/>'+
-                        '</svg>'
+                svg.setAttribute('shape-rendering', 'crispEdges');
+                var rect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+                rect.setAttribute('x', strokeWidth);
+                rect.setAttribute('y', strokeWidth);
+                rect.setAttribute('height', options.size*2);
+                rect.setAttribute('width', options.size*2);
+                rect.setAttribute('fill', options.color);
+                svg.appendChild(rect);
                 break;
             case 'diamond':
-                svg = '<svg width="30" height="30" style="margin-left: 4px;">'+
-                            '<path d="M -'+options.size*1.4+' 0 L 0 -'+options.size*1.4+' L '+options.size*1.4+' 0 L 0 '+options.size*1.4+' Z" style="fill: '+options.color+'; stroke: black; transform: translateX(15px) translateY(15px);"/>'+
-                        '</svg>'
+                var path = document.createElementNS("http://www.w3.org/2000/svg", 'path');
+                path.setAttribute('d', 'M '+strokeWidth+' '+parseFloat(options.size+strokeWidth)+' L '+parseFloat(options.size+strokeWidth)+' '+strokeWidth+' L '+parseFloat(options.size*2+strokeWidth)+' '+parseFloat(options.size+strokeWidth)+' L '+parseFloat(options.size+strokeWidth)+' '+parseFloat(options.size*2+strokeWidth)+' Z');
+                path.setAttribute('fill', options.color);
+                svg.appendChild(path);
                 break;
             /*case 'triangle':
                 svg = '<svg width="30" height="30" style="margin-left: 4px; scale: '+options.size/7.5+'; stroke: black; ">'+
@@ -623,15 +638,15 @@ L.DataClassification = L.GeoJSON.extend({
                                     break;
                             }
                             container.innerHTML +=
-                                '<div class="legendDataRow">'+
-                                    svgCreator({shape: ps, color: colors[i-1], size: prad})+
+                                '<div class="legendDataRow legendVarSizeDataRow">'+
+                                    svgCreator({shape: ps, color: colors[i-1], size: prad}).outerHTML+
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>';
                         }
                         if (nodata && !nodataignore) {
                             container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    svgCreator({shape: ps, color: nodatacolor, size: prad})+
+                                '<div id="nodatarow" class="legendDataRow legendVarSizeDataRow">'+
+                                    svgCreator({shape: ps, color: nodatacolor, size: prad}).outerHTML+
                                     '<div>'+lt_formattedNoData+'</div>'+
                                 '</div>'
                         }
@@ -652,17 +667,37 @@ L.DataClassification = L.GeoJSON.extend({
                                     break;
                             }
                             
+                            // Changed in v1.6.1, since the symbol SVGs no longer have a fixed 25x25/30x30 svg size,
+                            // but only a size that encapsulates the symbol itself (therefore those SVGs no longer can be insert as they are).
+                            // The following X/Y shift is only for use in the legend, creating a uniform 30x30 svg canvas for legend symbols:
+                            var symbol = svgCreator({shape: ps, size: radiuses[i-1], color: pfc});
+                            var origHeight = symbol.getAttribute('height');
+                            var origWidth = symbol.getAttribute('width');
+                            var shiftX = (30-origWidth)/2;
+                            var shiftY = (30-origHeight)/2;
+                            symbol.setAttribute('height', 30);
+                            symbol.setAttribute('width', 30);
+                            symbol.children[0].setAttribute('style', 'transform: translateX('+shiftX+'px) translateY('+shiftY+'px)');
+
                             // generate row with symbol
                             container.innerHTML += 
-                                '<div class="legendDataRow">'+
-                                    svgCreator({shape: ps, size: radiuses[i-1], color: pfc})+
+                                '<div class="legendDataRow legendVarSizeDataRow">'+
+                                    symbol.outerHTML+
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>';
                         }
                         if (nodata && !nodataignore) {
+                            var NDsymbol = svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor});
+                            var origHeight = NDsymbol.getAttribute('height');
+                            var origWidth = NDsymbol.getAttribute('width');
+                            var shiftX = (30-origWidth)/2;
+                            var shiftY = (30-origHeight)/2;
+                            NDsymbol.setAttribute('height', 30);
+                            NDsymbol.setAttribute('width', 30);
+                            NDsymbol.children[0].setAttribute('style', 'transform: translateX('+shiftX+'px) translateY('+shiftY+'px)');
                             container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor})+
+                                '<div id="nodatarow" class="legendDataRow legendVarSizeDataRow">'+
+                                    NDsymbol.outerHTML+
                                     '<div>'+lt_formattedNoData+'</div>'+
                                 '</div>'
                         }
@@ -689,7 +724,7 @@ L.DataClassification = L.GeoJSON.extend({
 
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
                                     '</svg>' +
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
@@ -698,7 +733,7 @@ L.DataClassification = L.GeoJSON.extend({
                         if (nodata && !nodataignore) {
                             container.innerHTML +=
                                 '<div id="nodatarow" class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
                                     '</svg>' +
                                     '<div>'+lt_formattedNoData+'</div>'+
@@ -722,7 +757,7 @@ L.DataClassification = L.GeoJSON.extend({
                             }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
                                     '</svg>'+
                                     '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
@@ -731,7 +766,7 @@ L.DataClassification = L.GeoJSON.extend({
                         if (nodata && !nodataignore) {
                             container.innerHTML +=
                                 '<div id="nodatarow" class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25" style="margin-left: 4px;">'+
+                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
                                         '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
                                     '</svg>' +
                                     '<div>'+lt_formattedNoData+'</div>'+
@@ -842,6 +877,8 @@ L.DataClassification = L.GeoJSON.extend({
     },
 
     _classify(map) {
+        var timerGlobalStart = Date.now();
+
         _field=this.options.field;
         _normalizeByField=this.options.normalizeByField;
         _nodata=this._noDataFound;
@@ -849,6 +886,8 @@ L.DataClassification = L.GeoJSON.extend({
         var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
         var typeOfFeatures = 'unknown';
         features = [];
+
+        var timerLoadValuesStart = Date.now();
         this.eachLayer(function (layer) {
             // gather info feature types in geojson 
             switch (layer.feature.geometry.type) {
@@ -899,12 +938,14 @@ L.DataClassification = L.GeoJSON.extend({
                 console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
             };
         })
+        var timerLoadValuesEnd = Date.now();
         console.debug('Feature types in GeoJSON:', features_info)
         typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
         console.debug('Dominant feature type in GeoJSON:', typeOfFeatures)
 
         console.debug('Loaded values from GeoJSON (field: '+this._field+'):', features.map(a => a[this._field]));
 
+        var timerNormalizationStart = Date.now();
         features.forEach((arrayItem, index) => {
             if (this._normalizeByField != null && arrayItem[this._field] != null && arrayItem[this._normalizeByField] != null) {
                 arrayItem.finalvalue = arrayItem[this._field]/arrayItem[this._normalizeByField];
@@ -912,6 +953,7 @@ L.DataClassification = L.GeoJSON.extend({
                 arrayItem.finalvalue = arrayItem[this._field];
             }
         });
+        var timerNormalizationEnd = Date.now();
 
         this._noDataFound = _nodata;
         this._features = features;
@@ -987,6 +1029,7 @@ L.DataClassification = L.GeoJSON.extend({
         this._noDataColor = this.options.noDataColor;
         this._noDataIgnore = this.options.noDataIgnore;
 
+        var timerClsfStart = Date.now();
         // classification process
         var success = false;
         if (mode == 'manual') {
@@ -1159,6 +1202,9 @@ L.DataClassification = L.GeoJSON.extend({
                 default:
                     console.error('Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "stddeviation", "logarithmic", "manual" - when manual, `classes` must be an array!)')
             }
+            var timerClsfEnd = Date.now();
+
+            var timerGenColorsStart = Date.now();
             // Classification success, proceed with generating colors
             if (success) {
                 console.debug('Classification success.');
@@ -1175,6 +1221,8 @@ L.DataClassification = L.GeoJSON.extend({
                     colors.reverse(); 
                 };
             }
+            var timerGenColorsEnd = Date.now();
+            var timerGenRangesStart = Date.now();
             // Generate symbol property ranges (size/width/hatch classes):
             if (mode_point == "size") {
                 this._pointMode_size_radiuses(pointSize);
@@ -1185,6 +1233,7 @@ L.DataClassification = L.GeoJSON.extend({
             if (mode_polygon == "hatch") {
                 this._polygonMode_hatch(polygonHatch);
             }
+            var timerGenRangesEnd = Date.now();
             // Middlepoint value handling:
             if (middlepoint != null && classes.length % 2 == 0) {
                 console.debug('Adjusting middle classes to value: ', middlepoint);
@@ -1196,6 +1245,7 @@ L.DataClassification = L.GeoJSON.extend({
             console.error('Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
             return;
         };
+
         this._classes = classes;
         svgCreator = this._svgCreator;
         ps = this._pointShape;
@@ -1217,6 +1267,7 @@ L.DataClassification = L.GeoJSON.extend({
 
         var n = 0;
 
+        var timerSymbologyStart = Date.now();
         console.debug('Applying symbology to map features.');
         // apply symbology to features
         this.eachLayer(function(layer) {
@@ -1228,24 +1279,32 @@ L.DataClassification = L.GeoJSON.extend({
                         var coords = layer.feature.geometry.coordinates;
                         var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
                         style.shape = ps;
-    
+                        var finalSymbol = svgCreator({shape: style.shape, size: style.radius, color: style.fillColor});
+                        iconW = finalSymbol.getAttribute('width');
+                        iconH = finalSymbol.getAttribute('height');
+
                         const svgIcon = L.divIcon({
-                            html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
+                            html: finalSymbol,
                             className: "",
-                            iconSize: [25, 25],
-                            iconAnchor: [17, 25/2],
+                            iconSize: [iconW, iconH],
+                            iconAnchor: [iconW/2, iconH/2],
                         });                
                         layer.setIcon(svgIcon);
                         break;
                     case "MultiPoint":
                         var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
+                        style.shape = ps;
+                        var finalSymbol2 = svgCreator({shape: style.shape, size: style.radius, color: style.fillColor});
+                        iconW = finalSymbol2.getAttribute('width');
+                        iconH = finalSymbol2.getAttribute('height');
+
                         var mpfeatures = layer._layers;
                         for (const property in mpfeatures) {
                             mpfeatures[property].setIcon(L.divIcon({
-                                html: svgCreator({shape: style.shape, size: style.radius, color: style.fillColor}),
+                                html: finalSymbol2.outerHTML,
                                 className: "",
-                                iconSize: [25, 25],
-                                iconAnchor: [17, 25/2],
+                                iconSize: [iconW, iconH],
+                                iconAnchor: [iconW/2, iconH/2],
                             }));
                         }
                         break;
@@ -1269,6 +1328,7 @@ L.DataClassification = L.GeoJSON.extend({
                 n += 1;  
             }     
         });
+        var timerSymbologyEnd = Date.now();
 
         // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
         var validFeatures = 0;
@@ -1279,9 +1339,29 @@ L.DataClassification = L.GeoJSON.extend({
 
         //this._convertClassesToObjects();
 
+        var timerLegendStart = Date.now();
         this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, legendfooter);  // generate legend
+        var timerLegendEnd = Date.now();
 
         console.debug('L.dataClassification: Finished!')
+        var timerGlobalEnd = Date.now();
+
+        var showTimeBreakdown = false;
+        if (showTimeBreakdown) {
+            // timing breakdown (ms)
+            console.group('Processing time breakdown (ms):')
+            console.table({
+                'Loading values': (timerLoadValuesEnd - timerLoadValuesStart),
+                'Data normalization': (timerNormalizationEnd - timerNormalizationStart),
+                'Generating classes': (timerClsfEnd - timerClsfStart),
+                'Generating colors': (timerGenColorsEnd - timerGenColorsStart),
+                'Generating symbol size ranges': (timerGenRangesEnd - timerGenRangesStart),
+                'Applying symbology based on classes': (timerSymbologyEnd - timerSymbologyStart),
+                'Generating legend': (timerLegendEnd - timerLegendStart),
+                'TOTAL PROCESS TIME for this layer': (timerGlobalEnd - timerGlobalStart)
+            });
+            console.groupEnd()
+        }
         console.debug('------------------------------------')
     },
 

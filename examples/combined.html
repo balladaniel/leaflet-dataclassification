@@ -12,10 +12,11 @@
 
 		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
-		<link rel="stylesheet" href="../leaflet-dataclassification.css" />				
+		<link rel="stylesheet" href="../leaflet-dataclassification.css" />	
+					
 		<!-- dependencies locally: -->
-		<script src="../lib/simple-statistics.min.js"></script>
-		<script src="../lib/chroma.min.js"></script>
+		<script src="../lib/simple-statistics.min.js"></script>		<!-- https://github.com/simple-statistics/simple-statistics -->
+		<script src="../lib/chroma.min.js"></script>				<!-- https://github.com/gka/chroma.js -->
 		
 		<style>
 			html, body {
@@ -85,9 +86,6 @@
 				function tooltip(feature, layer) {
 					if (feature.properties.name && feature.properties.population) {
 						layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + parseInt(feature.properties.population));
-						layer.on('mousemove',e=>{
-							e.target.getTooltip().setLatLng(e.latlng);
-						});
 					}
 				}
 				window.testdata2 = L.dataClassification(d, {
@@ -96,8 +94,8 @@
 					field: 'population',
 					pointMode: 'size',
 					pointSize: {
-						min: 3.7,
-						max: 12
+						min: 3.5,
+						max: 14
 					},
 					classRounding: -4,
 					legendTitle: 'Population of capitals',
@@ -197,13 +195,13 @@
 				}).addTo(map);
 			});
 			
-			map.fitBounds([[17, -150],[68, -65]]);
+			map.fitBounds([[17, -140],[68, -65]]);
 
 			var infopanel = L.control({position: 'bottomright'});
 			infopanel.onAdd = function (map) {
 				var div = L.DomUtil.create('div', 'info');
 				div.innerHTML += 
-					'<div style="display: flex; flex-direction: column; max-width: 500px; text-align: center; row-gap: 8px">' +
+					'<div style="display: flex; flex-direction: column; max-width: 515px; text-align: center; row-gap: 8px">' +
 						'<div style="font-weight: bold; margin-bottom: 5px;">' + 
 							'Leaflet-dataclassification plugin demo page: "combined"' + 
 						'</div>'+ 
@@ -216,7 +214,9 @@
 						'<div>'+ 
 							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
 							'<br><br>'+
-							'Project page: <a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a>'+
+							'Demos: <a href="./points_c.html">points_c</a>, <a href="./points_s.html">points_s</a>, <a href="./lines_c.html">lines_c</a>, <a href="./lines_w.html">lines_w</a>, <a href="./polygons_c.html">polygons_c</a>, <a href="./polygons_c2.html">polygons_c2</a>, <a href="./polygons_h.html">polygons_h</a>'+
+							'<br><br>'+
+							'Project page: <b><a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a></b>'+
 						'</div>'+ 
 							'<a href="https://github.com/balladaniel/leaflet-dataclassification" target="_blank"><img src="banner.png" style="max-width: 100%;"></img></a>'+
 					'</div>';

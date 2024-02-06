@@ -22,6 +22,9 @@
     align-items: center;
     margin-right: 4px;
 }
+.legendVarSizeDataRow {
+    flex-basis: 26px;
+}
 .legend i {
     width: 18px;
     height: 18px;
@@ -29,6 +32,7 @@
     margin-right: 8px;
 }
 .legend svg {
+    margin-left: 4px;
     margin-right: 10px;
 }
 .legend .hatchPatch {
