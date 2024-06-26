@@ -172,3 +172,10 @@ const layer = L.dataClassification(data, {
 Hatch fill patterns provided by [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass). (Gede, M.: Hatch Fill on Webmaps – to Do or Not to Do, and How to Do, Abstr. Int. Cartogr. Assoc., 5, 48, https://doi.org/10.5194/ica-abs-5-48-2022, 2022.)
 
 ![Screenshot of different hatch fill pattern modes (distinctionMode option). Samples.](screenshots_hatchfill.png)
+
+## How to cite
+If you happen to use the plugin in connection with a scientific publication, please refer to: 
+
+**Balla, D. and Gede, M.: Beautiful thematic maps in Leaflet with automatic data classification, Int. Arch. Photogramm. Remote Sens. Spatial Inf. Sci., XLVIII-4/W12-2024, 3–10, https://doi.org/10.5194/isprs-archives-XLVIII-4-W12-2024-3-2024, 2024.**
+
+The publication gives an overview of features offered (and not offered) by Leaflet specifically for creating thematic maps and it also includes a basic performance assessment of the plugin.
