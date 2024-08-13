@@ -10,7 +10,7 @@
  * project page: https://github.com/balladaniel/leaflet-dataclassification 
  *
  * MIT License
- * Copyright (c) 2023 Dániel Balla
+ * Copyright (c) 2024 Dániel Balla
 */
 
 L.DataClassification = L.GeoJSON.extend({
