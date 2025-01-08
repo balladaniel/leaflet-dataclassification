@@ -1,0 +1,82 @@
+cff-version: 1.2.0
+title: leaflet-dataclassification
+message: >-
+  If you use the plugin in connection with a work or
+  scientific publication, please refer to:
+type: software
+authors:
+  - given-names: Dániel
+    family-names: Balla
+    email: balla.daniel@inf.elte.hu
+    affiliation: >-
+      Institute of Cartography and Geoinformatics, ELTE
+      Eötvös Loránd University, Budapest, Hungary
+    orcid: 'https://orcid.org/0009-0003-4143-5836'
+  - given-names: Mátyás
+    family-names: Gede
+    name-suffix: PhD
+    email: saman@inf.elte.hu
+    affiliation: >-
+      Institute of Cartography and Geoinformatics, ELTE
+      Eötvös Loránd University, Budapest, Hungary
+    orcid: 'https://orcid.org/0000-0002-8639-2812'
+identifiers:
+  - type: doi
+    value: 10.5194/isprs-archives-XLVIII-4-W12-2024-3-2024
+  - type: url
+    value: >-
+      https://isprs-archives.copernicus.org/articles/XLVIII-4-W12-2024/3/2024/
+repository-code: 'https://github.com/balladaniel/leaflet-dataclassification'
+url: >-
+  https://balladaniel.github.io/leaflet-dataclassification/examples/combined
+abstract: >-
+  Single-step data classification, symbology and legend
+  creation for GeoJSON data powered thematic maps
+keywords:
+  - thematic maps
+  - data classification
+  - symbology
+  - Leaflet
+  - web cartography
+  - open source
+license: MIT
+commit: a4e8d0dce595dff97e32fdaa65b067df89d68b6b
+version: 1.6.1
+date-released: '2024-02-06'
+preferred-citation:
+  authors:
+    - given-names: Dániel
+      family-names: Balla
+      email: balla.daniel@inf.elte.hu
+      affiliation: >-
+        Institute of Cartography and Geoinformatics, ELTE
+        Eötvös Loránd University, Budapest, Hungary
+      orcid: 'https://orcid.org/0009-0003-4143-5836'
+    - given-names: Mátyás
+      family-names: Gede
+      name-suffix: PhD
+      email: saman@inf.elte.hu
+      affiliation: >-
+        Institute of Cartography and Geoinformatics, ELTE
+        Eötvös Loránd University, Budapest, Hungary
+      orcid: 'https://orcid.org/0000-0002-8639-2812'
+  title: "Beautiful thematic maps in Leaflet with automatic data classification"
+  type: article
+  year: 2024
+  volume: XLVIII-4/W12-2024
+  pages: "3-10"
+  journal: "The International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences"
+  publisher: 
+    name: Copernicus Publications
+  license: CC-BY-4.0
+  doi: 10.5194/isprs-archives-XLVIII-4-W12-2024-3-2024
+  url: https://isprs-archives.copernicus.org/articles/XLVIII-4-W12-2024/3/2024/
+  keywords: 
+  - thematic maps
+  - data classification
+  - symbology
+  - Leaflet
+  - web cartography
+  - open source
+  abstract: >-
+    Even though the web is a platform that provides lots of features, interactivity, and a high degree of customizability for creating web maps, web-based thematic maps still require expertise to visualize geospatial data in a way that highlights spatial differences and is cartographically comprehensive. The popular open-source web mapping library Leaflet lacks a straightforward approach to create thematic maps with basic principles they should adhere to (data classification, automatic symbology and legend generation). Although various tutorials and workarounds exist, those are hard-coded, only solve some principles thematic maps require and are complex to accomplish, requiring programming experience. The paper focuses on finding a way to overcome shortcomings of Leaflet in terms of thematic maps, that supports a simple, self-explanatory method of producing thematic web maps using the library. As a solution, this paper introduces an easy-to-use, open-source plugin for Leaflet, developed by the authors, which combines all processes required for creating a thematic map from a GeoJSON dataset, in one single step. For symbology, it supports graduated symbol colours and sizes, and colour and hatch pattern fills for polygons. It supports well-known classification methods for quantitative data and puts emphasis on providing numerous options for all underlying processes, to fine-tune the visualization (data normalization, rounding class boundary values, legend templating etc.). This highly customizable extension intends to help people who do not have experience with map design and are not familiar with scripting to an extent to be able to code visually pleasing thematic maps for websites.
