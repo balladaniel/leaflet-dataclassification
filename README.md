@@ -47,7 +47,7 @@ All features in the examples listed here have binded tooltips (a default Leaflet
 - [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v1.9.4)
 ### External dependencies
 - [simple-statistics.js](https://github.com/simple-statistics/simple-statistics) (tested with v7.8.0)
-- [chroma.js](https://github.com/gka/chroma.js) (tested with v2.6.0)
+- [chroma.js](https://github.com/gka/chroma.js) (tested with v3.1.1)
 - [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass) (only if you intend to use hatch pattern fills for polygons)
 
 Include dependencies plus `leaflet-dataclassification.css` and `leaflet-dataclassification.js` in your code. You can also link them through GitHub Pages:
