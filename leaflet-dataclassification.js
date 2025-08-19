@@ -10,7 +10,7 @@
  * project page: https://github.com/balladaniel/leaflet-dataclassification 
  *
  * MIT License
- * Copyright (c) 2024 Dániel Balla
+ * Copyright (c) 2025 Dániel Balla
 */
 
 L.DataClassification = L.GeoJSON.extend({
@@ -593,7 +593,7 @@ L.DataClassification = L.GeoJSON.extend({
             position = 'bottomleft';
         }
 
-        var legend = L.control({position: position});
+        var legend = new L.Control({position: position});
         
         legend.onAdd = function (map) {
             var div = L.DomUtil.create('div', 'info legend');
@@ -1283,7 +1283,7 @@ L.DataClassification = L.GeoJSON.extend({
                         iconW = finalSymbol.getAttribute('width');
                         iconH = finalSymbol.getAttribute('height');
 
-                        const svgIcon = L.divIcon({
+                        const svgIcon = new L.DivIcon({
                             html: finalSymbol,
                             className: "",
                             iconSize: [iconW, iconH],
@@ -1300,7 +1300,7 @@ L.DataClassification = L.GeoJSON.extend({
 
                         var mpfeatures = layer._layers;
                         for (const property in mpfeatures) {
-                            mpfeatures[property].setIcon(L.divIcon({
+                            mpfeatures[property].setIcon(new L.DivIcon({
                                 html: finalSymbol2.outerHTML,
                                 className: "",
                                 iconSize: [iconW, iconH],
