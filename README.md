@@ -4,7 +4,7 @@ Classifies quantitative data from attributes, styles the features appropriately 
 
 Aims to simplify data visualization and creation of elegant thematic web maps with Leaflet using GeoJSON data, with a more traditional approach of thematic cartography. Although tutorials for defining style functions (to retrieve class colors through pre-defined conditional statements) and basic legend creation exist for Leaflet, those are static (are only created for a specific dataset) and might require using GIS software beforehand to classify and style the dataset properly (to get class boundaries and exact colors), in order to have a visualization that gets the message through. This customizable plugin automates all this and can easily be used for any dataset with quantitative data. As it extends L.GeoJSON, you can have multiple layers of this (with a matched legend for each) to create a more complex data visualization.
 
-**Version 1.7 now supports both Leaflet v2 ([Leaflet 2.0.0-alpha.1](https://leafletjs.com/2025/05/18/leaflet-2.0.0-alpha.html)) and v1.9.4, in a global/vanilla script environment only. See usage below.**
+**Version 1.7 now supports both Leaflet v2 ([Leaflet 2.0.0-beta.2](https://github.com/Leaflet/Leaflet/releases/tag/v2.0.0-beta.2)) and v1.9.4, in a global/vanilla script environment only. See usage below.**
 
 ![Screenshot of example maps created with the plugin. Samples.](screenshots.png)
 
@@ -46,7 +46,7 @@ For working examples, please see the [Examples](https://github.com/balladaniel/l
 - polygons (hatch fill, with both width/angle as distinction, 334 polygons): [./examples/polygons_h.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_h.html)
 
 ## Requirements
-- [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v2.0.0-alpha1 global and v1.9.4)
+- [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v2.0.0-beta.2 global and v1.9.4)
 
 ### External dependencies
 - [simple-statistics.js](https://github.com/simple-statistics/simple-statistics) (tested with v7.8.0)
@@ -165,11 +165,11 @@ const layer = L.dataClassification(data, {
 - `polygonHatch <object>`: when polygonMode: "hatch", customize hatch fill pattern
     - `distinctionMode <string>`: ['width'|'angle'|'both'] symbol distinction type between classes (default: 'both')
     - `strokeColors <array<string>>`: stroke colors (default: ['darkred', 'none'])
-    - `strokeWidth <object>`: stroke widths to gradually alternate between for symbols, when distinctionMode: 'width' or both'.
+    - `strokeWidth <object>`: stroke widths to gradually alternate between for symbols, when distinctionMode: 'width' or 'both'.
         - `min <float>`: stroke width of the first color. Tip: set to -1 to have solid fills on two ends of the symbols' spectrum, only in distinctionMode: 'width' and 'both'. (default: 2)
         - `max <float>`: stroke width of the other color (default: 10)
     - `angle <number>`: initial angle for hatch pattern (leaflet-hatchclass default: 45)
-    - `alternateAngle <number>`: value to increment angle with between all hatch fill symbols, when distinctionMode: 'angle' or both'
+    - `alternateAngle <number>`: value to increment angle with between all hatch fill symbols, when distinctionMode: 'angle' or 'both'
 - `style <object>`: custom styling
     - `fillOpacity <float>`: polygon fill opacity (default: 0.7)
     - `color <string>`: polygon outline color (default: '#3388ff' blue, the L.path default)
@@ -199,9 +199,11 @@ const layer = L.dataClassification(data, {
     - `by <number>`: a number to divide/multiply class boundary values with. Required for `unitModifier`.
 
 ## Hatch fill pattern types
-Hatch fill patterns provided by [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass). (Gede, M.: Hatch Fill on Webmaps – to Do or Not to Do, and How to Do, Abstr. Int. Cartogr. Assoc., 5, 48, https://doi.org/10.5194/ica-abs-5-48-2022, 2022.)
+Symbol distinction types, when using a hatch pattern fill: width/angle/both. Option 'both' uses differing stroke width and angle at the same time.
 
 ![Screenshot of different hatch fill pattern modes (distinctionMode option). Samples.](screenshots_hatchfill.png)
+
+Hatch fill patterns provided by [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass). (Gede, M.: Hatch Fill on Webmaps – to Do or Not to Do, and How to Do, Abstr. Int. Cartogr. Assoc., 5, 48, https://doi.org/10.5194/ica-abs-5-48-2022, 2022.)
 
 ## How to cite
 If you happen to use the plugin in connection with a scientific publication, please refer to: 

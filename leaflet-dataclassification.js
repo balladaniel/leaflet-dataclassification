@@ -10,84 +10,102 @@
  * project page: https://github.com/balladaniel/leaflet-dataclassification 
  *
  * MIT License
- * Copyright (c) 2025 Dániel Balla
+ * Copyright (c) 2026 Dániel Balla
 */
 
-L.DataClassification = L.GeoJSON.extend({
-    options: {
-        // NOTE: documentation in this object might not be up to date. Please always refer to the documentation on GitHub.
-        // default options
-        mode: 'quantile',							// classification method: jenks, quantile, equalinterval, logarithmic, stddeviation (when using stddev, `classes` is ignored!), manual (when using manual, `classes` must be an array!)
-        classes: 5,									// desired number of classes (min: 3, max: 10 or featurecount, whichever is lower)
-        pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
-        pointSize: {min: 2, max: 10},               // POINT FEATURES: when pointMode: "size", define min/max point circle radius (default min: 2, default max: 10, recommended max: 12)
-        pointShape: 'circle',						// POINT FEATURES: shape of points: 'circle', 'square', 'diamond' (default: 'circle')
-        lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
-        lineWidth: {min: 3, max: 15},				// LINE FEATURES: when lineMode: "width", define min/max stroke width as object (default min: 1, default max: 15, recommended max: 20)
-        polygonMode: 'color',                       // POLYGON FEATURES: fill "color" or "hatch" (default: color)
-        polygonHatch: {                             // POLYGON FEATURES: when polygonMode: "hatch", define hatch stroke colors and min/max widths to alternate between for individual classes.
-            strokeColors: ['darkred', 'none'],      // POLYGON HATCHING: stroke colors
-            strokeWidth: {min: 2, max: 10},         // POLYGON HATCHING: stroke widths
-            distinctionMode: 'both',                // POLYGON HATCHING: resulting symbol distinction type between classes. width/angle/both
-            angle: 45,                              // POLYGON HATCHING: initial angle
-            alternateAngle: 45                     // POLYGON HATCHING: value to increment angle with between all hatch fill symbols
-        },                           
-        colorRamp: 'purd',							// color ramp to use in symbology. Based on ColorBrewer2 color ramps, included in Chroma.js: https://colorbrewer2.org/. (default: PuRd)
-        /*colorCustom: [	'rgba(210,255,178,1)', 
-                        '#fec44fff', 
-                        'f95f0eff'],*/				// custom color ramp as an array, colors in format supported by Chroma.js, with opacity support. A minimum of two colors are required.
-                                                    // (examples for yellow: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', 
-                                                    // chroma('yellow').alpha(0.5). For more, see: https://gka.github.io/chroma.js/)
-                                                    // Custom colors override colorRamp.
-        noDataColor: '#606060',                     // fill/stroke color to use for features with null/nodata attribute values, in polygon, point/color and line/color modes  (default: '#606060')
-        noDataIgnore: false,                        // if true, features with null attribute values are not shown on the map. This also means the legend will not have a nodata classs (default: false)
-        legendAscending: false,						// true = values in legend will be ascending (low first, high last) (default: false)
-        reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. (default: false)
-                                                    // Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
-                                                    // (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
-        /*middlePointValue: 0,*/					// optional: adjust boundary value of middle classes (only for even classcount), useful for symmetric classification of diverging data around 0 for example. Only use a value within the original middle classes range.
-        /*field: '',*/					            // target attribute field name. Case-sensitive!
-        /*normalizeByField: '',*/                   // attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
-        legendTitle: '',					        // title for legend (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
-        legendFooter: null,					        // legend footer, italic and a smaller font by default (see attached css - .legendFooter class). HTML-markdown and CSS styling allowed. Hidden by default. (default: null)
-        classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
-        unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
-        legendPosition: 'bottomleft',               // Legend position (L.control option: 'topleft', 'topright', 'bottomleft' or 'bottomright')
-        legendTemplate: {                           // Legend row template for custom formatting using {high} and {low} placeholders (interpreted as high/low value in the context of a given class). Placeholder {count} represents feature count in that class. Distinct formatting for the highest, lowest and middle classes (legend rows). Middle class format requires both {high} and {low}, highest only {low} and lowest only {high}. You can also format the row for nodata.
-            highest: '{low} <',
-            middle:  '{low} – {high}',
-            lowest: '< {high}',
-            nodata: 'No data'
-        },
-        legendRowGap: null,       
+var LeafletisV1 = L.version.startsWith('1.');
 
-        style: {
-            fillColor: 'orange',
-            fillOpacity: 0.7,
-            color: L.Path.prototype.options.color,
-            weight: L.Path.prototype.options.weight,
-            radius: 8
-        }
+var plugin_defaultOptions = {
+    // NOTE: documentation in this object might not be up to date. Please always refer to the documentation on GitHub.
+    // default options
+    mode: 'quantile',							// classification method: jenks, quantile, equalinterval, logarithmic, stddeviation (when using stddev, `classes` is ignored!), manual (when using manual, `classes` must be an array!)
+    classes: 5,									// desired number of classes (min: 3, max: 10 or featurecount, whichever is lower)
+    pointMode: 'color', 						// POINT FEATURES: fill "color" or "size" (default: color)
+    pointSize: {min: 2, max: 10},               // POINT FEATURES: when pointMode: "size", define min/max point circle radius (default min: 2, default max: 10, recommended max: 12)
+    pointShape: 'circle',						// POINT FEATURES: shape of points: 'circle', 'square', 'diamond' (default: 'circle')
+    lineMode: 'width', 							// LINE FEATURES: stroke "color" or "width" (default: color)
+    lineWidth: {min: 3, max: 15},				// LINE FEATURES: when lineMode: "width", define min/max stroke width as object (default min: 1, default max: 15, recommended max: 20)
+    polygonMode: 'color',                       // POLYGON FEATURES: fill "color" or "hatch" (default: color)
+    polygonHatch: {                             // POLYGON FEATURES: when polygonMode: "hatch", define hatch stroke colors and min/max widths to alternate between for individual classes.
+        strokeColors: ['darkred', 'none'],      // POLYGON HATCHING: stroke colors
+        strokeWidth: {min: 2, max: 10},         // POLYGON HATCHING: stroke widths
+        distinctionMode: 'both',                // POLYGON HATCHING: resulting symbol distinction type between classes. width/angle/both
+        angle: 45,                              // POLYGON HATCHING: initial angle
+        alternateAngle: 45                     // POLYGON HATCHING: value to increment angle with between all hatch fill symbols
+    },                           
+    colorRamp: 'purd',							// color ramp to use in symbology. Based on ColorBrewer2 color ramps, included in Chroma.js: https://colorbrewer2.org/. (default: PuRd)
+    /*colorCustom: [	'rgba(210,255,178,1)', 
+                    '#fec44fff', 
+                    'f95f0eff'],*/				// custom color ramp as an array, colors in format supported by Chroma.js, with opacity support. A minimum of two colors are required.
+                                                // (examples for yellow: 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', 
+                                                // chroma('yellow').alpha(0.5). For more, see: https://gka.github.io/chroma.js/)
+                                                // Custom colors override colorRamp.
+    noDataColor: '#606060',                     // fill/stroke color to use for features with null/nodata attribute values, in polygon, point/color and line/color modes  (default: '#606060')
+    noDataIgnore: false,                        // if true, features with null attribute values are not shown on the map. This also means the legend will not have a nodata classs (default: false)
+    legendAscending: false,						// true = values in legend will be ascending (low first, high last) (default: false)
+    reverseColorRamp: false,					// true = reverse the chosen color ramp, both in symbology on map and legend colors. (default: false)
+                                                // Useful if you found a great looking colorramp (green to red), but would prefer reversed colors 
+                                                // (for example to match visual implications about colors: green implies positive, red implies negative phenomena)
+    /*middlePointValue: 0,*/					// optional: adjust boundary value of middle classes (only for even classcount), useful for symmetric classification of diverging data around 0 for example. Only use a value within the original middle classes range.
+    /*field: '',*/					            // target attribute field name. Case-sensitive!
+    /*normalizeByField: '',*/                   // attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
+    legendTitle: '',					        // title for legend (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. If you want to hide title, set this as 'hidden'. (default: ='field')
+    legendFooter: null,					        // legend footer, italic and a smaller font by default (see attached css - .legendFooter class). HTML-markdown and CSS styling allowed. Hidden by default. (default: null)
+    classRounding: null,                        // class boundary value rounding. Positive numbers round to x decimals, zero will round to whole numbers, negative numbers will round values to the nearest 10, 100, 1000, etc. (default: null - no rounding, values are used as-is)
+    unitModifier: null,                         // modifies the final class boundary values in order to multiply/divide them. Useful when a dataset attribute is in metres, but kilometres would fit the legend better, for example 786000 metres shown as 786 km. Purely visual, only affects legend.
+    legendPosition: 'bottomleft',               // Legend position (L.control option: 'topleft', 'topright', 'bottomleft' or 'bottomright')
+    legendTemplate: {                           // Legend row template for custom formatting using {high} and {low} placeholders (interpreted as high/low value in the context of a given class). Placeholder {count} represents feature count in that class. Distinct formatting for the highest, lowest and middle classes (legend rows). Middle class format requires both {high} and {low}, highest only {low} and lowest only {high}. You can also format the row for nodata.
+        highest: '{low} <',
+        middle:  '{low} – {high}',
+        lowest: '< {high}',
+        nodata: 'No data'
     },
+    legendRowGap: null,       
 
-    // variables for plugin scope
-    _legends: [],
-    _classes: [],
-    _colors: [],
-    _radiuses: [],
-    _widths: [],
-    _pointMarkers: [],
-    _unitMod: {},
-    _field: '',
-    _normalizeByField: '',
-    _pointShape: '',
-    _linecolor: '',
-    _lineweight: '',
-    _legendPos: '',
-    _legendTemplate: {},
-    _noDataFound: false,
-    _noDataIgnore: false,
-    _noDataColor: '',
+    style: {
+        fillColor: 'orange',
+        //fillOpacity: 0.7,
+        color: (LeafletisV1 ? L.Path.prototype.options.color : L.Path.defaultOptions.color),
+        weight: (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight),
+        radius: 8
+    }
+}
+
+class DataClassification extends L.GeoJSON {
+    static defaultOptions = plugin_defaultOptions
+
+    constructor(data, options) {
+        super(data, options);
+        L.Util.setOptions(this, options);
+        
+        // variables for plugin scope
+        this._legends = [];
+        this._classes = [];
+        this._colors = [];
+        this._radiuses = [];
+        this._widths = [];
+        this._pointMarkers = [];
+        this._hatchclasses = [];
+        this._unitMod = {};
+        this._field = '';
+        this._normalizeByField = '';
+        this._pointShape = '';
+        this._linecolor = '';
+        this._lineweight = '';
+        this._legendPos = '';
+        this._legendTemplate = {};
+        this._noDataFound = false;
+        this._noDataIgnore = false;
+        this._noDataColor = '';
+
+        console.debug('L.dataClassification: Classifying...')
+        console.debug('L.dataClassification: options:', this.options)
+        this._field = this.options.field
+        this._normalizeByField = this.options.normalizeByField
+        L.GeoJSON.prototype.onAdd.call(this, map);
+        this._classify();
+    }
+
 
     // value evaluators to match classes
     /**
@@ -96,18 +114,18 @@ L.DataClassification = L.GeoJSON.extend({
      * @returns {string} Symbol color of the class
      */
     _getColor(d) {
-        for (var i = 0; i<classes.length; i++) {
-            if (classes[i+1] != null) {
-                if (d < classes[i+1].value) {
-                    ++classes[i].featureCount;
-                    return colors[i];
+        for (var i = 0; i<this._classes.length; i++) {
+            if (this._classes[i+1] != null) {
+                if (d < this._classes[i+1].value) {
+                    ++this._classes[i].featureCount;
+                    return this._colors[i];
                 } 	
             }				
         }
         // highest group
-        ++classes[classes.length-1].featureCount;
-        return colors.at(-1);	
-    },
+        ++this._classes[this._classes.length-1].featureCount;
+        return this._colors.at(-1);	
+    }
 
     /**
      * Value evaluator to match a line width class (LINES/WIDTH mode). While evaluating, also counts the number of features in given class.
@@ -115,18 +133,18 @@ L.DataClassification = L.GeoJSON.extend({
      * @returns {float} Symbol width of the class
      */
     _getWeight(d) {
-        for (var i = 0; i<classes.length; i++) {
-            if (classes[i+1] != null) {
-                if (d < classes[i+1].value) {
-                    ++classes[i].featureCount;
-                    return widths[i];
+        for (var i = 0; i<this._classes.length; i++) {
+            if (this._classes[i+1] != null) {
+                if (d < this._classes[i+1].value) {
+                    ++this._classes[i].featureCount;
+                    return this._widths[i];
                 } 					
             } 					
         }
         // highest group
-        ++classes[classes.length-1].featureCount;
-        return widths.at(-1);
-    },
+        ++this._classes[this._classes.length-1].featureCount;
+        return this._widths.at(-1);
+    }
 
     /**
      * Value evaluator to match a point symbol size class (POINTS/SIZE mode). While evaluating, also counts the number of features in given class.
@@ -134,18 +152,18 @@ L.DataClassification = L.GeoJSON.extend({
      * @returns {float} Symbol radius of the class
      */
     _getRadius(d) {
-        for (var i = 0; i<classes.length; i++) {
-            if (classes[i+1] != null) {
-                if (d < classes[i+1].value) {
-                    ++classes[i].featureCount;
-                    return radiuses[i];
+        for (var i = 0; i<this._classes.length; i++) {
+            if (this._classes[i+1] != null) {
+                if (d < this._classes[i+1].value) {
+                    ++this._classes[i].featureCount;
+                    return this._radiuses[i];
                 }
             }
         }
         // highest group
-        ++classes[classes.length-1].featureCount;
-        return radiuses.at(-1);
-    },
+        ++this._classes[this._classes.length-1].featureCount;
+        return this._radiuses.at(-1);
+    }
 
     /**
      * Value evaluator to match a polygon hatch fill symbol class (POLYGONS/HATCH mode). While evaluating, also counts the number of features in given class.
@@ -153,18 +171,18 @@ L.DataClassification = L.GeoJSON.extend({
      * @returns {string} Symbol hatch fill pattern CSS class name
      */
     _getHatch(d) {
-        for (var i = 0; i<classes.length; i++) {
-            if (classes[i+1] != null) {
-                if (d < classes[i+1].value) {
-                    ++classes[i].featureCount;
-                    return hatchclasses[i];
+        for (var i = 0; i<this._classes.length; i++) {
+            if (this._classes[i+1] != null) {
+                if (d < this._classes[i+1].value) {
+                    ++this._classes[i].featureCount;
+                    return this._hatchclasses[i];
                 }
             }
         }
         // highest group
-        ++classes[classes.length-1].featureCount;
-        return hatchclasses.at(-1);
-    },
+        ++this._classes[this._classes.length-1].featureCount;
+        return this._hatchclasses.at(-1);
+    }
 
     // stylers
     /**
@@ -172,16 +190,16 @@ L.DataClassification = L.GeoJSON.extend({
      * @param {float} value - Attribute (number), based on which we classify the feature
      * @returns {object} Final symbol style of the feature
      */
-    _stylePoint_color(value){
+    _stylePoint_color = (value, options) => {
         return {
-            fillColor: (value != null ? getColor(value) : options.noDataColor),
+            fillColor: (value != null ? this._getColor(value) : options.noDataColor),
             fillOpacity: 1,
             color: "black",
             weight: 1,
             shape: "circle",
             radius: options.style.radius
         };
-    },
+    }
 
     /**
      * Feature styler for point/size mode.
@@ -189,39 +207,40 @@ L.DataClassification = L.GeoJSON.extend({
      * @param {object} options - Custom styling (see the `style` option)
      * @returns {object} Final symbol style of the feature
      */
-    _stylePoint_size(value, options){
+    _stylePoint_size = (value, options) => {
         return {
             fillColor: (value != null ? (options.style.fillColor != null ? options.style.fillColor : 'orange') : options.noDataColor),
             fillOpacity: 1,
             color: "black",
             weight: 1,
             shape: "circle",
-            radius: (value != null ? getRadius(value) : Math.min.apply(Math, radiuses))
+            radius: (value != null ? this._getRadius(value) : Math.min.apply(Math, this._radiuses))
         };
-    },
+    }
 
     /**
      * Feature styler for line/color mode.
      * @param {float} value - Attribute (number), based on which we classify the feature
      * @returns {object} Final symbol style of the feature
      */
-    _styleLine_color(value){
+    _styleLine_color = (value, options) => {
         return {
-            color: (value != null ? getColor(value) : options.noDataColor)
+            color: (value != null ? this._getColor(value) : options.noDataColor)
         };
-    },
+    }
 
     /**
      * Feature styler for line/width mode.
      * @param {float} value - Attribute (number), based on which we classify the feature
      * @returns {object} Final symbol style of the feature
      */
-    _styleLine_width(value){
+    _styleLine_width = (value, options) => {
         return {
-            weight: (value != null ? getWeight(value) : Math.min.apply(Math, widths)),
-            color: (value != null ? (options.style.color != null ? options.style.color : L.Path.prototype.options.color) : options.noDataColor)
+            weight: (value != null ? this._getWeight(value) : Math.min.apply(Math, this._widths)),
+            //color: (value != null ? (options.style.color != null ? options.style.color : (L.Path.defaultOptions.color ?? L.Path.prototype.options.color)) : options.noDataColor)
+            color: (value != null ? (options.style.color != null ? options.style.color : (LeafletisV1 ? L.Path.prototype.options.color : L.Path.defaultOptions.color)) : options.noDataColor)
         };
-    },
+    }
 
     /**
      * Feature styler for polygon/color mode.
@@ -229,29 +248,29 @@ L.DataClassification = L.GeoJSON.extend({
      * @param {object} options - Custom styling (see the `style` option)
      * @returns {object} Final symbol style of the feature
      */
-    _stylePolygon_color(value, options){
+    _stylePolygon_color = (value, options) => {
         return {
-            fillColor: (value != null ? getColor(value) : options.noDataColor),
+            fillColor: (value != null ? this._getColor(value) : options.noDataColor),
             fillOpacity: (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7),
             /*color: 'white',
             weight: 2*/
         };
-    },
+    }
 
     /**
      * Feature styler for polygon/hatch mode. Different to the other feature styler, since this returns a formatted string which is then used for the `fill` CSS property.
      * @param {float} value - Attribute (number), based on which we classify the feature
      * @returns {string} Final symbol style of the feature (as a string, which is used for CSS-`fill` later.)
      */
-    _stylePolygon_hatch(value, options){
+    _stylePolygon_hatch = (value, options) => {
         var style;
         if (value != null) {
-            style = 'url(#' + getHatch(value) + ')';
+            style = 'url(#' + this._getHatch(value) + ')';
         } else {
             style = options.noDataColor;
         }
         return style;
-    },
+    }
     
     // get n categories of point radiuses, line widths for symbology
     /**
@@ -261,15 +280,16 @@ L.DataClassification = L.GeoJSON.extend({
      * @param {float} sizes.max - Maximum symbol size, radius (symbol of the highest class)
      */
     _pointMode_size_radiuses(sizes){
-        radiuses = [];
+        this._radiuses = [];
         
-        var step = (sizes.max - sizes.min) / (classes.length - 1);
-        for (var i = 0; i < classes.length; i++) {
+        var step = (sizes.max - sizes.min) / (this._classes.length - 1);
+        for (var i = 0; i < this._classes.length; i++) {
             var curr = sizes.min + (step * i);
-            radiuses.push(curr);
+            this._radiuses.push(curr);
         }
-        console.debug('points: radius categories:', radiuses)
-    },
+        console.debug('points: radius categories:', this._radiuses)
+    }
+
     /**
      * Generates a range of symbol sizes for line/width mode. Fills up global array `widths[]`.
      * @param {Object} sizes - Symbol size information
@@ -277,21 +297,21 @@ L.DataClassification = L.GeoJSON.extend({
      * @param {float} sizes.max - Maximum symbol size, width (symbol of the highest class)
      */
     _lineMode_width(sizes){
-        widths = [];
+        this._widths = [];
         
-        var step = (sizes.max - sizes.min) / (classes.length - 1);
-        for (var i = 0; i < classes.length; i++) {
-            widths.push(sizes.min + (step * i));
+        var step = (sizes.max - sizes.min) / (this._classes.length - 1);
+        for (var i = 0; i < this._classes.length; i++) {
+            this._widths.push(sizes.min + (step * i));
         }
-        console.debug('lines: width categories:', widths)
-    },
+        console.debug('lines: width categories:', this._widths)
+    }
 
     _polygonMode_hatch(options){
         if (options.strokeColors != null && options.strokeColors.length != 2) {
             console.error('Currently, polygonMode "hatch" requires exactly two colors to alternate lines between. Check the polygonHatch/strokeColors property. Working example: ["red", "orange"] or ["red", "none"]')
             return;
         }
-        hatchclasses = [];
+        //var hatchclasses = [];
         var swMin, swMax, angle, altAng;
         // defaults
         if (options.strokeWidth != null) {
@@ -313,14 +333,14 @@ L.DataClassification = L.GeoJSON.extend({
         (options.strokeColors != null ? '' : options.strokeColors = ['darkred', 'none']);
         (options.angle != null ? angle = options.angle : angle = 45);
         (options.alternateAngle != null ? altAng = options.alternateAngle : altAng = 45);
-        var step = (swMax - swMin) / (classes.length - 1);
+        var step = (swMax - swMin) / (this._classes.length - 1);
 
         switch (options.distinctionMode) {
             case 'width':
                 console.debug('hatch distinction mode: `width`');
-                for (var i = 0; i < classes.length; i++) {
+                for (var i = 0; i < this._classes.length; i++) {
                     console.debug('current hatch class line widths: swMin:', swMin, 'swMax:', swMax);
-                    hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, angle));
+                    this._hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, angle));
                     swMin += step;
                     swMax -= step;
                 }
@@ -334,8 +354,8 @@ L.DataClassification = L.GeoJSON.extend({
                 if (95 >= altAng && altAng >= 85 || 185 >= altAng && altAng >= 175 || 275 >= altAng && altAng >= 265) {
                     console.warn('In this mode (`angle`), alternating angles around pi/2 (90), pi (180), 3pi/2 (270) result in very similar or same hatch fill symbols. Consider adjusting hatch angle to ~45°.');
                 }
-                for (var i = 0; i < classes.length; i++) {
-                    hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
+                for (var i = 0; i < this._classes.length; i++) {
+                    this._hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
                 }
                 break;
             case 'both':
@@ -344,17 +364,17 @@ L.DataClassification = L.GeoJSON.extend({
                     console.warn("You are using hatch distinction mode: `both`. Since this mode is supposed to alter both hatch stroke angle and width between class symbols, and option `alternateAngle` was set to 0, you wouldn't see any difference in stroke angle (and therefore could just simply use mode `width`). Overridden value with 45.");
                     altAng = 45;
                 }
-                for (var i = 0; i < classes.length; i++) {
+                for (var i = 0; i < this._classes.length; i++) {
                     console.debug('current hatch class line widths: swMin:', swMin, 'swMax:', swMax);
-                    hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
+                    this._hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
                     swMin += step;
                     swMax -= step;
                 }
                 break;
         }
-        hatchclasses.reverse();
-        console.debug('polygons: hatchclasses:', hatchclasses)
-    },
+        this._hatchclasses.reverse();
+        console.debug('polygons: hatchclasses:', this._hatchclasses)
+    }
 
     /**
      * SVG creator. This creates symbols for the point/size and point/color modes.
@@ -409,20 +429,20 @@ L.DataClassification = L.GeoJSON.extend({
                 break;
         }
         return svg;
-    },
+    }
 
     /**
      * Does a one-time conversion of classes array to an array of objects (from now on, access class boundary value by classes[i].value).
      */
     _convertClassesToObjects() {
-        classes = classes.map(function(element, idx) {
+        this._classes = this._classes.map(function(element, idx) {
             return {
                 value: element,
                 featureCount: 0
             }
         });
-        console.debug('Global array of class boundaries has been converted to an array of objects (access class boundary value by classes[i].value) and features were counted! New classes: ', classes)
-    },
+        console.debug('Global array of class boundaries has been converted to an array of objects (access class boundary value by classes[i].value) and features were counted! New classes: ', this._classes)
+    }
 
     /**
      * Recommends an optimal "classRounding" parameter in a console message, when it was set too extreme. Basically the reverse of function _classPostProc_rounding().
@@ -438,76 +458,76 @@ L.DataClassification = L.GeoJSON.extend({
             i = i*10
         } while (num > i)
         return (Math.log10(i)*-1)+2;
-    },
+    }
 
     _classPostProc_rounding(n) { 
         if (n >= 0) {
             // rounding to decimals using toFixed(), store string in classes object
-            for (var i=0; i<classes.length; i++) {
-                classes[i].value = +classes[i].value.toFixed(n);
-                classes[i].valueFormattedString = classes[i].value.toFixed(n);
+            for (var i=0; i<this._classes.length; i++) {
+                this._classes[i].value = +this._classes[i].value.toFixed(n);
+                this._classes[i].valueFormattedString = this._classes[i].value.toFixed(n);
             }
-            console.debug('Class interval boundary values have been rounded to', n, 'decimals. New classes:', classes)
+            console.debug('Class interval boundary values have been rounded to', n, 'decimals. New classes:', this._classes)
         } else {
             // rounding up/down to 10s, 100s, 1000s etc.
-            if (Math.max.apply(Math, classes.map(item => item.value)) < Math.pow(10,Math.abs(n))) {
+            if (Math.max.apply(Math, this._classes.map(item => item.value)) < Math.pow(10,Math.abs(n))) {
                 // check if the highest class boundary value is higher than the requested nearest value 
                 // (requested -3, so 1000, while the maximum value is 386.2 - this would yield useless rounded values for classes, with ~all classes between 0 and 0.)
                 console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
-                ') is larger than the highest class boundary value (' + Math.max.apply(Math, classes.map(item => item.value)) + '). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
-                + this._classPostProc_roundinghelper(Math.max.apply(Math, classes.map(item => item.value))) + ' (optimal).');                
+                ') is larger than the highest class boundary value (' + Math.max.apply(Math, this._classes.map(item => item.value)) + '). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
+                + this._classPostProc_roundinghelper(Math.max.apply(Math, this._classes.map(item => item.value))) + ' (optimal).');                
                 return;
             }
-            if (Math.max.apply(Math, classes.map(item => item.value)) < Math.pow(10,Math.abs(n-1))) {
+            if (Math.max.apply(Math, this._classes.map(item => item.value)) < Math.pow(10,Math.abs(n-1))) {
                 // the highest class boundary value vs. requested nearest value being high enough might cause problems (lowest class does not belong to any features etc.).
                 console.warn('Class interval boundary rounding warning: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + ') might result in weird class boundaries and/or in the lowest class not belonging to any features on the map (class empty). Make sure the visualized data is correct on the map, otherwise, fix this by adjusting the "classRounding" option to ' + parseInt(n+1) + '.')
             }
-            if (Math.round(classes[1].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)) == Math.round(classes[2].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n))) {
+            if (Math.round(this._classes[1].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)) == Math.round(this._classes[2].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n))) {
                 // check if the lowest and lowest+1 class boundary would be the same after rounding
                 // (requested -1, so 10, with lowest class boundaries being 7.32 and 10.4 - since these both would get rounded to 10, this would yield a class that is defined between 10 and 10.)
                 console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
                 ') might yield empty classes or classes with the same boundaries after rounding. Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
-                + parseInt(this._classPostProc_roundinghelper(classes[1].value)-1) + ' (optimal).');       
+                + parseInt(this._classPostProc_roundinghelper(this._classes[1].value)-1) + ' (optimal).');       
                 return;
             }
-            if (classes[1].value < Math.pow(10,Math.abs(n+1))) {
+            if (this._classes[1].value < Math.pow(10,Math.abs(n+1))) {
                 // check if the lowest class boundary value is smaller than the requested nearest value 
                 // (requested -2, so 100, while the upper value of the lowest class boundary is 7.32 - since this would get rounded to 0, this would yield useless rounded values for classes, with classes between 0 and 0 and similar.)
                 console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
-                ') is larger than the lowest class boundary value (' + classes[1].value + '). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
-                + parseInt(this._classPostProc_roundinghelper(classes[1].value)-2) + ' (optimal).');       
+                ') is larger than the lowest class boundary value (' + this._classes[1].value + '). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
+                + parseInt(this._classPostProc_roundinghelper(this._classes[1].value)-2) + ' (optimal).');       
                 return;
             }
-            for (var i=1; i<classes.length; i++) {
+            for (var i=1; i<this._classes.length; i++) {
                 // Lowest/highest class boundary value gets rounded up/down here, respectively. Done to avoid features with extreme attr. values
                 // (which should fall in the lowest/highest classes) falling in the 2nd lowest/highest class upon rounding.
-                if (i+1 == classes.length) {
+                if (i+1 == this._classes.length) {
                     // highest class, round down at all times
-                    if (n >= this._classPostProc_roundinghelper(Math.max.apply(Math, classes.map(item => item.value))) ) {
-                        classes[i].value = Math.floor(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                    if (n >= this._classPostProc_roundinghelper(Math.max.apply(Math, this._classes.map(item => item.value))) ) {
+                        this._classes[i].value = Math.floor(this._classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
                     }
                 } else if (i == 1) {
-                    if (n >= this._classPostProc_roundinghelper(classes[classes.length-1].value) ) {
+                    if (n >= this._classPostProc_roundinghelper(this._classes[this._classes.length-1].value) ) {
                         // lowest class handling to make sure it does not stay empty or same as lowest+1, after rounding
-                        var rounded_round = Math.round(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
-                        var rounded_ip1_round = Math.round(classes[i+1].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
-                        if (rounded_round <= classes[0].value || rounded_round == rounded_ip1_round){
+                        var rounded_round = Math.round(this._classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                        var rounded_ip1_round = Math.round(this._classes[i+1].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); 
+                        if (rounded_round <= this._classes[0].value || rounded_round == rounded_ip1_round){
                             console.error('Class interval boundary rounding error: requested nearest value (' + n + ', so rounding to the nearest ' + Math.pow(10,Math.abs(n)) + 
                             ') might yield empty classes or classes with the same boundaries after rounding the lowest two class boundaries (' + classes[1].value + ' and ' + classes[2].value+'). Class intervals were untouched. Fix this by adjusting the "classRounding" option to ' 
-                            + parseInt(this._classPostProc_roundinghelper(classes[1].value)-1) + ' (optimal).'); 
+                            + parseInt(this._classPostProc_roundinghelper(this._classes[1].value)-1) + ' (optimal).'); 
                             return;
                         } else {   
-                            classes[i].value = rounded_round; 
+                            this._classes[i].value = rounded_round; 
                         }
                     }
                 } else {
                     // midway classes
-                    classes[i].value = Math.round(classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); // round(number/100)*100 to round up/down to nearest 100 value
+                    this._classes[i].value = Math.round(this._classes[i].value/Math.pow(10,Math.abs(n)))*Math.pow(10,Math.abs(n)); // round(number/100)*100 to round up/down to nearest 100 value
                 }
             }
-            console.debug('Class interval boundary values have been rounded to the nearest', Math.pow(10,Math.abs(n)), 'values. New class boundary values:', classes)
+            console.debug('Class interval boundary values have been rounded to the nearest', Math.pow(10,Math.abs(n)), 'values. New class boundary values:', this._classes)
         }
-    },
+    }
 
     _legendPostProc_unitModifier(options) {
         // This processes the final class boundary values in order to multiply/divide them as wished. Purely visual, only affects legend. 
@@ -515,88 +535,53 @@ L.DataClassification = L.GeoJSON.extend({
         // Note: runs after classRounding(). Called inside _generatelegend(). It DOES change the main classes[] array elements, but since legend generation is the last step in the whole process, it's OK (for now).
         switch (options.action) {
             case 'multiply':
-                for (var i = 0; i<classes.length; i++) {
-                    console.debug('MULTIPLY', classes[i].value,' by', options.by)
-                    classes[i].value = classes[i].value * options.by;
+                for (var i = 0; i<this._classes.length; i++) {
+                    console.debug('MULTIPLY', this._classes[i].value,' by', options.by)
+                    this._classes[i].value = this._classes[i].value * options.by;
                 }
                 break;
             case 'divide':
-                for (var i = 0; i<classes.length; i++) {
-                    console.debug('DIVIDE', classes[i].value,' by', options.by)  
-                    classes[i].value = classes[i].value / options.by;                  
+                for (var i = 0; i<this._classes.length; i++) {
+                    console.debug('DIVIDE', this._classes[i].value,' by', options.by)  
+                    this._classes[i].value = this._classes[i].value / options.by;                  
                 }
                 break;
             default:
                 console.error('Invalid action for "unitModifier". Choose one of the following: "multiply", "divide".')
         }
         return;         
-    },
+    }
 
-    _legendRowFormatter(low, high, i) {
+    _legendRowFormatter(low, high, i) { 
+        var template = this._legendTemplate;
         // solve row based on the 3 row templates
-        if (i == classes.length) {
+        if (i == this._classes.length) {
             // highest
             let solved_high = template.highest.replace(/({high})/i, high)
             solved_high = solved_high.replace(/({low})/i, low)
-            solved_high = solved_high.replace(/({count})/i, classes[classes.length-1].featureCount)
+            solved_high = solved_high.replace(/({count})/i, this._classes[this._classes.length-1].featureCount)
             return solved_high;
         } else if (i == 1) {
             // lowest
             let solved_low = template.lowest.replace(/({high})/i, high)
             solved_low = solved_low.replace(/({low})/i, low)
-            solved_low = solved_low.replace(/({count})/i, classes[i-1].featureCount)
+            solved_low = solved_low.replace(/({count})/i, this._classes[i-1].featureCount)
             return solved_low;
         } else {
             // middle
             let solved_mid = template.middle.replace(/({high})/i, high)
             solved_mid = solved_mid.replace(/({low})/i, low)
-            solved_mid = solved_mid.replace(/({count})/i, classes[i-1].featureCount)
+            solved_mid = solved_mid.replace(/({count})/i, this._classes[i-1].featureCount)
             return solved_mid;
         };
-    },
+    }
 
-    _generateLegend(title, asc, mode_line, mode_point, typeOfFeatures, footer) {
-        svgCreator = this._svgCreator;
-        legendPP_unitMod = this._legendPostProc_unitModifier;
-        legendRowFormatter = this._legendRowFormatter;
-        unitMod_options = this._unitMod;
-        position = this._legendPos;
-        ps = this._pointShape;
-        lc = (this._linecolor != null ? this._linecolor : L.Path.prototype.options.color);
-        lw = this._lineweight;
-        nodata = this._noDataFound;
-        nodatacolor = this._noDataColor;
-        nodataignore = this._noDataIgnore;
-        rowgap = this.options.legendRowGap;
-        lt = this._legendTemplate;
-        // format nodata row. Necessary for supporting {count} in that legend class row.
-        if (classes.nodataFeatureCount > 0) {
-            lt_formattedNoData = lt.nodata.replace(/({count})/i, classes.nodataFeatureCount);
-        };
-        var prad = (options.style.radius != null ? options.style.radius : 8);
-        var pfc = (options.style.fillColor != null ? options.style.fillColor : 'orange');
-
-        template = this._legendTemplate;
-
-        // unitModifier process:
-        if (unitMod_options != null) {
-            if (unitMod_options.hasOwnProperty('action') && unitMod_options.action != null && typeof unitMod_options.action == "string" && unitMod_options.hasOwnProperty('by') && unitMod_options.by != null && typeof unitMod_options.by == "number") { 
-                legendPP_unitMod(unitMod_options)
-            } else {
-                console.error('Missing/invalid options for "unitModifier". Try `unitModifier: {action: "multiply", number: 1000}`. Class values in legend were not affected.')
-            };
-        }
-
-        // make sure legendPosition option is valid, if not, revert to default
-        if(!['topleft', 'topright', 'bottomleft', 'bottomright'].includes(position)) {
-            console.error('Invalid legendPosition. Choose one of the following: "bottomleft", "bottomright", "topleft", "topright". Overriding with default ("bottomleft").');
-            position = 'bottomleft';
-        }
-
-        var legend = new L.Control({position: position});
-        
-        legend.onAdd = function (map) {
+    _generateLegendContent = ({title, asc, mode_line, mode_point, mode_polygon, typeOfFeatures, footer, classes, mode, rowgap, prad, pfc, lc, lw, lt_formattedNoData}) => {
             var div = L.DomUtil.create('div', 'info legend');
+
+            var nodata = this._noDataFound;
+            var nodatacolor = this._noDataColor;
+            var nodataignore = this._noDataIgnore;
 
             // legend title:
             if (title != null && title != '') {
@@ -639,14 +624,14 @@ L.DataClassification = L.GeoJSON.extend({
                             }
                             container.innerHTML +=
                                 '<div class="legendDataRow legendVarSizeDataRow">'+
-                                    svgCreator({shape: ps, color: colors[i-1], size: prad}).outerHTML+
-                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                    this._svgCreator({shape: this._pointShape, color: this._colors[i-1], size: prad}).outerHTML+
+                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>';
                         }
                         if (nodata && !nodataignore) {
                             container.innerHTML +=
                                 '<div id="nodatarow" class="legendDataRow legendVarSizeDataRow">'+
-                                    svgCreator({shape: ps, color: nodatacolor, size: prad}).outerHTML+
+                                    this._svgCreator({shape: this._pointShape, color: nodatacolor, size: prad}).outerHTML+
                                     '<div>'+lt_formattedNoData+'</div>'+
                                 '</div>'
                         }
@@ -670,7 +655,7 @@ L.DataClassification = L.GeoJSON.extend({
                             // Changed in v1.6.1, since the symbol SVGs no longer have a fixed 25x25/30x30 svg size,
                             // but only a size that encapsulates the symbol itself (therefore those SVGs no longer can be insert as they are).
                             // The following X/Y shift is only for use in the legend, creating a uniform 30x30 svg canvas for legend symbols:
-                            var symbol = svgCreator({shape: ps, size: radiuses[i-1], color: pfc});
+                            var symbol = this._svgCreator({shape: this._pointShape, size: this._radiuses[i-1], color: pfc});
                             var origHeight = symbol.getAttribute('height');
                             var origWidth = symbol.getAttribute('width');
                             var shiftX = (30-origWidth)/2;
@@ -683,11 +668,11 @@ L.DataClassification = L.GeoJSON.extend({
                             container.innerHTML += 
                                 '<div class="legendDataRow legendVarSizeDataRow">'+
                                     symbol.outerHTML+
-                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>';
                         }
                         if (nodata && !nodataignore) {
-                            var NDsymbol = svgCreator({shape: ps, size: Math.min.apply(Math, radiuses), color: nodatacolor});
+                            var NDsymbol = this._svgCreator({shape: this._pointShape, size: Math.min.apply(Math, this._radiuses), color: nodatacolor});
                             var origHeight = NDsymbol.getAttribute('height');
                             var origWidth = NDsymbol.getAttribute('width');
                             var shiftX = (30-origWidth)/2;
@@ -725,9 +710,9 @@ L.DataClassification = L.GeoJSON.extend({
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
                                     '<svg width="25" height="25" viewBox="0 0 25 25">'+
-                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+colors[i-1]+';"/>'+
+                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+this._colors[i-1]+';"/>'+
                                     '</svg>' +
-                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>'
                         }
                         if (nodata && !nodataignore) {
@@ -758,9 +743,9 @@ L.DataClassification = L.GeoJSON.extend({
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
                                     '<svg width="25" height="25" viewBox="0 0 25 25">'+
-                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+widths[i-1]+'; stroke: '+lc+';"/>'+
+                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+this._widths[i-1]+'; stroke: '+lc+';"/>'+
                                     '</svg>'+
-                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>'
                         }
                         if (nodata && !nodataignore) {
@@ -775,7 +760,7 @@ L.DataClassification = L.GeoJSON.extend({
                         break;
                 }
             } else {
-                let opacity = (options.style.fillOpacity ? options.style.fillOpacity : 0.7);
+                let opacity = (this.options.style.fillOpacity ? this.options.style.fillOpacity : 0.7);
                 // polygons
                 switch (mode_polygon) {
                     case 'color':
@@ -794,8 +779,8 @@ L.DataClassification = L.GeoJSON.extend({
                             }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
-                                    '<i style="background: ' + colors[i-1] + '; opacity: ' + opacity + '"></i>' +
-                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                    '<i style="background: ' + this._colors[i-1] + '; opacity: ' + opacity + '"></i>' +
+                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>'
                         }
                         if (nodata && !nodataignore) {
@@ -822,8 +807,8 @@ L.DataClassification = L.GeoJSON.extend({
                             }
                             container.innerHTML +=
                                 '<div class="legendDataRow">'+
-                                    '<svg class="hatchPatch"><rect fill="url(#'+hatchclasses[i-1]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
-                                    '<div>'+ legendRowFormatter(low, high, i) +'</div>'+
+                                    '<svg class="hatchPatch"><rect fill="url(#'+this._hatchclasses[i-1]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
+                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
                                 '</div>'
                         }
                         if (nodata && !nodataignore) {
@@ -838,10 +823,12 @@ L.DataClassification = L.GeoJSON.extend({
             }
             // reverse legend row order in ascending mode by reversing flex-direction
             if (asc) {
-                L.DomUtil.addClass(container, 'reverseOrder');
+                container.classList.add('reverseOrder');
             }
             // append symbology content
             div.appendChild(container);
+
+            console.warn(container)
 
             // legend footer (note):
             if (footer != null && footer != '') {
@@ -852,7 +839,41 @@ L.DataClassification = L.GeoJSON.extend({
             }
 
             return div;
+    }
+
+    _generateLegend = (title, asc, mode_line, mode_point, mode_polygon, typeOfFeatures, footer, classes, mode) => {
+        var unitMod_options = this._unitMod;
+        var position = this._legendPos;
+        console.warn(position)
+        var ps = this._pointShape;
+        var lc = (this._linecolor != null ? this._linecolor : (LeafletisV1 ? L.Path.prototype.options.color : L.Path.defaultOptions.color));
+        var lw = this._lineweight;
+        var rowgap = this.options.legendRowGap;
+        var lt = this._legendTemplate;
+        // format nodata row. Necessary for supporting {count} in that legend class row.
+        if (this._classes.nodataFeatureCount > 0) {
+            var lt_formattedNoData = lt.nodata.replace(/({count})/i, this._classes.nodataFeatureCount);
         };
+        var prad = (this.options.style.radius != null ? this.options.style.radius : 8);
+        var pfc = (this.options.style.fillColor != null ? this.options.style.fillColor : 'orange');
+
+
+        // unitModifier process:
+        if (unitMod_options != null) {
+            if (unitMod_options.hasOwnProperty('action') && unitMod_options.action != null && typeof unitMod_options.action == "string" && unitMod_options.hasOwnProperty('by') && unitMod_options.by != null && typeof unitMod_options.by == "number") { 
+                this._legendPostProc_unitModifier(unitMod_options)
+            } else {
+                console.error('Missing/invalid options for "unitModifier". Try `unitModifier: {action: "multiply", number: 1000}`. Class values in legend were not affected.')
+            };
+        }
+
+        // make sure legendPosition option is valid, if not, revert to default
+        if(!['topleft', 'topright', 'bottomleft', 'bottomright'].includes(position)) {
+            console.error('Invalid legendPosition. Choose one of the following: "bottomleft", "bottomright", "topleft", "topright". Overriding with default ("bottomleft").');
+            position = 'bottomleft';
+        }
+
+        var legend = new LegendControl({position: position}, {title, asc, mode_line, mode_point, mode_polygon, typeOfFeatures, footer, classes, mode, rowgap, prad, pfc, lc, lw, lt_formattedNoData}, this)
 
         legend.id = this._leaflet_id;
         this._legends.push(legend);
@@ -865,27 +886,22 @@ L.DataClassification = L.GeoJSON.extend({
                 document.getElementById('nodatarow').classList.add('legendAscNodata');
             }
         } 
-    },
+    }
 
     onAdd(map) {
-        console.debug('L.dataClassification: Classifying...')
-        console.debug('L.dataClassification: options:', this.options)
-        this._field=this.options.field
-        this._normalizeByField=this.options.normalizeByField
-        L.GeoJSON.prototype.onAdd.call(this, map);
-        this._classify(map);
-    },
+        console.debug('L.dataClassification: added to map ', map)
+    }
 
-    _classify(map) {
+    _classify(data) {
         var timerGlobalStart = Date.now();
 
-        _field=this.options.field;
-        _normalizeByField=this.options.normalizeByField;
-        _nodata=this._noDataFound;
-        _nodataignore=this.options.noDataIgnore;
+        this._field = this.options.field;
+        this._normalizeByField = this.options.normalizeByField;
+        this._nodata = this._noDataFound;
+        this._nodataignore = this.options.noDataIgnore;
         var features_info = { Point: 0, MultiPoint: 0, LineString: 0, MultiLineString: 0, Polygon: 0, MultiPolygon: 0};
         var typeOfFeatures = 'unknown';
-        features = [];
+        var features = [];
 
         var timerLoadValuesStart = Date.now();
         this.eachLayer(function (layer) {
@@ -928,16 +944,16 @@ L.DataClassification = L.GeoJSON.extend({
             if (layer.feature.properties[this._field] != null) {
                 //values.push(layer.feature.properties[this._field]);
                 features.push(layer.feature.properties);
-            } else {
-                _nodata = true;     // flag for generateLegend() later
-                if (!_nodataignore) {
+            } else {    
+                this._nodata = true;     // flag for generateLegend() later
+                if (!this._nodataignore) {
                     // we add null values to main array
                     //values.push(layer.feature.properties[this._field]);
                     features.push(layer.feature.properties);
                 }
                 console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
             };
-        })
+        }, this)
         var timerLoadValuesEnd = Date.now();
         console.debug('Feature types in GeoJSON:', features_info)
         typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
@@ -955,7 +971,7 @@ L.DataClassification = L.GeoJSON.extend({
         });
         var timerNormalizationEnd = Date.now();
 
-        this._noDataFound = _nodata;
+        this._noDataFound = this._nodata;
         this._features = features;
         if (this._normalizeByField != null) {
             console.debug('Loaded values from GeoJSON field: "'+this._field+'", after normalization by field: "'+this._normalizeByField+'"', features.map(a => a.finalvalue));
@@ -968,28 +984,28 @@ L.DataClassification = L.GeoJSON.extend({
                 if (this.options.style.hasOwnProperty('weight')) {
                     this._lineweight = this.options.style.weight;
                 } else {
-                    this._lineweight = L.Path.prototype.options.weight;     // fallback to Leaflet default
+                    this._lineweight = (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight);     // fallback to Leaflet default
                 }
             } else {
-                this._linecolor = L.Path.prototype.options.color;           // fallback to Leaflet default
-                this._lineweight = L.Path.prototype.options.weight;         // fallback to Leaflet default
+                this._linecolor = (LeafletisV1 ? L.Path.prototype.options.color : L.Path.defaultOptions.color);           // fallback to Leaflet default
+                this._lineweight = (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight);         // fallback to Leaflet default
             }
         };
 
         // options extract and checks
-        classnum = this.options.classes;
+        var classnum = this.options.classes;
         if (classnum > 10) { console.warn("Don't be silly, both map and legend will look incomprehensible. Overriding classnumber with 10."); classnum = 10 }; // over 10
-        mode = this.options.mode;
-        mode_point = this.options.pointMode;
-        pointSize = this.options.pointSize;
+        var mode = this.options.mode;
+        var mode_point = this.options.pointMode;
+        var pointSize = this.options.pointSize;
 		this._pointShape = this.options.pointShape;
-        mode_line = this.options.lineMode;
-        mode_polygon = this.options.polygonMode;
-        lineWidth = this.options.lineWidth;
-        polygonHatch = this.options.polygonHatch;
-        colorramp = this.options.colorRamp;
-        colorramp_rev = this.options.reverseColorRamp;
-        colorramp_custom = this.options.colorCustom;
+        var mode_line = this.options.lineMode;
+        var mode_polygon = this.options.polygonMode;
+        var lineWidth = this.options.lineWidth;
+        var polygonHatch = this.options.polygonHatch;
+        var colorramp = this.options.colorRamp;
+        var colorramp_rev = this.options.reverseColorRamp;
+        var colorramp_custom = this.options.colorCustom;
         if (colorramp_custom != null ) {
             if (colorramp_custom.length == 1) {
                 console.error('Custom colors: only one color was set. At least 2 are required. Falling back to colorRamp.');
@@ -999,7 +1015,7 @@ L.DataClassification = L.GeoJSON.extend({
             }
         }
         var asc = (this.options.legendAscending != null ? this.options.legendAscending : false);
-        middlepoint = this.options.middlePointValue;
+        var middlepoint = this.options.middlePointValue;
         var legendtitle;
         if (this.options.legendTitle == 'hidden') {
             legendtitle = '';                    
@@ -1011,13 +1027,13 @@ L.DataClassification = L.GeoJSON.extend({
             legendfooter = null;                    
         } else {
             legendfooter = this.options.legendFooter;
-        }; 	
+        };
         var classrounding = this.options.classRounding;
         if (classrounding > 10) { // over 10
             console.warn("Don't be silly, by rounding class boundary values to 10+ decimal places the legend will look incomprehensible. Overriding classrounding with 0 (whole numbers) for now. Fix this by using a more sensible number for the 'classRounding' parameter (like 2), set it to zero to get whole numbers, or set it to negative numbers to round up/down to 10s (-1), 100s (-2), 1000s (-3), etc."); 
             classrounding = 0;
         }; 
-        var pointfillcolor = this.options.style.fillColor;
+        //var pointfillcolor = this.options.style.fillColor;
         this._unitMod = this.options.unitModifier;
         this._legendPos = this.options.legendPosition;
         this._legendTemplate = this.options.legendTemplate;
@@ -1043,8 +1059,8 @@ L.DataClassification = L.GeoJSON.extend({
                 classnum.sort(function(a, b) {
                     return a - b;
                   });
-                classes = classnum;
-                classnum = classes.length;
+                this._classes = classnum;
+                classnum = this._classes.length;
             }
         } else {
             if (Array.isArray(classnum)) {
@@ -1053,18 +1069,18 @@ L.DataClassification = L.GeoJSON.extend({
                 return;
             }
         }
-        values = features.map(a => a.finalvalue);
+        var values = features.map(a => a.finalvalue);
         if (classnum > 2 && classnum < this._features.length) {	
             switch (mode) {
                 case 'jenks':	
-                    classes = ss.jenks(values.filter((value) => value != null), classnum);
-                    classes.pop(); // remove last, since its the max value
-                    console.debug('Jenks classes: ', classes);
+                    this._classes = ss.jenks(values.filter((value) => value != null), classnum);
+                    this._classes.pop(); // remove last, since its the max value
+                    console.debug('Jenks classes: ', this._classes);
                     this._convertClassesToObjects();
                     success = true;
                     break;
                 case 'equalinterval':
-                    classes = [];
+                    this._classes = [];
                     var minmax = ss.extent(values.filter((value) => value != null));
                     console.debug('min:', minmax[0], ', max:', minmax[1])
                     var range = minmax[1]-minmax[0];
@@ -1072,33 +1088,33 @@ L.DataClassification = L.GeoJSON.extend({
                     var oneclass = range/classnum;
                     console.debug('one class:', oneclass);
                     for (var i=minmax[0]; i<minmax[1];) {
-                        classes.push(i);
+                        this._classes.push(i);
                         i = i + oneclass;
                     }
-                    console.debug('EI classes: ', classes);
+                    console.debug('EI classes: ', this._classes);
                     this._convertClassesToObjects();
                     success = true;
                     break;
                 case 'quantile':
-                    classes = [];
+                    this._classes = [];
                     for (var i = 0; i<classnum; i++) {
                         var currentq = (1/classnum)*i;
-                        classes.push(ss.quantile(values.filter((value) => value != null), currentq));
+                        this._classes.push(ss.quantile(values.filter((value) => value != null), currentq));
                     }				
                     console.warn('Quantile classes at the middle might be slightly different compared to GIS SW');		
-                    console.debug('Quantile classes: ', classes);	
+                    console.debug('Quantile classes: ', this._classes);	
                     this._convertClassesToObjects();
                     success = true;
                     break;
                 case 'manual':
-					classnum = classes.length;
-                    console.debug('Manually defined classes: ', classes);	
+					this._classnum = this._classes.length;
+                    console.debug('Manually defined classes: ', this._classes);	
                     this._convertClassesToObjects();
                     success = true;
                     break;
                 case 'stddeviation':
                     // with zScore: (number-average)/standard_deviation
-                    classes = [];
+                    this._classes = [];
                     var stddev = ss.standardDeviation(values.filter((value) => value != null))
                     var mean = ss.mean(values.filter((value) => value != null))
                     console.debug('stddev:', stddev)
@@ -1118,7 +1134,7 @@ L.DataClassification = L.GeoJSON.extend({
                     var up = 1;
                     //var potclassnum = Math.round(diff/(stddev/1));
                     var valid = true;
-                    classes.push(-999999);
+                    this._classes.push(-999999);
                     for (var i = 0; valid /*i<potclassnum*/; i++) {
                             console.debug('downwards', down)
                             curr = mean-(halfstddev*down);
@@ -1127,7 +1143,7 @@ L.DataClassification = L.GeoJSON.extend({
                             console.debug((curr > extent[0]))
                             console.debug(halfstddev)
                             if (curr > extent[0] && down < 7) {
-                                classes.push(curr);
+                                this._classes.push(curr);
                                 down += 2;
                             } else {
                                 valid = false;
@@ -1140,23 +1156,23 @@ L.DataClassification = L.GeoJSON.extend({
                         curr = mean+(halfstddev*up);
                         console.debug('upwards curr', curr)
                         if (curr < extent[1] && up < 7) {
-                            classes.push(curr);
+                            this._classes.push(curr);
                             up += 2;
                         } else {
                             valid = false
                         };
                     }
 
-                    console.debug(classes);
-                    classes.sort(function(a, b) {
+                    console.debug(this._classes);
+                    this._classes.sort(function(a, b) {
                         return a - b;
                     });
-                    console.debug('Sorted Stddev classes: ', classes);	
+                    console.debug('Sorted Stddev classes: ', this._classes);	
                     this._convertClassesToObjects();
 
                     console.debug('down intervals:', down, 'up intervals:', up)
                     var interval_lower = (0.5 * -down);
-                    classes.forEach(function (arrayItem) {
+                    this._classes.forEach(function (arrayItem) {
                         if (down > 0) {
                             console.debug('down =', down, 'up =', up, 'boundary =', interval_lower)
                             arrayItem.stddev_lower = interval_lower;
@@ -1173,7 +1189,7 @@ L.DataClassification = L.GeoJSON.extend({
                     success = true;
                     break;
                 case 'logarithmic':
-                    classes = [];
+                    this._classes = [];
                     var minmax = ss.extent(values.filter((value) => value != null));
                     console.debug('min:', minmax[0], ', max:', minmax[1])	
 
@@ -1187,15 +1203,15 @@ L.DataClassification = L.GeoJSON.extend({
                     console.debug('logdiff divided by classnum', logdiff_divided)
                     var factor = Math.exp(logdiff_divided);
                     console.debug('factor Math.exp(logdiff_divided):', factor)
-                    classes.push(minmax[0])
+                    this._classes.push(minmax[0])
                     for (var i = 1; i < classnum; i++) {
-                        classes.push(classes[classes.length - 1] * factor);
+                        this._classes.push(this._classes[this._classes.length - 1] * factor);
                     }
 
                     // round interval boundary values by default, since with logarithmic classes we get high precision floats
                     if (classrounding == null) { classrounding = 2;}
 
-                    console.debug('Logarithmic classes: ', classes);	
+                    console.debug('Logarithmic classes: ', this._classes);	
                     this._convertClassesToObjects();
                     success = true;
                     break;
@@ -1208,9 +1224,9 @@ L.DataClassification = L.GeoJSON.extend({
             // Classification success, proceed with generating colors
             if (success) {
                 console.debug('Classification success.');
-                console.debug('Generating color- and symbol property ranges for '+classes.length+' classes.');
+                console.debug('Generating color- and symbol property ranges for '+this._classes.length+' classes.');
                 try {
-                    colors = chroma.scale(colorramp).colors(classes.length);
+                    this._colors = chroma.scale(colorramp).colors(this._classes.length);
                 } catch (error) {
                     console.error(error)
                     console.error('Make sure chosen color ramp exists (color ramps based on https://colorbrewer2.org/) and custom colors are formatted correctly. For supported formats, see https://gka.github.io/chroma.js/. For an interactive color palette helper, see https://gka.github.io/palettes/.')
@@ -1218,7 +1234,7 @@ L.DataClassification = L.GeoJSON.extend({
                 }
                 if (colorramp_rev) {
                     console.debug('reversing colorramp')
-                    colors.reverse(); 
+                    this._colors.reverse(); 
                 };
             }
             var timerGenColorsEnd = Date.now();
@@ -1235,9 +1251,9 @@ L.DataClassification = L.GeoJSON.extend({
             }
             var timerGenRangesEnd = Date.now();
             // Middlepoint value handling:
-            if (middlepoint != null && classes.length % 2 == 0) {
+            if (middlepoint != null && this._classes.length % 2 == 0) {
                 console.debug('Adjusting middle classes to value: ', middlepoint);
-                classes[classes.length / 2].value = middlepoint;
+                this._classes[this._classes.length / 2].value = middlepoint;
             }
             // Class rounding handling:
             if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
@@ -1246,24 +1262,18 @@ L.DataClassification = L.GeoJSON.extend({
             return;
         };
 
-        this._classes = classes;
-        svgCreator = this._svgCreator;
-        ps = this._pointShape;
-        stylePoint_color = this._stylePoint_color;
-        stylePoint_size = this._stylePoint_size;
-        styleLine_color = this._styleLine_color;
-        styleLine_width = this._styleLine_width;
-        stylePolygon_color = this._stylePolygon_color;
-        stylePolygon_hatch = this._stylePolygon_hatch;
-        getColor = this._getColor;
-        getHatch= this._getHatch;
-        getRadius = this._getRadius;
-        getWeight = this._getWeight;
-        pointMarkers = this._pointMarkers;
-        options = this.options;
-        nodataignore = this._noDataIgnore;
-
-        currentmarker = null;
+        //this._classes = classes;
+        var svgCreator = this._svgCreator;
+        var ps = this._pointShape;
+        var stylePoint_color = this._stylePoint_color;
+        var stylePoint_size = this._stylePoint_size;
+        var styleLine_color = this._styleLine_color;
+        var styleLine_width = this._styleLine_width;
+        var stylePolygon_color = this._stylePolygon_color;
+        var stylePolygon_hatch = this._stylePolygon_hatch;
+        var pointMarkers = this._pointMarkers;
+        var options = this.options;
+        var nodataignore = this._noDataIgnore;
 
         var n = 0;
 
@@ -1277,11 +1287,11 @@ L.DataClassification = L.GeoJSON.extend({
                 switch (layer.feature.geometry.type) {
                     case "Point":
                         var coords = layer.feature.geometry.coordinates;
-                        var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
+                        var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue, this.options) : stylePoint_size(features[n].finalvalue, this.options))
                         style.shape = ps;
                         var finalSymbol = svgCreator({shape: style.shape, size: style.radius, color: style.fillColor});
-                        iconW = finalSymbol.getAttribute('width');
-                        iconH = finalSymbol.getAttribute('height');
+                        var iconW = finalSymbol.getAttribute('width');
+                        var iconH = finalSymbol.getAttribute('height');
 
                         const svgIcon = new L.DivIcon({
                             html: finalSymbol,
@@ -1292,7 +1302,7 @@ L.DataClassification = L.GeoJSON.extend({
                         layer.setIcon(svgIcon);
                         break;
                     case "MultiPoint":
-                        var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue) : stylePoint_size(features[n].finalvalue, this.options))
+                        var style = (mode_point == "color" ? stylePoint_color(features[n].finalvalue, this.options) : stylePoint_size(features[n].finalvalue, this.options))
                         style.shape = ps;
                         var finalSymbol2 = svgCreator({shape: style.shape, size: style.radius, color: style.fillColor});
                         iconW = finalSymbol2.getAttribute('width');
@@ -1310,7 +1320,7 @@ L.DataClassification = L.GeoJSON.extend({
                         break;
                     case "LineString":
                     case "MultiLineString":
-                        layer.setStyle((mode_line == "width" ? styleLine_width(features[n].finalvalue) : styleLine_color(features[n].finalvalue)))/*.addTo(map)*/;
+                        layer.setStyle((mode_line == "width" ? styleLine_width(features[n].finalvalue, this.options) : styleLine_color(features[n].finalvalue, this.options)))/*.addTo(map)*/;
                         break;
                     case "Polygon":
                     case "MultiPolygon":
@@ -1327,20 +1337,20 @@ L.DataClassification = L.GeoJSON.extend({
                 }
                 n += 1;  
             }     
-        });
+        }, this);
         var timerSymbologyEnd = Date.now();
 
         // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
         var validFeatures = 0;
-        classes.forEach((element, idx) => {
+        this._classes.forEach((element, idx) => {
             validFeatures += element.featureCount;
         });
-        classes.nodataFeatureCount = features.length-validFeatures;
+        this._classes.nodataFeatureCount = features.length-validFeatures;
 
         //this._convertClassesToObjects();
 
         var timerLegendStart = Date.now();
-        this._generateLegend(legendtitle, asc, mode_line, mode_point, typeOfFeatures, legendfooter);  // generate legend
+        this._generateLegend(legendtitle, asc, mode_line, mode_point, mode_polygon, typeOfFeatures, legendfooter, this._classes, mode);  // generate legend
         var timerLegendEnd = Date.now();
 
         console.debug('L.dataClassification: Finished!')
@@ -1363,11 +1373,11 @@ L.DataClassification = L.GeoJSON.extend({
             console.groupEnd()
         }
         console.debug('------------------------------------')
-    },
+    }
 
     classify() {
         this._classify(this._map);
-    },
+    }
     
     onRemove(map) {
         console.debug('Removing Layer..........')
@@ -1380,9 +1390,31 @@ L.DataClassification = L.GeoJSON.extend({
 		this.eachLayer(map.removeLayer, map);
         console.debug('Layer Removed.')
 	}
-});
+};
 
+class LegendControl extends L.Control {
+	//static defaultOptions = {position: 'topright'};
+
+	constructor(options, legendData = {}, ctx) {
+		super(options);
+		//this._title = title;
+        this._legendData = legendData;
+        this._ctx = ctx;
+	}
+
+	onAdd(map) {
+        const div = this._ctx._generateLegendContent(this._legendData)
+        return div;
+	}
+}
+
+// Leaflet 1.x to 2.x migration (for support of both): https://github.com/Leaflet/Leaflet/blob/main/MIGRATION.md#11-support-1x-and-20-from-one-release
+// 1.x keeps defaults on the prototype, and without a copy of its own, mergeOptions would change the defaults of every L.Layer
+if (LeafletisV1) {
+	DataClassification.prototype.options = Object.create(L.GeoJSON.prototype.options);
+}
+DataClassification.mergeOptions(plugin_defaultOptions);
 
 L.dataClassification = function (layers, options) {
-	return new L.DataClassification(layers, options);
+	return new DataClassification(layers, options);
 };

@@ -7,8 +7,8 @@
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
 		<!-- leaflet from CDN -->		
-		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet.css" />
-		<script src="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet-global.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.2/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@2.0.0-beta.2/dist/leaflet-global.js"></script>
 
 		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
@@ -53,19 +53,19 @@
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var carto_attrib = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
@@ -78,11 +78,11 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.Map('map', {layers: [cartodb_voyager]}).setView([0,0], 3); 
+			var map = new L.Map('map', {layers: [OSM]}).setView([0,0], 3); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			map.createPane('front');
 			map.getPane('front').style.zIndex = 450;
-			var layerControl = new L.Control.Layers(baseMaps, null, {collapsed: false}).addTo(map);
+			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
 
 			// Point features example. Attribute to test with: 'population'
 			fetch('data/us-state-capitals.geojson').then(r => r.json()).then(d => {
@@ -94,7 +94,7 @@
 				window.testdata2 = L.dataClassification(d, {
 					mode: 'jenks',
 					classes: 4,
-					field: 'population',
+					field: 'population',					
 					pointMode: 'size',
 					pointSize: {
 						min: 3.5,
@@ -110,7 +110,8 @@
 						lowest: '< {high} [{count}]',
 						nodata: 'No data [{count}]'
 					},
-					onEachFeature: tooltip
+					onEachFeature: tooltip,
+					//style: {fillColor: 'red'}
 				}).addTo(map);
 			});
 			
@@ -119,12 +120,12 @@
 				function tooltip(feature, layer) {
 					if (feature.properties.name && feature.properties.density) {
 						layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + parseInt(feature.properties.density)+' pop/mi²');
-						layer.on('mousemove',e=>{
+						layer.on('pointermove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
 					} else {
 						layer.bindTooltip('<b>' + feature.properties.name + '</b><br> No data');
-						layer.on('mousemove',e=>{
+						layer.on('pointermove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
 					}
@@ -142,7 +143,7 @@
 					classRounding: 1,
 					onEachFeature: tooltip,
 					// polygon outline styling example (standard L.Path styling options):
-					style: {
+					style: {	
 						weight: 2, 
 						color: 'white'
 					}
@@ -153,7 +154,7 @@
 			fetch('data/rivers_yukon.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + String(feature.properties.discharge)+' m³/s<br>'+ String(Math.round(feature.properties.discharge*35.3147))+' cuft/s');
-					layer.on('mousemove',e=>{
+					layer.on('pointermove',e=>{
 						e.target.getTooltip().setLatLng(e.latlng);
 					});
 
@@ -172,8 +173,8 @@
 						e.target.setStyle(origstyle);
 					}
 					layer.on({
-						mouseover: highlight,
-						mouseout: resetStyle
+						pointerover: highlight,
+						pointerout: resetStyle
 					});
 					// line highlighting end
 				}
