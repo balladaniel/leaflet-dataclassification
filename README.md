@@ -34,16 +34,18 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
     - positioning (L.control options)
     - row gap adjustments
 
-## Demo
-For working examples, please see the [Examples](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples) folder. The examples use Leaflet v2.0.0-alpha.1 (examples with Leaflet v1 are in the [Leaflet_v1](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples/leaflet_v1) subfolder). All features in the examples listed here have binded tooltips (a default Leaflet feature) for an easier check of attribute values.
-- combined (three layers): [./examples/combined.html](https://balladaniel.github.io/leaflet-dataclassification/examples/combined.html)
-- points (color, 92 points): [./examples/points_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_c.html)
-- points (size, 471 points with diamond-shaped symbols): [./examples/points_s.html](https://balladaniel.github.io/leaflet-dataclassification/examples/points_s.html)
-- lines (color, 4879 lines): [./examples/lines_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_c.html)
-- lines (width, 109 lines): [./examples/lines_w.html](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_w.html)
-- polygons (color, 16 polygons): [./examples/polygons_c.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c.html)
-- polygons (color 2, 3220 polygons): [./examples/polygons_c2.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c2.html)
-- polygons (hatch fill, with both width/angle as distinction, 334 polygons): [./examples/polygons_h.html](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_h.html)
+## Demos (Examples)
+For working examples, please see the [Examples](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples) folder. The examples use Leaflet v2.0.0-beta.2, while the same examples using Leaflet v1.9.4 can be found in the [Leaflet_v1](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples/leaflet_v1) subfolder.
+- [A combined map with three layers (points, lines and polygons)](https://balladaniel.github.io/leaflet-dataclassification/examples/combined.html)
+- [Points - 92 points, distinguished by symbol color](https://balladaniel.github.io/leaflet-dataclassification/examples/points_c.html)
+- [Points - 471 points, distinguished by symbol size, with diamond-shaped symbols)](https://balladaniel.github.io/leaflet-dataclassification/examples/points_s.html)
+- [Lines - 4879 lines, distinguished by line symbol color](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_c.html)
+- [Lines - 109 lines, distinguished by line symbol width](https://balladaniel.github.io/leaflet-dataclassification/examples/lines_w.html)
+- [Polygons - 16 polygons, distinguished by fill color](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c.html)
+- [Polygons - 3220 polygons, distinguished by fill color](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c2.html)
+- [Polygons - 334 polygons, distinguished by hatch pattern fills, using both hatch width and hatch angle as distinction between classes, simultaneously](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_h.html)
+
+All features in the examples maps listed here have binded tooltips (a default Leaflet feature) for easier check of attribute values.
 
 ## Requirements
 - [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v2.0.0-beta.2 global and v1.9.4)
@@ -53,14 +55,14 @@ For working examples, please see the [Examples](https://github.com/balladaniel/l
 - [chroma.js](https://github.com/gka/chroma.js) (tested with v3.1.1)
 - [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass) (only if you intend to use hatch pattern fills for polygons)
 
-### Leaflet v2 and above
-⚠️ **For Leaflet v2 use the global script, which has a global L declared for backwards compatibility.** 
+### Leaflet v2 and newer
+⚠️ **Currently, when used with Leaflet v2, the global Leaflet script is required, which declares the global L for backwards compatibility.** 
 
 Include Leaflet v2, the plugin itself (`leaflet-dataclassification.css` and `leaflet-dataclassification.js`) and plugin dependencies in your code. You can also link them through CDN and GitHub Pages:
 ``` html
-<!-- Leaflet v2.0.0-alpha.1 GLOBAL -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet-global.js"></script>	
+<!-- Leaflet v2.0.0-beta.2 GLOBAL -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.2/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@2.0.0-beta.2/dist/leaflet-global.js"></script>	
 <!-- leaflet-dataclassification -->
 <link rel="stylesheet" href="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.css" />
 <script src="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.js"></script>
@@ -70,7 +72,7 @@ Include Leaflet v2, the plugin itself (`leaflet-dataclassification.css` and `lea
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/leaflet-hatchclass.js"></script> 		<!-- samanbey/leaflet-hatchclass -->
 ```
 
-### Leaflet v1.9.4 and below
+### Leaflet v1.9.4
 
 Include Leaflet v1.9.4, the plugin itself (`leaflet-dataclassification.css` and `leaflet-dataclassification.js`) and plugin dependencies in your code. You can also link them through CDN and GitHub Pages:
 ``` html
@@ -137,23 +139,25 @@ const layer = L.dataClassification(data, {
 }.addTo(map);
 ```
 
+## API Reference
+
 ### Required options 
-- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'logarithmic'|'stddeviation'|'manual'] classification method: natural break (Jenks), equal count (quantile), equal interval, logarithmic scale, standard deviation, manual. When using standard deviation, option `classes` is ignored. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
-- `classes <integer|array>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.). If `mode` is manual, this must be an array of numbers (for example [0, 150, 200] would yield the following three classes: below 150, 150-200, above 200). 
+- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'logarithmic'|'stddeviation'|'manual'] Classification method: natural break (Jenks), equal count (quantile), equal interval, logarithmic scale, standard deviation, manual. When using standard deviation, option `classes` is ignored. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
+- `classes <integer|array<integer>>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.). If `mode` is manual, this must be an array of numbers (for example [0, 150, 200] would yield the following three classes: below 150, 150-200, above 200). 
 - `field <string>`: target attribute field name to base classification on. Case-sensitive!
 
 ### Additional options (in addition to the standard L.geoJSON options)
 #### Specific for Point	features
-- `pointMode <string>`: ['color'|'size'] fill "color" or "size" (default: 'color')
+- `pointMode <string>`: ['color'|'size'] Fill "color" or "size" (default: 'color')
 - `pointSize <object>`: when pointMode: "size", define min/max point circle radius 
     - `min <float>`: symbol size for the lowest class. (default: 2)
     - `max <float>`: symbol size for the highest class. (default: 10)
-- `pointShape <string>`: ['circle'|'square'|'diamond'] shape of points: 'circle', 'square', 'diamond' (default: 'circle')
+- `pointShape <string>`: ['circle'|'square'|'diamond'] Shape of point symbols: 'circle', 'square', 'diamond' (default: 'circle')
 - `style <object>`: custom styling
     - `fillColor <string>`: marker fill color, use only in size mode (default: orange)
     - `radius <float>`: marker shape radius (size), use only in color mode (default: 8, max: 10-12)
 #### Specific for Line features
-- `lineMode <string>`: ['color'|'width'] stroke "color" or "width" (default: 'color')
+- `lineMode <string>`: ['color'|'width'] Stroke "color" or "width" (default: 'color')
 - `lineWidth <object>`: when lineMode: "width", define min/max stroke width as object
     - `min <float>`: symbol size for the lowest class. (default: 3)
     - `max <float>`: symbol size for the highest class. (default: 15)
@@ -161,9 +165,9 @@ const layer = L.dataClassification(data, {
     - `color <string>`: line stroke color, use only in width mode (default: blue, the L.path default)
     - `weight <float>`: line stroke weight, use only in color mode (default: 3, the L.path default)
 #### Specific for Polygon features
-- `polygonMode <string>`: ['color'|'hatch'] fill "color" or "hatch" (default: 'color')
+- `polygonMode <string>`: ['color'|'hatch'] Fill "color" or "hatch" (default: 'color')
 - `polygonHatch <object>`: when polygonMode: "hatch", customize hatch fill pattern
-    - `distinctionMode <string>`: ['width'|'angle'|'both'] symbol distinction type between classes (default: 'both')
+    - `distinctionMode <string>`: ['width'|'angle'|'both'] Symbol distinction type between classes (default: 'both')
     - `strokeColors <array<string>>`: stroke colors (default: ['darkred', 'none'])
     - `strokeWidth <object>`: stroke widths to gradually alternate between for symbols, when distinctionMode: 'width' or 'both'.
         - `min <float>`: stroke width of the first color. Tip: set to -1 to have solid fills on two ends of the symbols' spectrum, only in distinctionMode: 'width' and 'both'. (default: 2)
@@ -186,7 +190,7 @@ const layer = L.dataClassification(data, {
 - `normalizeByField <string>`: attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
 - `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
 - `legendFooter <string>`: legend footer, centered, using a smaller italic font by default (customizble in CSS - .legendFooter class). HTML-markdown and CSS styling allowed. Hidden by default. (default: null)
-- `legendPosition <string>`: ['topleft'|'topright'|'bottomleft'|'bottomright'] legend position, L.control option. (default: 'bottomleft')
+- `legendPosition <string>`: ['topleft'|'topright'|'bottomleft'|'bottomright'] Legend position, L.control option. (default: 'bottomleft')
 - `legendRowGap <number>`: legend symbology row gap in pixels. You can also alter this in the attached CSS file. (default: 3)
 - `legendAscending <boolean>`: if true, value classes in legend will be ascending (low first, high last) (default: false)
 - `legendTemplate <object>`: custom HTML formatting of legend rows using {high}, {low} and {count} placeholders (interpreted as high/low value and feature count in the context of a given class interval). Distinct formatting for the highest, lowest and middle class intervals. Middle class format requires both {high} and {low}, highest only {low} and lowest only {high}. You can also format the row for nodata, if there are features with null attributes and you wish to show a class for them in the legend (defined by `noDataIgnore`).
@@ -195,13 +199,15 @@ const layer = L.dataClassification(data, {
     - `lowest <string>`: template for the lower end of classes, "lowest value and below" (default: '< {high}')
     - `nodata <string>`: text to show for null/nodata class (default: 'No data')
 - `unitModifier <object>`: modifies the final class boundary values in order to multiply/divide them by a number. Useful for example when a dataset attribute is in metres, but kilometres would fit the legend better (786000 metres shown as 786 km). Purely visual, only affects legend. Happens after classRounding.
-    - `action <string>`: ['divide'|'multiply'] action to take on the number specified by `by`. Required for `unitModifier`.
+    - `action <string>`: ['divide'|'multiply'] Action to take on the number specified by `by`. Required for `unitModifier`.
     - `by <number>`: a number to divide/multiply class boundary values with. Required for `unitModifier`.
 
 ## Hatch fill pattern types
 Symbol distinction types, when using a hatch pattern fill: width/angle/both. Option 'both' uses differing stroke width and angle at the same time.
 
 ![Screenshot of different hatch fill pattern modes (distinctionMode option). Samples.](screenshots_hatchfill.png)
+
+When using hatch fills with Leaflet v2 and newer, make sure to set the view on the Leaflet map object initially, with `L.map(...).setView([0,0], 3)`. Otherwise, you might get errors originating from the plugin (`TypeError: Cannot read properties of undefined (reading 'style')`), because without setView(), Leaflet v2 does not initialize the `_path` property of features at that point. This is also related to L.Path not accepting setStyle() with a CSS className (https://github.com/leaflet/leaflet/issues/2662). Unfortunately, currently, the only workaround is to set the classname directly on the object's fill, using the internal `layer._path.style['fill']`, to make hatch pattern fills work.
 
 Hatch fill patterns provided by [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass). (Gede, M.: Hatch Fill on Webmaps – to Do or Not to Do, and How to Do, Abstr. Int. Cartogr. Assoc., 5, 48, https://doi.org/10.5194/ica-abs-5-48-2022, 2022.)
 

@@ -7,8 +7,8 @@
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
 		<!-- leaflet from CDN -->
-		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet.css" />
-		<script src="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet-global.js"></script>	
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet-global.js"></script>
 
 		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
@@ -53,19 +53,19 @@
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var carto_attrib = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
@@ -80,7 +80,7 @@
 			// map div object, main Leaflet object:
 			var map = new L.Map('map', {layers: [cartodb_voyager]}); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
-			var layerControl = new L.Control.Layers(baseMaps, null, {collapsed: false}).addTo(map);
+			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
 
 			// Polygon features example. Attribute to test with: 'population2022', 'areakm2', 'density2022'
 			fetch('data/polygons_nz_regions.geojson').then(r => r.json()).then(d => {
@@ -91,7 +91,7 @@
 						'Area: '+feature.properties.areakm2+' km²<br>'+
 						'<i>Normalized: '+String(Math.round(feature.properties.population2022/feature.properties.areakm2 * 100)/100)+
 						' pop/km²</i>');
-						layer.on('mousemove',e=>{
+						layer.on('pointermove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
 					}

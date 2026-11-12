@@ -232,6 +232,7 @@ class DataClassification extends L.GeoJSON {
     /**
      * Feature styler for line/width mode.
      * @param {float} value - Attribute (number), based on which we classify the feature
+     * @param {object} options - Custom styling (see the `style` option)
      * @returns {object} Final symbol style of the feature
      */
     _styleLine_width = (value, options) => {
@@ -260,6 +261,7 @@ class DataClassification extends L.GeoJSON {
     /**
      * Feature styler for polygon/hatch mode. Different to the other feature styler, since this returns a formatted string which is then used for the `fill` CSS property.
      * @param {float} value - Attribute (number), based on which we classify the feature
+     * @param {object} options - Custom styling (basically just the `noDataColor` option)
      * @returns {string} Final symbol style of the feature (as a string, which is used for CSS-`fill` later.)
      */
     _stylePolygon_hatch = (value, options) => {
@@ -1325,7 +1327,7 @@ class DataClassification extends L.GeoJSON {
                     case "Polygon":
                     case "MultiPolygon":
                         if (mode_polygon == "hatch") {
-                            layer._path.style['fill'] = stylePolygon_hatch(features[n].finalvalue, this.options); // this messy workaround is needed due to Leaflet ignoring `className` in layer.setStyle(). See https://github.com/leaflet/leaflet/issues/2662.
+                            layer._path.style['fill'] = stylePolygon_hatch(features[n].finalvalue, this.options); // this messy workaround is needed due to Leaflet ignoring `className` in layer.setStyle(). See https://github.com/leaflet/leaflet/issues/2662. With Leaflet v2, make sure to set intial map view (L.map.setView()), otherwise the plugin spits an error on this line.
                             layer._path.style['fill-opacity'] = (options.style.fillOpacity != null ? options.style.fillOpacity : 0.7); 
                         } else {
                             layer.setStyle(stylePolygon_color(features[n].finalvalue, this.options))/*.addTo(map)*/;

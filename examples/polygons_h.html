@@ -7,15 +7,15 @@
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
 		<!-- leaflet from CDN -->
-		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet.css" />
-		<script src="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet-global.js"></script>	
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet-global.js"></script>
 
 		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
 		<link rel="stylesheet" href="../leaflet-dataclassification.css" />	
 
 		<!-- dependencies locally: -->
-		<script src="https://balladaniel.github.io/leaflet-dataclassification/lib/simple-statistics.min.js"></script>		<!-- https://github.com/simple-statistics/simple-statistics -->
+		<script src="../lib/simple-statistics.min.js"></script>		<!-- https://github.com/simple-statistics/simple-statistics -->
 		<script src="../lib/chroma.min.cjs"></script>				<!-- https://github.com/gka/chroma.js -->
 		<script src="../lib/leaflet-hatchclass.js"></script> 		<!-- https://github.com/samanbey/leaflet-hatchclass -->
 		
@@ -54,19 +54,19 @@
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var carto_attrib = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
@@ -79,28 +79,27 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.Map('map', {layers: [cartodb_voyager]}); 
+			var map = new L.Map('map', {layers: [cartodb_voyager]}).setView([0,0], 3); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
-			var layerControl = new L.Control.Layers(baseMaps, null, {collapsed: false}).addTo(map);
+			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
 
 			// Polygon features example. Attribute to test with: 'time_2018_MEAN'
 			fetch('data/polygons_hatch_eu_lifeexp_2018.geojson').then(r => r.json()).then(d => {
 				function tooltip(feature, layer) {
 					if (feature.properties.NUTS_NAME && feature.properties.time_2018_MEAN) {
 						layer.bindTooltip('<b>' + feature.properties.NUTS_NAME + ' (' + feature.properties.CNTR_CODE + ')</b><br>' + String(Math.round((feature.properties.time_2018_MEAN + Number.EPSILON) * 10) / 10)+' years');
-						layer.on('mousemove',e=>{
+						layer.on('pointermove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
 					} else {
 						layer.bindTooltip('<b>' + feature.properties.NUTS_NAME + ' (' + feature.properties.CNTR_CODE + ')</b><br> No data');
-						layer.on('mousemove',e=>{
+						layer.on('pointermove',e=>{
 							e.target.getTooltip().setLatLng(e.latlng);
 						});
 					}
 				}
 
 				window.testdata = L.dataClassification(d, {
-					style: {color: "white", weight: 0.8},
 					mode: 'jenks',
 					classes: 4,
 					field: 'time_2018_MEAN',
@@ -109,6 +108,7 @@
 					classRounding: 0,
 					legendTitle: '2018 Life expectancy<br>at birth (years)',
 					legendFooter: 'NUTS 2 regions',
+					legendRowGap: 5,
     				attribution: "<a href='https://ec.europa.eu/eurostat/web/products-datasets/-/tgs00101' target='_blank'>Data: Life expectancy at birth (NUTS 2), Eurostat</a>",
 					onEachFeature: tooltip,
 					polygonHatch: {
@@ -118,7 +118,7 @@
 						angle: 45,
 						alternateAngle: 45
 					},  
-					legendRowGap: 5
+					style: {color: "white", weight: 0.8}
 				}).addTo(map);
 				map.fitBounds([[40, -20], [60, 50]]);
 				//map.fitBounds([[56.76476752576022, 42.12158203125001], [43.29320031385285, 17.907714843750004]]);

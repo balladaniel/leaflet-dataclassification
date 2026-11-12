@@ -7,8 +7,8 @@
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
 		<!-- leaflet from CDN -->
-		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet.css" />
-		<script src="https://unpkg.com/leaflet@2.0.0-alpha.1/dist/leaflet-global.js"></script>	
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet-global.js"></script>
 
 		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
@@ -53,19 +53,19 @@
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var carto_attrib = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
@@ -100,7 +100,7 @@
 				}
 
 				function tooltip(feature, layer) {
-					layer.on('mousemove',e=>{
+					layer.on('pointermove',e=>{
 						e.target.getTooltip().setLatLng(e.latlng);
 					});
 					if (feature.properties.voterturnout) {
@@ -113,8 +113,8 @@
 						'Voter turnout: no data');
 					}
 					layer.on({
-						mouseover: highlight,
-						mouseout: resetStyle
+						pointerover: highlight,
+						pointerout: resetStyle
 					});
 
 				}
@@ -149,7 +149,7 @@
 					pane: 'front',
 				}).addTo(map);
 			}).then(a => {
-				var layerControl = new L.Control.Layers(baseMaps, {"US States": states}, {collapsed: false}).addTo(map);
+				var layerControl = new L.LayersControl(baseMaps, {"US States": states}, {collapsed: false}).addTo(map);
 			});
 
 			var infopanel = new L.Control({position: 'bottomright'});
