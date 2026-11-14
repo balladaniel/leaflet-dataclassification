@@ -98,8 +98,8 @@ class DataClassification extends L.GeoJSON {
         this._noDataIgnore = false;
         this._noDataColor = '';
 
-        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, '] ', 'Plugin initialized...')
-        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, '] ', 'Options:', this.options)
+        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Plugin initialized...')
+        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Options:', this.options)
         this._field = this.options.field
         this._normalizeByField = this.options.normalizeByField
         L.GeoJSON.prototype.onAdd.call(this, map);
