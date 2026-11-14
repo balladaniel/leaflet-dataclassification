@@ -64,7 +64,7 @@ var plugin_defaultOptions = {
 
     style: {
         fillColor: 'orange',
-        //fillOpacity: 0.7,
+        fillOpacity: 0.7,
         color: (LeafletisV1 ? L.Path.prototype.options.color : L.Path.defaultOptions.color),
         weight: (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight),
         radius: 8
@@ -72,7 +72,7 @@ var plugin_defaultOptions = {
 }
 
 class DataClassification extends L.GeoJSON {
-    static defaultOptions = plugin_defaultOptions
+    static defaultOptions = plugin_defaultOptions;
 
     constructor(data, options) {
         super(data, options);
