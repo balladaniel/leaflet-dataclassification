@@ -992,8 +992,44 @@ class DataClassification extends L.GeoJSON {
 
         // options extract and checks
         var classnum = this.options.classes;
-        if (classnum > 10) { console.warn("Don't be silly, both map and legend will look incomprehensible. Overriding classnumber with 10."); classnum = 10 }; // over 10
+        if (classnum > 10) { console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', "Don't be silly, both map and legend will look incomprehensible. Overriding classnumber with 10."); classnum = 10 }; // over 10
+        // mode (clsf. method name) aliases for ease of use
         var mode = this.options.mode;
+        var aliases_stddev = ['stddeviation', 'stddev', 'sd', 's']
+        if (aliases_stddev.indexOf(mode.toLowerCase()) !== -1) {
+            if (mode != 'stddeviation') {
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Alias for 'stddeviation' found!: '${mode}'. Overridden with 'stddeviation'`)
+                mode = 'stddeviation';
+            }            
+        }
+        var aliases_log = ['logarithmic', 'log']
+        if (aliases_log.indexOf(mode.toLowerCase()) !== -1) {
+            if (mode != 'logarithmic') {
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Alias for 'logarithmic' found!: '${mode}'. Overridden with 'logarithmic'`)
+                mode = 'logarithmic';
+            }            
+        }
+        var aliases_jenks = ['jenks', 'naturalbreaks', 'naturalbreaksjenks', 'jenksnaturalbreaks', 'jnb']
+        if (aliases_jenks.indexOf(mode.toLowerCase()) !== -1) {
+            if (mode != 'jenks') {
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Alias for 'jenks' found!: '${mode}'. Overridden with 'jenks'`)
+                mode = 'jenks';
+            }            
+        }
+        var aliases_equalinterval = ['equalinterval', 'equalintervals', 'ei']
+        if (aliases_equalinterval.indexOf(mode.toLowerCase()) !== -1) {
+            if (mode != 'equalinterval') {
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Alias for 'equalinterval' found!: '${mode}'. Overridden with 'equalinterval'`)
+                mode = 'equalinterval';
+            }            
+        }
+        var aliases_quantile = ['quantile', 'q']
+        if (aliases_quantile.indexOf(mode.toLowerCase()) !== -1) {
+            if (mode != 'quantile') {
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Alias for 'quantile' found!: '${mode}'. Overridden with 'quantile'`)
+                mode = 'quantile';
+            }            
+        }
         var mode_point = this.options.pointMode;
         var pointSize = this.options.pointSize;
         this._pointShape = this.options.pointShape;
