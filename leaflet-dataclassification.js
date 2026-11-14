@@ -349,6 +349,11 @@ class DataClassification extends L.GeoJSON {
                 break;
             case 'angle':
                 console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'hatch distinction mode: `angle`');
+                // the total hatch pattern rotation range from the bottom class to the top. If this exceeds 180 + altAng, repeated symbols might occur.
+                var totalRotation = this._classes.length * altAng;
+                if (totalRotation >= (180 + altAng)) {
+                    console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'With your current `polygonHatch.alternateAngle` (', altAng, ') and `classes` (', this._classes.length, ') settings, the total hatch pattern symbol rotation exceeds 180 degrees across all classes, therefore classes might share very similar or matching symbols. Double-check that your symbols are visibly different and distinguishable. Consider lowering the number of your classes, or adjust the `alternateAngle` setting.')
+                }
                 if (altAng == 0) {
                     console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'You are using hatch distinction mode: `angle`. Since this mode is supposed to only alter hatch stroke angle between class symbols, and option `alternateAngle` was set to 0, you would not be able to distinguish the classes. Overridden value with 45.');
                     altAng = 45;

@@ -173,7 +173,7 @@ const layer = L.dataClassification(data, {
         - `min <float>`: stroke width of the first color. Tip: set to -1 to have solid fills on two ends of the symbols' spectrum, only in distinctionMode: 'width' and 'both'. (default: 2)
         - `max <float>`: stroke width of the other color (default: 10)
     - `angle <number>`: initial angle for hatch pattern (leaflet-hatchclass default: 45)
-    - `alternateAngle <number>`: value to increment angle with between all hatch fill symbols, when distinctionMode: 'angle' or 'both'
+    - `alternateAngle <number>`: value to increment angle with between each individual hatch fill symbol, when distinctionMode is 'angle' or 'both'. When solely using angle-based distinction, adjust this value carefully. The total rotation of the hatch pattern symbol should not exceed 180°+alternateAngle across the classes you have (`classes` * `alternateAngle` <= (180 + `alternateAngle`)), otherwise the classes might share very similar or matching symbols. Double-check that your symbols are visibly different, distinguishable and the map is readable.
 - `style <object>`: custom styling
     - `fillOpacity <float>`: polygon fill opacity (default: 0.7)
     - `color <string>`: polygon outline color (default: '#3388ff' blue, the L.path default)
