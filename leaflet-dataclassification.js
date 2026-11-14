@@ -1212,7 +1212,7 @@ class DataClassification extends L.GeoJSON {
 
                         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down intervals:', down, 'up intervals:', up)
                         var interval_lower = (0.5 * -down);
-                        this._classes.forEach(function (arrayItem) {
+                        this._classes.forEach((arrayItem) => {
                             if (down > 0) {
                                 console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down =', down, 'up =', up, 'boundary =', interval_lower)
                                 arrayItem.stddev_lower = interval_lower;
@@ -1227,6 +1227,7 @@ class DataClassification extends L.GeoJSON {
                             };
                         });
                         success = true;
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: final classes:', this._classes)
                         break;
                     case 'logarithmic':
                         this._classes = [];
