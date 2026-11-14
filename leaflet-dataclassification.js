@@ -1386,9 +1386,17 @@ class DataClassification extends L.GeoJSON {
         }, this);
         var timerSymbologyEnd = Date.now();
 
+        // count valid features (those which have a value in set attribute field)
         var validFeatures = 0;
         this._classes.forEach((element, idx) => {
             validFeatures += element.featureCount;
+            if (element.featureCount == 0) { 
+                if (mode == 'stddeviation') {
+                    console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Empty class! Zero features belong to class covering interval [${element.stddev_lower},${(idx != this._classes.length-1 ? this._classes[idx+1].stddev_lower : "")}] (class no. ${idx+1}, counted from the lowest class)! Consider using a different classification method.`) 
+                } else {
+                    console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Empty class! Zero features belong to class covering interval [${element.value},${(idx != this._classes.length-1 ? this._classes[idx+1].value : "")}] (class no. ${idx+1}, counted from the lowest class)! Consider using a different classification method.`) 
+                }                
+            };
         });
         // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
         this._classes.nodataFeatureCount = features.length-validFeatures;
