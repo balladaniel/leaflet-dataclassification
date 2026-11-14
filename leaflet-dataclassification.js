@@ -97,6 +97,7 @@ class DataClassification extends L.GeoJSON {
         this._noDataFound = false;
         this._noDataIgnore = false;
         this._noDataColor = '';
+        this._attributeFieldExistsButAllFeaturesAreNull = true; // assume by default, this flag is used to handle the special case when all attributes are null in given field
 
         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Plugin initialized...')
         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Options:', this.options)
@@ -909,10 +910,6 @@ class DataClassification extends L.GeoJSON {
         } 
     }
 
-    onAdd(map) {
-        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Layer added to map:', map)
-    }
-
     _classify(data) {
         var timerGlobalStart = Date.now();
 
@@ -965,53 +962,33 @@ class DataClassification extends L.GeoJSON {
             if (layer.feature.properties[this._field] != null) {
                 //values.push(layer.feature.properties[this._field]);
                 features.push(layer.feature.properties);
+                this._attributeFieldExistsButAllFeaturesAreNull = false;
             } else {    
-                this._nodata = true;     // flag for generateLegend() later
+                this._nodata = true;     // set flag for generateLegend() and code control later
                 if (!this._nodataignore) {
                     // we add null values to main array
                     //values.push(layer.feature.properties[this._field]);
                     features.push(layer.feature.properties);
                 }
-                console.warn('A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
+                console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'A feature has NULL as attribute field "'+this._field+'" in given GeoJSON. If this is a valid nodata attribute, ignore this warning, the plugin will handle nodata features as a separate symbol class. Null found in feature: ', layer.feature)
             };
         }, this)
+
         var timerLoadValuesEnd = Date.now();
+
+        if (this._attributeFieldExistsButAllFeaturesAreNull && this._nodataignore) {
+            console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'The attribute field exists in GeoJSON, but no features have a value defined for it (all are NULL). Since you enabled `noDataIgnore`, nothing will be shown on the map. Automatically removing layer...')
+            return;
+        } else if (this._attributeFieldExistsButAllFeaturesAreNull) {
+            console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'The attribute field exists in GeoJSON, but no features have a value defined for it (all are NULL). The map and legend will still be generated, but with a sole "No data" class.')
+        }
+
+        // extract feature type information from GeoJSON
         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Feature types in GeoJSON:', features_info)
         typeOfFeatures = Object.keys(features_info).reduce((a, b) => features_info[a] > features_info[b] ? a : b);
         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Dominant feature type in GeoJSON:', typeOfFeatures)
 
         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Loaded values from GeoJSON (field: '+this._field+'):', features.map(a => a[this._field]));
-
-        var timerNormalizationStart = Date.now();
-        features.forEach((arrayItem, index) => {
-            if (this._normalizeByField != null && arrayItem[this._field] != null && arrayItem[this._normalizeByField] != null) {
-                arrayItem.finalvalue = arrayItem[this._field]/arrayItem[this._normalizeByField];
-            } else {
-                arrayItem.finalvalue = arrayItem[this._field];
-            }
-        });
-        var timerNormalizationEnd = Date.now();
-
-        this._noDataFound = this._nodata;
-        this._features = features;
-        if (this._normalizeByField != null) {
-            console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Loaded values from GeoJSON field: "'+this._field+'", after normalization by field: "'+this._normalizeByField+'"', features.map(a => a.finalvalue));
-        }	
-
-        // if line color is overridden with L.Path style options, reflect that in Legend too
-        if ((typeOfFeatures == 'LineString' || typeOfFeatures == 'MultiLineString')) {
-            if (this.options.hasOwnProperty('style')) {
-                this._linecolor = this.options.style.color;
-                if (this.options.style.hasOwnProperty('weight')) {
-                    this._lineweight = this.options.style.weight;
-                } else {
-                    this._lineweight = (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight);     // fallback to Leaflet default
-                }
-            } else {
-                this._linecolor = (LeafletisV1 ? L.Path.prototype.options.color : L.Path.defaultOptions.color);           // fallback to Leaflet default
-                this._lineweight = (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight);         // fallback to Leaflet default
-            }
-        };
 
         // options extract and checks
         var classnum = this.options.classes;
@@ -1019,7 +996,7 @@ class DataClassification extends L.GeoJSON {
         var mode = this.options.mode;
         var mode_point = this.options.pointMode;
         var pointSize = this.options.pointSize;
-		this._pointShape = this.options.pointShape;
+        this._pointShape = this.options.pointShape;
         var mode_line = this.options.lineMode;
         var mode_polygon = this.options.polygonMode;
         var lineWidth = this.options.lineWidth;
@@ -1065,230 +1042,266 @@ class DataClassification extends L.GeoJSON {
         if (!this._legendTemplate.hasOwnProperty('nodata')) {this._legendTemplate.nodata = 'No data'};
         this._noDataColor = this.options.noDataColor;
         this._noDataIgnore = this.options.noDataIgnore;
+        this._noDataFound = this._nodata;
 
-        var timerClsfStart = Date.now();
-        // classification process
-        var success = false;
-        if (mode == 'manual') {
-            console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification method: ', mode);
-            console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Value for option "classes": ', classnum);
-            if (!Array.isArray(classnum)) {
-                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using `mode`: "manual", `classes` must be an array of class boundary values you wish to classify features into (for example `classes`: [50, 150, 300]). ');
-                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification error, stopped process.');
-                return;
-            } else {
-                classnum.sort(function(a, b) {
-                    return a - b;
-                  });
-                this._classes = classnum;
-                classnum = this._classes.length;
-            }
-        } else {
-            if (Array.isArray(classnum)) {
-                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using a classification `mode` other than "manual", `classes` option must be an integer, based on how many classes you want to generate (for example `classes`: 5). ');
-                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification error, stopped process.');
-                return;
-            }
-        }
-        var values = features.map(a => a.finalvalue);
-        if (classnum > 2 && classnum < this._features.length) {	
-            switch (mode) {
-                case 'jenks':	
-                    this._classes = ss.jenks(values.filter((value) => value != null), classnum);
-                    this._classes.pop(); // remove last, since its the max value
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Jenks classes: ', this._classes);
-                    this._convertClassesToObjects();
-                    success = true;
-                    break;
-                case 'equalinterval':
-                    this._classes = [];
-                    var minmax = ss.extent(values.filter((value) => value != null));
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI: min:', minmax[0], ', max:', minmax[1])
-                    var range = minmax[1]-minmax[0];
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI data range:', range)
-                    var oneclass = range/classnum;
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI one class:', oneclass);
-                    for (var i=minmax[0]; i<minmax[1];) {
-                        this._classes.push(i);
-                        i = i + oneclass;
-                    }
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI classes:', this._classes);
-                    this._convertClassesToObjects();
-                    success = true;
-                    break;
-                case 'quantile':
-                    this._classes = [];
-                    for (var i = 0; i<classnum; i++) {
-                        var currentq = (1/classnum)*i;
-                        this._classes.push(ss.quantile(values.filter((value) => value != null), currentq));
-                    }				
-                    console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Quantile classes at the middle might be slightly different compared to GIS SW');		
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Quantile classes: ', this._classes);	
-                    this._convertClassesToObjects();
-                    success = true;
-                    break;
-                case 'manual':
-					this._classnum = this._classes.length;
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Manually defined classes: ', this._classes);	
-                    this._convertClassesToObjects();
-                    success = true;
-                    break;
-                case 'stddeviation':
-                    // with zScore: (number-average)/standard_deviation
-                    this._classes = [];
-                    var stddev = ss.standardDeviation(values.filter((value) => value != null))
-                    var mean = ss.mean(values.filter((value) => value != null))
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'stddev:', stddev)
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'stddev mean:', mean)
-                    var extent = ss.extent(values.filter((value) => value != null))
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'stddev extent:', extent)
-                    /*var diff = extent[1]-extent[0]                    
-                    console.debug('diff', diff)
-                    console.debug('number of classes if 1 stddev:', diff/(stddev/1))
-                    console.debug('number of classes if 1 stddev:', Math.round(diff/(stddev/1)))
-                    console.debug('number of classes if 1/2 stddev:', diff/(stddev/2))
-                    console.debug('number of classes if 1/3 stddev:', diff/(stddev/3))
-                    */
+        // only do normalization, classification, rounding stuff if we have some actual values. Otherwise, everything that comes after (legend creation) can still happen, if user does not ignore nodata. It will result in a single "!"No data" class with a legend.
+        if (!this._attributeFieldExistsButAllFeaturesAreNull) {
 
-                    var halfstddev = stddev/2;
-                    var curr;
-                    var down = 1;
-                    var up = 1;
-                    //var potclassnum = Math.round(diff/(stddev/1));
-                    var valid = true;
-                    this._classes.push(-999999);
-                    for (var i = 0; valid /*i<potclassnum*/; i++) {
-                            //console.debug('downwards', down)
-                            curr = mean-(halfstddev*down);
-                            /*
-                            console.debug('downwards curr', curr)
-                            console.debug(extent[0])
-                            console.debug((curr > extent[0]))
-                            console.debug(halfstddev)
-                            */
-                            if (curr > extent[0] && down < 7) {
-                                this._classes.push(curr);
-                                down += 2;
-                            } else {
-                                valid = false;
-                            };
-                    }
-                    
-                    valid = true;
-                    for (var i = 0; valid /*i<potclassnum*/; i++) {
-                        //console.debug('upwards', up)
-                        curr = mean+(halfstddev*up);
-                        //console.debug('upwards curr', curr)
-                        if (curr < extent[1] && up < 7) {
-                            this._classes.push(curr);
-                            up += 2;
-                        } else {
-                            valid = false
-                        };
-                    }
+            // data normalization, if user opted in to do so
+            var timerNormalizationStart = Date.now();
+            features.forEach((arrayItem, index) => {
+                if (this._normalizeByField != null && arrayItem[this._field] != null && arrayItem[this._normalizeByField] != null) {
+                    arrayItem.finalvalue = arrayItem[this._field]/arrayItem[this._normalizeByField];
+                } else {
+                    arrayItem.finalvalue = arrayItem[this._field];
+                }
+            });
+            var timerNormalizationEnd = Date.now();
 
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev unsorted classes:', this._classes);
-                    this._classes.sort(function(a, b) {
+            this._features = features;
+            if (this._normalizeByField != null) {
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Loaded values from GeoJSON field: "'+this._field+'", after normalization by field: "'+this._normalizeByField+'"', features.map(a => a.finalvalue));
+            }	
+
+            // if line color is overridden with L.Path style options, reflect that in Legend too
+            if ((typeOfFeatures == 'LineString' || typeOfFeatures == 'MultiLineString')) {
+                if (this.options.hasOwnProperty('style')) {
+                    this._linecolor = this.options.style.color;
+                    if (this.options.style.hasOwnProperty('weight')) {
+                        this._lineweight = this.options.style.weight;
+                    } else {
+                        this._lineweight = (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight);     // fallback to Leaflet default
+                    }
+                } else {
+                    this._linecolor = (LeafletisV1 ? L.Path.prototype.options.color : L.Path.defaultOptions.color);           // fallback to Leaflet default
+                    this._lineweight = (LeafletisV1 ? L.Path.prototype.options.weight : L.Path.defaultOptions.weight);         // fallback to Leaflet default
+                }
+            };
+
+            var timerClsfStart = Date.now();
+            // classification process
+            var success = false;
+            if (mode == 'manual') {
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification method: ', mode);
+                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Value for option "classes": ', classnum);
+                if (!Array.isArray(classnum)) {
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using `mode`: "manual", `classes` must be an array of class boundary values you wish to classify features into (for example `classes`: [50, 150, 300]). ');
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification error, stopped process.');
+                    return;
+                } else {
+                    classnum.sort(function(a, b) {
                         return a - b;
                     });
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev sorted classes: ', this._classes);	
-                    this._convertClassesToObjects();
-
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down intervals:', down, 'up intervals:', up)
-                    var interval_lower = (0.5 * -down);
-                    this._classes.forEach(function (arrayItem) {
-                        if (down > 0) {
-                            console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down =', down, 'up =', up, 'boundary =', interval_lower)
-                            arrayItem.stddev_lower = interval_lower;
-                            interval_lower += 1;
-                            down -= 2;
-                        } else if (down < 0 && up > 0) {
-                            console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down =', down, 'up =', up, 'boundary =', interval_lower)
-                            arrayItem.stddev_lower = interval_lower;
-                            interval_lower += 1;
-                            up -= 2;
-                            
-                        };
-                    });
-                    success = true;
-                    break;
-                case 'logarithmic':
-                    this._classes = [];
-                    var minmax = ss.extent(values.filter((value) => value != null));
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Log: min:', minmax[0], ', max:', minmax[1])	
-
-                    var logdiff = Math.log(minmax[1]) - Math.log(minmax[0])
-                    if (Number.isNaN(logdiff)) {
-                        console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logarithmic scale does not support negative values yet. (dataset minimum: '+minmax[0]+', maximum: '+minmax[1]+') Please use a different classification method for this dataset, or choose an other data attribute field that has no negative values. Classification failed, map was not generated properly.');
-                        return;
-                    };
-                    var logdiff_divided = logdiff / classnum;
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logdiff', Math.log(minmax[1]) - Math.log(minmax[0]))
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logdiff divided by classnum', logdiff_divided)
-                    var factor = Math.exp(logdiff_divided);
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Log: factor Math.exp(logdiff_divided):', factor)
-                    this._classes.push(minmax[0])
-                    for (var i = 1; i < classnum; i++) {
-                        this._classes.push(this._classes[this._classes.length - 1] * factor);
-                    }
-
-                    // round interval boundary values by default, since with logarithmic classes we get high precision floats
-                    if (classrounding == null) { classrounding = 2;}
-
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logarithmic classes: ', this._classes);	
-                    this._convertClassesToObjects();
-                    success = true;
-                    break;
-                default:
-                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "stddeviation", "logarithmic", "manual" - when manual, `classes` must be an array!)')
-            }
-            var timerClsfEnd = Date.now();
-
-            var timerGenColorsStart = Date.now();
-            // Classification success, proceed with generating colors
-            if (success) {
-                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification success.');
-                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Generating color- and symbol property ranges for '+this._classes.length+' classes.');
-                try {
-                    this._colors = chroma.scale(colorramp).colors(this._classes.length);
-                } catch (error) {
-                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', error)
-                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Make sure chosen color ramp exists (color ramps based on https://colorbrewer2.org/) and custom colors are formatted correctly. For supported formats, see https://gka.github.io/chroma.js/. For an interactive color palette helper, see https://gka.github.io/palettes/.')
+                    this._classes = classnum;
+                    classnum = this._classes.length;
+                }
+            } else {
+                if (Array.isArray(classnum)) {
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using a classification `mode` other than "manual", `classes` option must be an integer, based on how many classes you want to generate (for example `classes`: 5). ');
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification error, stopped process.');
                     return;
                 }
-                if (colorramp_rev) {
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Reversing colorramp...')
-                    this._colors.reverse(); 
-                };
             }
-            var timerGenColorsEnd = Date.now();
-            var timerGenRangesStart = Date.now();
-            // Generate symbol property ranges (size/width/hatch classes):
-            if (mode_point == "size") {
-                this._pointMode_size_radiuses(pointSize);
-            }
-            if (mode_line == "width") {
-                this._lineMode_width(lineWidth);
-            }
-            if (mode_polygon == "hatch") {
-                this._polygonMode_hatch(polygonHatch);
-            }
-            var timerGenRangesEnd = Date.now();
-            // Middlepoint value handling:
-            if (middlepoint != null) {
-                if (this._classes.length % 2 == 0) {
-                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Adjusting middle classes to boundary value:', middlepoint);
-                    this._classes[this._classes.length / 2].value = middlepoint;
-                } else {
-                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Option `middlePointValue` only works with an even number of classes. Option ignored, middle class boundary values unchanged.')
+            var values = features.map(a => a.finalvalue);
+            if (classnum > 2 && classnum < this._features.length) {	
+                switch (mode) {
+                    case 'jenks':	
+                        this._classes = ss.jenks(values.filter((value) => value != null), classnum);
+                        this._classes.pop(); // remove last, since its the max value
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Jenks classes: ', this._classes);
+                        this._convertClassesToObjects();
+                        success = true;
+                        break;
+                    case 'equalinterval':
+                        this._classes = [];
+                        var minmax = ss.extent(values.filter((value) => value != null));
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI: min:', minmax[0], ', max:', minmax[1])
+                        var range = minmax[1]-minmax[0];
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI data range:', range)
+                        var oneclass = range/classnum;
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI one class:', oneclass);
+                        for (var i=minmax[0]; i<minmax[1];) {
+                            this._classes.push(i);
+                            i = i + oneclass;
+                        }
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'EI classes:', this._classes);
+                        this._convertClassesToObjects();
+                        success = true;
+                        break;
+                    case 'quantile':
+                        this._classes = [];
+                        for (var i = 0; i<classnum; i++) {
+                            var currentq = (1/classnum)*i;
+                            this._classes.push(ss.quantile(values.filter((value) => value != null), currentq));
+                        }				
+                        console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Quantile classes at the middle might be slightly different compared to GIS SW');		
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Quantile classes: ', this._classes);	
+                        this._convertClassesToObjects();
+                        success = true;
+                        break;
+                    case 'manual':
+                        this._classnum = this._classes.length;
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Manually defined classes: ', this._classes);	
+                        this._convertClassesToObjects();
+                        success = true;
+                        break;
+                    case 'stddeviation':
+                        // with zScore: (number-average)/standard_deviation
+                        this._classes = [];
+                        var stddev = ss.standardDeviation(values.filter((value) => value != null))
+                        var mean = ss.mean(values.filter((value) => value != null))
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'stddev:', stddev)
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'stddev mean:', mean)
+                        var extent = ss.extent(values.filter((value) => value != null))
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'stddev extent:', extent)
+                        /*var diff = extent[1]-extent[0]                    
+                        console.debug('diff', diff)
+                        console.debug('number of classes if 1 stddev:', diff/(stddev/1))
+                        console.debug('number of classes if 1 stddev:', Math.round(diff/(stddev/1)))
+                        console.debug('number of classes if 1/2 stddev:', diff/(stddev/2))
+                        console.debug('number of classes if 1/3 stddev:', diff/(stddev/3))
+                        */
+
+                        var halfstddev = stddev/2;
+                        var curr;
+                        var down = 1;
+                        var up = 1;
+                        //var potclassnum = Math.round(diff/(stddev/1));
+                        var valid = true;
+                        this._classes.push(-999999);
+                        for (var i = 0; valid /*i<potclassnum*/; i++) {
+                                //console.debug('downwards', down)
+                                curr = mean-(halfstddev*down);
+                                /*
+                                console.debug('downwards curr', curr)
+                                console.debug(extent[0])
+                                console.debug((curr > extent[0]))
+                                console.debug(halfstddev)
+                                */
+                                if (curr > extent[0] && down < 7) {
+                                    this._classes.push(curr);
+                                    down += 2;
+                                } else {
+                                    valid = false;
+                                };
+                        }
+                        
+                        valid = true;
+                        for (var i = 0; valid /*i<potclassnum*/; i++) {
+                            //console.debug('upwards', up)
+                            curr = mean+(halfstddev*up);
+                            //console.debug('upwards curr', curr)
+                            if (curr < extent[1] && up < 7) {
+                                this._classes.push(curr);
+                                up += 2;
+                            } else {
+                                valid = false
+                            };
+                        }
+
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev unsorted classes:', this._classes);
+                        this._classes.sort(function(a, b) {
+                            return a - b;
+                        });
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev sorted classes: ', this._classes);	
+                        this._convertClassesToObjects();
+
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down intervals:', down, 'up intervals:', up)
+                        var interval_lower = (0.5 * -down);
+                        this._classes.forEach(function (arrayItem) {
+                            if (down > 0) {
+                                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down =', down, 'up =', up, 'boundary =', interval_lower)
+                                arrayItem.stddev_lower = interval_lower;
+                                interval_lower += 1;
+                                down -= 2;
+                            } else if (down < 0 && up > 0) {
+                                console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Stddev: down =', down, 'up =', up, 'boundary =', interval_lower)
+                                arrayItem.stddev_lower = interval_lower;
+                                interval_lower += 1;
+                                up -= 2;
+                                
+                            };
+                        });
+                        success = true;
+                        break;
+                    case 'logarithmic':
+                        this._classes = [];
+                        var minmax = ss.extent(values.filter((value) => value != null));
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Log: min:', minmax[0], ', max:', minmax[1])	
+
+                        var logdiff = Math.log(minmax[1]) - Math.log(minmax[0])
+                        if (Number.isNaN(logdiff)) {
+                            console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logarithmic scale does not support negative values yet. (dataset minimum: '+minmax[0]+', maximum: '+minmax[1]+') Please use a different classification method for this dataset, or choose an other data attribute field that has no negative values. Classification failed, map was not generated properly.');
+                            return;
+                        };
+                        var logdiff_divided = logdiff / classnum;
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logdiff', Math.log(minmax[1]) - Math.log(minmax[0]))
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logdiff divided by classnum', logdiff_divided)
+                        var factor = Math.exp(logdiff_divided);
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Log: factor Math.exp(logdiff_divided):', factor)
+                        this._classes.push(minmax[0])
+                        for (var i = 1; i < classnum; i++) {
+                            this._classes.push(this._classes[this._classes.length - 1] * factor);
+                        }
+
+                        // round interval boundary values by default, since with logarithmic classes we get high precision floats
+                        if (classrounding == null) { classrounding = 2;}
+
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Logarithmic classes: ', this._classes);	
+                        this._convertClassesToObjects();
+                        success = true;
+                        break;
+                    default:
+                        console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Wrong classification type (choose one of the following: "jenks", "equalinterval", "quantile", "stddeviation", "logarithmic", "manual" - when manual, `classes` must be an array!)')
                 }
-            }
-            // Class rounding handling:
-            if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
-        } else {
-            console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
-            return;
-        };
+                var timerClsfEnd = Date.now();
+
+                var timerGenColorsStart = Date.now();
+                // Classification success, proceed with generating colors
+                if (success) {
+                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification success.');
+                    console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Generating color- and symbol property ranges for '+this._classes.length+' classes.');
+                    try {
+                        this._colors = chroma.scale(colorramp).colors(this._classes.length);
+                    } catch (error) {
+                        console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', error)
+                        console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Make sure chosen color ramp exists (color ramps based on https://colorbrewer2.org/) and custom colors are formatted correctly. For supported formats, see https://gka.github.io/chroma.js/. For an interactive color palette helper, see https://gka.github.io/palettes/.')
+                        return;
+                    }
+                    if (colorramp_rev) {
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Reversing colorramp...')
+                        this._colors.reverse(); 
+                    };
+                }
+                var timerGenColorsEnd = Date.now();
+                var timerGenRangesStart = Date.now();
+                // Generate symbol property ranges (size/width/hatch classes):
+                if (mode_point == "size") {
+                    this._pointMode_size_radiuses(pointSize);
+                }
+                if (mode_line == "width") {
+                    this._lineMode_width(lineWidth);
+                }
+                if (mode_polygon == "hatch") {
+                    this._polygonMode_hatch(polygonHatch);
+                }
+                var timerGenRangesEnd = Date.now();
+                // Middlepoint value handling:
+                if (middlepoint != null) {
+                    if (this._classes.length % 2 == 0) {
+                        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Adjusting middle classes to boundary value:', middlepoint);
+                        this._classes[this._classes.length / 2].value = middlepoint;
+                    } else {
+                        console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Option `middlePointValue` only works with an even number of classes. Option ignored, middle class boundary values unchanged.')
+                    }
+                }
+                // Class rounding handling:
+                if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
+            } else {
+                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
+                return;
+            };
+        } 
 
         //this._classes = classes;
         var svgCreator = this._svgCreator;
@@ -1406,14 +1419,25 @@ class DataClassification extends L.GeoJSON {
     classify() {
         this._classify(this._map);
     }
-    
+
+    onAdd(map) {
+        // in case of attribute values being null in the selected field in all features AND user does NOT want to show the nodata class (noDataIgnore: true), 
+        // self-destructively remove layer from map. Otherwise, just show a message that all went well, layer added to the map.
+        if (this._attributeFieldExistsButAllFeaturesAreNull && this._nodataignore) {
+            this.remove();
+            return;
+        }
+        console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Layer added to map:', map)
+    }
     onRemove(map) {
         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, '] ', 'Removing Layer ...')
         // remove legend
         var legend = this._legends.find(item => item.id === this._leaflet_id);
-        console.debug(`[ %cl-dcls: %cLegend id ${legend.id}`, `color: red`, `color: orange`, '] ', 'Removing the following Legend:', legend)
-        legend.remove();
-        console.debug(`[ %cl-dcls: %cLegend id ${legend.id}`, `color: red`, `color: orange`, '] ', 'Legend Removed.')
+        if (legend) {
+            console.debug(`[ %cl-dcls: %cLegend id ${legend.id}`, `color: red`, `color: orange`, '] ', 'Removing the following Legend:', legend)
+            legend.remove();
+            console.debug(`[ %cl-dcls: %cLegend id ${legend.id}`, `color: red`, `color: orange`, '] ', 'Legend Removed.')
+        }
         // remove layer
 		this.eachLayer(map.removeLayer, map);
         console.debug(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, '] ', 'Layer Removed.')
