@@ -80,6 +80,7 @@
 			// map div object, main Leaflet object:
 			var map = new L.Map('map', {layers: [OSM]}).setView([0,0], 3); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
+			// create a 'front' pane, so that the overlay data layers appear in front of the polygon layer (this is only specific to multi-layered maps)
 			map.createPane('front');
 			map.getPane('front').style.zIndex = 450;
 			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
