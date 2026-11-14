@@ -1047,6 +1047,10 @@ class DataClassification extends L.GeoJSON {
         // only do normalization, classification, rounding stuff if we have some actual values. Otherwise, everything that comes after (legend creation) can still happen, if user does not ignore nodata. It will result in a single "!"No data" class with a legend.
         if (!this._attributeFieldExistsButAllFeaturesAreNull) {
 
+            // count how many features have an actual value in the given attribute field (not null)
+            var valuesOnly = features.map(a => a[this._field])
+            var validFeatureCount = valuesOnly.filter(function(value) { return value !== null }).length;
+
             // data normalization, if user opted in to do so
             var timerNormalizationStart = Date.now();
             features.forEach((arrayItem, index) => {
@@ -1103,7 +1107,7 @@ class DataClassification extends L.GeoJSON {
                 }
             }
             var values = features.map(a => a.finalvalue);
-            if (classnum > 2 && classnum < this._features.length) {	
+            if (classnum > 2 && classnum <= validFeatureCount) {	
                 switch (mode) {
                     case 'jenks':	
                         this._classes = ss.jenks(values.filter((value) => value != null), classnum);
@@ -1298,7 +1302,7 @@ class DataClassification extends L.GeoJSON {
                 // Class rounding handling:
                 if (classrounding != null) { this._classPostProc_rounding(classrounding); }    // round class boundary values
             } else {
-                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classnumber out of range (must be: 2 < x <', values.length, '(featurecount))!');
+                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classnumber', classnum, 'is out of range, must be: 2 < x <=', validFeatureCount, '(count of features with a numeric value in field)!');
                 return;
             };
         } 
@@ -1381,11 +1385,11 @@ class DataClassification extends L.GeoJSON {
         }, this);
         var timerSymbologyEnd = Date.now();
 
-        // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
         var validFeatures = 0;
         this._classes.forEach((element, idx) => {
             validFeatures += element.featureCount;
         });
+        // count nodata features (= all values - validFeatures). For use in legend ("no data" class).
         this._classes.nodataFeatureCount = features.length-validFeatures;
 
         //this._convertClassesToObjects();
