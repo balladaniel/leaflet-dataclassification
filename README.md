@@ -51,8 +51,8 @@ All features in the examples maps listed here have binded tooltips (a default Le
 - [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v2.0.0-beta.4 global and v1.9.4)
 
 ### External dependencies
-- [simple-statistics.js](https://github.com/simple-statistics/simple-statistics) (tested with v7.8.0)
-- [chroma.js](https://github.com/gka/chroma.js) (tested with v3.1.1)
+- [simple-statistics.js](https://github.com/simple-statistics/simple-statistics) (tested with v8.0.0)
+- [chroma.js](https://github.com/gka/chroma.js) (tested with v3.3.0)
 - [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass) (only if you intend to use hatch pattern fills for polygons)
 
 ### Leaflet v2 and newer
