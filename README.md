@@ -168,7 +168,7 @@ const layer = L.dataClassification(data, {
 - `polygonMode <string>`: ['color'|'hatch'] Fill "color" or "hatch" (default: 'color')
 - `polygonHatch <object>`: when polygonMode: "hatch", customize hatch fill pattern
     - `distinctionMode <string>`: ['width'|'angle'|'both'] Symbol distinction type between classes (default: 'both')
-    - `strokeColors <array<string>>`: stroke colors (default: ['darkred', 'none'])
+    - `strokeColors <array<string>>`: two stroke colors (default: ['darkred', 'none'])
     - `strokeWidth <object>`: stroke widths to gradually alternate between for symbols, when distinctionMode: 'width' or 'both'.
         - `min <float>`: stroke width of the first color. Tip: set to -1 to have solid fills on two ends of the symbols' spectrum, only in distinctionMode: 'width' and 'both'. (default: 2)
         - `max <float>`: stroke width of the other color (default: 10)
