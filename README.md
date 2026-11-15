@@ -4,7 +4,7 @@ Classifies quantitative data from attributes, styles the features appropriately 
 
 Aims to simplify data visualization and creation of elegant thematic web maps with Leaflet using GeoJSON data, with a more traditional approach of thematic cartography. Although tutorials for defining style functions (to retrieve class colors through pre-defined conditional statements) and basic legend creation exist for Leaflet, those are static (are only created for a specific dataset) and might require using GIS software beforehand to classify and style the dataset properly (to get class boundaries and exact colors), in order to have a visualization that gets the message through. This customizable plugin automates all this and can easily be used for any dataset with quantitative data. As it extends L.GeoJSON, you can have multiple layers of this (with a matched legend for each) to create a more complex data visualization.
 
-**Version 1.7 now supports both Leaflet v2 ([Leaflet 2.0.0-beta.4](https://github.com/Leaflet/Leaflet/releases/tag/v2.0.0-beta.4)) and v1.9.4, in a global/vanilla script environment only. See usage below.**
+**Version 1.7 now supports both [Leaflet 2.0](https://github.com/Leaflet/Leaflet/releases/tag/v2.0.0-beta.4) and Leaflet 1.9.4, in a global script environment only. See usage below.**
 
 ![Screenshot of example maps created with the plugin. Samples.](screenshots.png)
 
@@ -55,7 +55,7 @@ All features in the examples maps listed here have bound tooltips (a default Lea
 - [chroma.js](https://github.com/gka/chroma.js) (tested with v3.3.0)
 - [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass) (only if you intend to use hatch pattern fills for polygons)
 
-### Leaflet v2 and newer
+### Leaflet 2.0 and newer
 ⚠️ **Currently, when used with Leaflet v2, the global Leaflet script is required, which declares the global L for backwards compatibility.** 
 
 Include Leaflet v2, the plugin itself (`leaflet-dataclassification.css` and `leaflet-dataclassification.js`) and plugin dependencies in your code. You can also link them through CDN and GitHub Pages:
@@ -63,29 +63,29 @@ Include Leaflet v2, the plugin itself (`leaflet-dataclassification.css` and `lea
 <!-- Leaflet v2.0.0-beta.4 GLOBAL -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet-global.js"></script>	
-<!-- leaflet-dataclassification -->
-<link rel="stylesheet" href="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.css" />
-<script src="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.js"></script>
 <!-- plugin dependencies -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/simple-statistics.min.js"></script>	<!-- simple-statistics/simple-statistics -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/chroma.min.cjs"></script>				<!-- gka/chroma.js -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/leaflet-hatchclass.js"></script> 		<!-- samanbey/leaflet-hatchclass -->
+<!-- leaflet-dataclassification -->
+<link rel="stylesheet" href="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.css" />
+<script src="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.js"></script>
 ```
 
-### Leaflet v1.9.4
+### Leaflet 1.9.4
 
 Include Leaflet v1.9.4, the plugin itself (`leaflet-dataclassification.css` and `leaflet-dataclassification.js`) and plugin dependencies in your code. You can also link them through CDN and GitHub Pages:
 ``` html
 <!-- Leaflet v1.9.4 -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- leaflet-dataclassification -->
-<link rel="stylesheet" href="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.css" />
-<script src="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.js"></script>
 <!-- plugin dependencies -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/simple-statistics.min.js"></script>	<!-- simple-statistics/simple-statistics -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/chroma.min.cjs"></script>				<!-- gka/chroma.js -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/leaflet-hatchclass.js"></script> 		<!-- samanbey/leaflet-hatchclass -->
+<!-- leaflet-dataclassification -->
+<link rel="stylesheet" href="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.css" />
+<script src="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.js"></script>
 ```
 
 ## Usage example
