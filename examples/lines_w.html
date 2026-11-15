@@ -7,8 +7,8 @@
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
 		<!-- leaflet from CDN -->
-		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-		<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet-global.js"></script>
 
 		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
@@ -44,28 +44,28 @@
 	<body>		
 		<div id="map"></div>
 		<script>
-
+		
 			// carto API key - restricted to domain
 			var cartoKey = 'cb1_3fpi_1_9bb9b282ea7b7476f058db9a';
 			
 			// base maps
-			var OSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			var OSM = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var carto_attrib = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-			var cartodb_dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_voyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_positron = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (L.Browser.retina ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
@@ -78,9 +78,9 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = L.map('map', {layers: [cartodb_positron]}).setView([0,0], 3); 
+			var map = new L.Map('map', {layers: [cartodb_positron]}).setView([0,0], 3); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
-			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
+			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
 
 			// Line features example. Attribute to test with: 'Shape_Leng'
 			fetch('data/rivers.geojson').then(r => r.json()).then(d => {
@@ -108,8 +108,8 @@
 						layer.bindTooltip('<b>' + String(feature.properties.NAME) + '</b><br>' + 'no data');
 					}
 					layer.on({
-						mouseover: highlight,
-						mouseout: resetStyle
+						pointerover: highlight,
+						pointerout: resetStyle
 					});
 				}
 
@@ -131,28 +131,29 @@
 				map.fitBounds(testdata.getBounds());
 			});
 
-			var infopanel = L.control({position: 'bottomright'});
+			var infopanel = new L.Control({position: 'bottomright'});
 			infopanel.onAdd = function (map) {
 				var div = L.DomUtil.create('div', 'info');
-				div.innerHTML += 
-					'<div style="display: flex; flex-direction: column; max-width: 530px; text-align: center; row-gap: 8px">' +
-						'<div style="font-weight: bold">' + 
-							'Leaflet-dataclassification plugin demo page: "lines_width"' + 
-						'</div>'+ 
-						'<div style="text-align: justify">' +
-							'This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>. '+
-							'Feature tooltips on hover and feature highlighting (native features of Leaflet) were added to provide an easy check of attribute values used. '+
-							'<br><br>'+
-						'</div>'+ 
-						'<div>'+ 
-							'Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.'+
-							'<br><br>'+
-							'Demos: <a href="./combined.html">combined</a>, <a href="./points_c.html">points_c</a>, <a href="./points_s.html">points_s</a>, <a href="./lines_c.html">lines_c</a>, <a href="./polygons_c.html">polygons_c</a>, <a href="./polygons_c2.html">polygons_c2</a>, <a href="./polygons_h.html">polygons_h</a>'+
-							'<br><br>'+
-							'Project page: <b><a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a></b>'+
-						'</div>'+ 
-							'<a href="https://github.com/balladaniel/leaflet-dataclassification"><img src="banner.png" style="max-width: 100%;"></img></a>'+
-					'</div>';
+				div.innerHTML = `
+					<div style="display: flex; flex-direction: column; max-width: 530px; text-align: center; row-gap: 8px">
+						<div style="font-weight: bold">
+							Leaflet-dataclassification plugin demo page: "lines_width"
+						</div>
+						<div style="text-align: justify">
+							This is an example page showcasing some of the features of Leaflet plugin <i>leaflet-dataclassification</i>.
+							Feature tooltips on hover and feature highlighting (native features of Leaflet) were added to provide an easy check of attribute values used.
+							<br><br>
+						</div>
+						<div>
+							Single-step data classification, symbology and legend creation for GeoJSON data powered thematic maps.
+							<br><br>
+							Demos: <a href="./combined.html">combined</a>, <a href="./points_c.html">points_c</a>, <a href="./points_s.html">points_s</a>, <a href="./lines_c.html">lines_c</a>, <a href="./polygons_c.html">polygons_c</a>, <a href="./polygons_c2.html">polygons_c2</a>, <a href="./polygons_h.html">polygons_h</a>
+							<br><br>
+							Project page: <b><a href="https://github.com/balladaniel/leaflet-dataclassification">https://github.com/balladaniel/leaflet-dataclassification</a></b>
+						</div>
+							<a href="https://github.com/balladaniel/leaflet-dataclassification"><img src="banner.png" style="max-width: 100%;"></img></a>
+					</div>
+				`;
 				return div;
 			}
 			infopanel.addTo(map);
