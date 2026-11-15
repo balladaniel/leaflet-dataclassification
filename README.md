@@ -45,7 +45,7 @@ For working examples, please see the [Examples](https://github.com/balladaniel/l
 - [Polygons - 3220 polygons, distinguished by fill color](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_c2.html)
 - [Polygons - 334 polygons, distinguished by hatch pattern fills, using both hatch width and hatch angle as distinction between classes, simultaneously](https://balladaniel.github.io/leaflet-dataclassification/examples/polygons_h.html)
 
-All features in the examples maps listed here have binded tooltips (a default Leaflet feature) for easier check of attribute values.
+All features in the examples maps listed here have bound tooltips (a default Leaflet feature) for easier check of attribute values.
 
 ## Requirements
 - [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v2.0.0-beta.4 global and v1.9.4)
@@ -142,7 +142,7 @@ const layer = L.dataClassification(data, {
 ## API Reference
 
 ### Required options 
-- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'logarithmic'|'stddeviation'|'manual'] Classification method: natural break (Jenks), equal count (quantile), equal interval, logarithmic scale, standard deviation, manual. When using standard deviation, option `classes` is ignored. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values!
+- `mode <string>`: ['jenks'|'quantile'|'equalinterval'|'logarithmic'|'stddeviation'|'manual'] Classification method: natural break (Jenks), equal count (quantile), equal interval, logarithmic scale, standard deviation, manual. When using standard deviation, option `classes` is ignored. When using manual (which partially defeats the purpose of this plugin), option `classes` must be an array of class boundary values! Some aliases for the methods are also accepted (see [here](https://github.com/balladaniel/leaflet-dataclassification/releases/tag/v1.7)).
 - `classes <integer|array<integer>>`: desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.). If `mode` is manual, this must be an array of numbers (for example [0, 150, 200] would yield the following three classes: below 150, 150-200, above 200). 
 - `field <string>`: target attribute field name to base classification on. Case-sensitive!
 
