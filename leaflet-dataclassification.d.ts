@@ -12,14 +12,15 @@ declare module 'leaflet' {
         constructor(geojson: GeoJSON.GeoJsonObject | GeoJSON.GeoJsonObject[], options: DataClassificationOptions);
     }
 
-    export interface DataClassificationOptions extends GeoJSONOptions {
+    export interface DataClassificationOptions extends L.GeoJSONOptions {
         /**
          * Classification method to use. When using standard deviation, option classes is ignored. 
          * When using manual (which partially defeats the purpose of this plugin), option classes must be an array of class boundary values!
+         * Some aliases for the methods are also accepted (see [here](https://github.com/balladaniel/leaflet-dataclassification/releases/tag/v1.7)).
          * 
          * **Required.**
          */
-        mode: ('jenks' | 'quantile' | 'equalinterval' | 'logarithmic' | 'stddeviation' | 'manual');
+        mode: ('jenks' | 'quantile' | 'equalinterval' | 'logarithmic' | 'stddeviation' | 'manual' | 'stddev' | 'sd' | 's' | 'log' | 'naturalbreaksjenks' | 'jenksnaturalbreaks' | 'jnb' | 'equalintervals' | 'ei' | 'q');
         /**
          * Desired number of classes (min: 3; max: 10 or featurecount, whichever is lower. If higher, reverts back to the max of 10.). 
          * If mode is 'manual', this must be an array of numbers! In that case, for example [0, 150, 200] would yield the following 
@@ -59,7 +60,7 @@ declare module 'leaflet' {
         polygonHatch?: {
             /** Symbol distinction mode between classes, whether the pattern differ in stroke widths, angles or both (default: 'both') */
             distinctionMode?: ('width' | 'angle' | 'both');
-            /** Stroke colors (default: ['darkred', 'none']) */
+            /** Two stroke colors (default: ['darkred', 'none']) */
             strokeColors?: string[];
             /** Stroke widths to gradually alternate between for symbols, when distinctionMode is 'width' or 'both'. */
             strokeWidth?: {
@@ -70,7 +71,11 @@ declare module 'leaflet' {
             };
             /** Initial angle for strokes in hatch pattern (leaflet-hatchclass default: 45) */
             angle?: number;
-            /** Value to increment angle with between all hatch fill symbols, when distinctionMode is 'angle' or 'both' */
+            /** Value to increment angle with between all hatch fill symbols, when distinctionMode is 'angle' or 'both'.
+             * When solely using angle-based distinction, adjust this value carefully. The total rotation of the hatch pattern symbol should not exceed 
+             * 180°+alternateAngle across the classes you have (`classes * alternateAngle <= (180 + alternateAngle)`), otherwise the classes might share 
+             * very similar or matching symbols. Double-check that your symbols are visibly different, distinguishable and the map is readable.
+             */
             alternateAngle?: number;
         };
         /** Custom styling (in addition to standard L.GeoJSON styling options) */
