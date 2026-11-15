@@ -77,7 +77,7 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.Map('map', {layers: [OSM]}).setView([0,0], 3); 
+			var map = new L.Map('map', {layers: [cartodb_voyager]}).setView([0,0], 3); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			// create a 'front' pane, so that the overlay data layers appear in front of the polygon layer (this is only specific to multi-layered maps)
 			map.createPane('front');
