@@ -103,7 +103,7 @@
 
 				function oEF(feature, layer) {
 					if (feature.properties.discharge) {
-						layer.bindTooltip('<b>' + String(feature.properties.NAME) + '</b><br>' + String(feature.properties.discharge) + ' m³/s');
+						layer.bindTooltip(`<b>${String(feature.properties.NAME)}</b><br>${String(feature.properties.discharge)} m³/s${String((feature.properties.discharge_loc ? ' at ' + feature.properties.discharge_loc : ''))}${(feature.properties.discharge_note == 'estimate' ? '*' : '')}`);
 					} else {
 						layer.bindTooltip('<b>' + String(feature.properties.NAME) + '</b><br>' + 'no data');
 					}
