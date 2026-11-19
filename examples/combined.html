@@ -77,12 +77,13 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.Map('map', {layers: [cartodb_voyager]}).setView([0,0], 3); 
+			var map = new L.Map('map', {layers: [cartodb_voyager]}); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			// create a 'front' pane, so that the overlay data layers appear in front of the polygon layer (this is only specific to multi-layered maps)
 			map.createPane('front');
 			map.getPane('front').style.zIndex = 450;
-			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
+			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);			
+			map.fitBounds([[17, -140],[68, -65]]);
 
 			// Point features example. Attribute to test with: 'population'
 			fetch('data/us-state-capitals.geojson').then(r => r.json()).then(d => {
@@ -198,8 +199,6 @@
 					onEachFeature: tooltip
 				}).addTo(map);
 			});
-			
-			map.fitBounds([[17, -140],[68, -65]]);
 
 			var infopanel = new L.Control({position: 'bottomright'});
 			infopanel.onAdd = function (map) {

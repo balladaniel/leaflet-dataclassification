@@ -78,11 +78,12 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = L.map('map', {layers: [cartodb_voyager]}).setView([0,0], 3); 
+			var map = L.map('map', {layers: [cartodb_voyager]}); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			map.createPane('front');
 			map.getPane('front').style.zIndex = 450;
 			var layerControl = L.control.layers(baseMaps, null, {collapsed: false}).addTo(map);
+			map.fitBounds([[17, -140],[68, -65]]);
 
 			// Point features example. Attribute to test with: 'population'
 			fetch('../data/us-state-capitals.geojson').then(r => r.json()).then(d => {
@@ -197,8 +198,6 @@
 					onEachFeature: tooltip
 				}).addTo(map);
 			});
-			
-			map.fitBounds([[17, -140],[68, -65]]);
 
 			var infopanel = L.control({position: 'bottomright'});
 			infopanel.onAdd = function (map) {
