@@ -7,8 +7,8 @@
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
 		<!-- leaflet from CDN -->
-		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet.css" />
-		<script src="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet-global.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet.css" />
+		<script src="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet-global.js"></script>
 
 		<!-- plugin: -->
 		<script src="../leaflet-dataclassification.js"></script>
@@ -79,7 +79,7 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.Map('map', {layers: [cartodb_voyager]}).setView([0,0], 3); 
+			var map = new L.Map('map', {layers: [cartodb_voyager]}); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
 

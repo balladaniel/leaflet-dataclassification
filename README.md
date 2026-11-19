@@ -1,10 +1,12 @@
 # leaflet-dataclassification
 
+[![DOI](https://img.shields.io/badge/DOI-10.5194/isprs--archives--XLVIII--4--W12--2024--3--2024-green)](https://doi.org/10.5194/isprs-archives-XLVIII-4-W12-2024-3-2024)
+
 Classifies quantitative data from attributes, styles the features appropriately and also creates a clean, simple and appealing legend depicting the value classes and their associated symbols, all combined in a single step. Classifying point features can be done based on symbol color and size, line features based on color and width, polygon features based on fill color (for choropleth maps) and fill pattern (hatch fill). Extends the L.geoJSON layer.
 
 Aims to simplify data visualization and creation of elegant thematic web maps with Leaflet using GeoJSON data, with a more traditional approach of thematic cartography. Although tutorials for defining style functions (to retrieve class colors through pre-defined conditional statements) and basic legend creation exist for Leaflet, those are static (are only created for a specific dataset) and might require using GIS software beforehand to classify and style the dataset properly (to get class boundaries and exact colors), in order to have a visualization that gets the message through. This customizable plugin automates all this and can easily be used for any dataset with quantitative data. As it extends L.GeoJSON, you can have multiple layers of this (with a matched legend for each) to create a more complex data visualization.
 
-**Version 1.7 now supports both [Leaflet 2.0](https://github.com/Leaflet/Leaflet/releases/tag/v2.0.0-beta.4) and Leaflet 1.9.4, in a global script environment only. See usage below.**
+**Version 1.7 now supports both [Leaflet 2.0](https://github.com/Leaflet/Leaflet/releases/tag/v2.0.0-beta.5) and Leaflet 1.9.4, in a global script environment only. See usage below.**
 
 ![Screenshot of example maps created with the plugin. Samples.](screenshots.png)
 
@@ -35,7 +37,7 @@ Aims to simplify data visualization and creation of elegant thematic web maps wi
     - row gap adjustments
 
 ## Demos (Examples)
-For working examples, please see the [Examples](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples) folder. The examples use Leaflet v2.0.0-beta.4, while the same examples using Leaflet v1.9.4 can be found in the [Leaflet_v1](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples/leaflet_v1) subfolder.
+For working examples, please see the [Examples](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples) folder. The examples use Leaflet v2.0.0-beta.5, while the same examples using Leaflet v1.9.4 can be found in the [Leaflet_v1](https://github.com/balladaniel/leaflet-dataclassification/tree/main/examples/leaflet_v1) subfolder.
 - [A combined map with three layers (points, lines and polygons)](https://balladaniel.github.io/leaflet-dataclassification/examples/combined.html)
 - [Points - 92 points, distinguished by symbol color](https://balladaniel.github.io/leaflet-dataclassification/examples/points_c.html)
 - [Points - 471 points, distinguished by symbol size, with diamond-shaped symbols)](https://balladaniel.github.io/leaflet-dataclassification/examples/points_s.html)
@@ -48,7 +50,7 @@ For working examples, please see the [Examples](https://github.com/balladaniel/l
 All features in the examples maps listed here have bound tooltips (a default Leaflet feature) for easier check of attribute values.
 
 ## Requirements
-- [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v2.0.0-beta.4 global and v1.9.4)
+- [Leaflet](https://github.com/Leaflet/Leaflet) (tested with v2.0.0-beta.5 global and v1.9.4)
 
 ### External dependencies
 - [simple-statistics.js](https://github.com/simple-statistics/simple-statistics) (tested with v8.0.0)
@@ -60,9 +62,9 @@ All features in the examples maps listed here have bound tooltips (a default Lea
 
 Include Leaflet v2, the plugin itself (`leaflet-dataclassification.css` and `leaflet-dataclassification.js`) and plugin dependencies in your code. You can also link them through CDN and GitHub Pages:
 ``` html
-<!-- Leaflet v2.0.0-beta.4 GLOBAL -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@2.0.0-beta.4/dist/leaflet-global.js"></script>	
+<!-- Leaflet v2.0.0-beta.5 GLOBAL -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet-global.js"></script>	
 <!-- plugin dependencies -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/simple-statistics.min.js"></script>	<!-- simple-statistics/simple-statistics -->
 <script src="https://balladaniel.github.io/leaflet-dataclassification/lib/chroma.min.cjs"></script>				<!-- gka/chroma.js -->
@@ -147,7 +149,7 @@ const layer = L.dataClassification(data, {
 - `field <string>`: target attribute field name to base classification on. Case-sensitive!
 
 ### Additional options (in addition to the standard L.geoJSON options)
-#### Specific for Point	features
+#### Symbology: Specific for Point features
 - `pointMode <string>`: ['color'|'size'] Fill "color" or "size" (default: 'color')
 - `pointSize <object>`: when pointMode: "size", define min/max point circle radius 
     - `min <float>`: symbol size for the lowest class. (default: 2)
@@ -156,7 +158,7 @@ const layer = L.dataClassification(data, {
 - `style <object>`: custom styling
     - `fillColor <string>`: marker fill color, use only in size mode (default: orange)
     - `radius <float>`: marker shape radius (size), use only in color mode (default: 8, max: 10-12)
-#### Specific for Line features
+#### Symbology: Specific for Line features
 - `lineMode <string>`: ['color'|'width'] Stroke "color" or "width" (default: 'color')
 - `lineWidth <object>`: when lineMode: "width", define min/max stroke width as object
     - `min <float>`: symbol size for the lowest class. (default: 3)
@@ -164,7 +166,7 @@ const layer = L.dataClassification(data, {
 - `style <object>`: custom styling
     - `color <string>`: line stroke color, use only in width mode (default: blue, the L.path default)
     - `weight <float>`: line stroke weight, use only in color mode (default: 3, the L.path default)
-#### Specific for Polygon features
+#### Symbology: Specific for Polygon features
 - `polygonMode <string>`: ['color'|'hatch'] Fill "color" or "hatch" (default: 'color')
 - `polygonHatch <object>`: when polygonMode: "hatch", customize hatch fill pattern
     - `distinctionMode <string>`: ['width'|'angle'|'both'] Symbol distinction type between classes (default: 'both')
@@ -179,16 +181,18 @@ const layer = L.dataClassification(data, {
     - `color <string>`: polygon outline color (default: '#3388ff' blue, the L.path default)
     - `weight <float>`: polygon outline stroke width (default: 3, the L.path default)
 
-#### General options
+#### General: Symbology and "noData" handling
 - `colorRamp <string>`: color ramp to use for symbology (only used with modes in which color is the way of distinction between symbols). Based on ColorBrewer2 color ramps (https://colorbrewer2.org/), included in Chroma.js. Custom colors (`colorCustom`) override this. (default: 'PuRd')
 - `colorCustom <array<string>>`: custom color ramp defined as an array, colors in formats supported by Chroma.js, with opacity support. A minimum of two colors are required. If defined, custom colors override `colorRamp`. Example: ['rgba(210,255,178,1)', '#fec44f', 'f95f0eff']. Examples for yellow in different color formats: '#ffff00', 'ffff00', '#ff0', 'yellow', '#ffff0055', 'rgba(255,255,0,0.35)', 'hsla(58,100%,50%,0.6)', chroma('yellow').alpha(0.5). For more formats, see: https://gka.github.io/chroma.js/. For an interactive color palette helper, see: https://gka.github.io/palettes/.
+- `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful when you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
 - `noDataColor <string>`: fill/line color to use for features with null/nodata attribute values. (default: '#606060')
 - `noDataIgnore <boolean>`: if true, features with null attribute values are not shown on the map. This also means the legend will not have a nodata class (default: false)
-- `reverseColorRamp <boolean>`: if true, reverses the chosen color ramp, both in symbology on map and legend colors. Useful when you found a great looking colorramp (green to red), but would prefer reversed colors to match visual implications about colors: green implies positive, red implies negative phenomena. (default: false)
+#### General: Classification and Normalization
 - `middlePointValue <number>`: adjust boundary value of middle classes (only when classifying into even classes). Useful for symmetric classification of diverging data around 0. Only use a value within the range of the two middle classes.    
 - `classRounding <integer>`: class boundary value rounding. When positive numbers are used for this option, class boundary values are rounded to x decimals, zero will round to whole numbers, while negative numbers will round values to the nearest 10, 100, 1000, etc. Example: with a setting of "1", a value of 254777.253 will get rounded up to 254777.3, with "0" it will be 254777, with "-2" it will become 254800. (default: null - no rounding happens, values are used as-is)
-- `normalizeByField <string>`: attribute field name to normalize values of `field` by. Useful for choropleth maps showing population density. Case-sensitive!
-- `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as ''. (by default it inherits target attribute field name, on which the classification is based on)
+- `normalizeByField <string>`: attribute field name to normalize values of `field` by. Useful for e.g. choropleth maps showing population density from raw data (population and area). Case-sensitive!
+#### General: Legend
+- `legendTitle <string>`: legend header (usually a description of visualized data, with a unit of measurement). HTML-markdown and styling allowed. To hide header, set this as an empty string ''. (default: it inherits target attribute field name, on which the classification is based on)
 - `legendFooter <string>`: legend footer, centered, using a smaller italic font by default (customizble in CSS - .legendFooter class). HTML-markdown and CSS styling allowed. Hidden by default. (default: null)
 - `legendPosition <string>`: ['topleft'|'topright'|'bottomleft'|'bottomright'] Legend position, L.control option. (default: 'bottomleft')
 - `legendRowGap <number>`: legend symbology row gap in pixels. You can also alter this in the attached CSS file. (default: 3)
@@ -198,16 +202,16 @@ const layer = L.dataClassification(data, {
     - `middle <string>`: template for rows in the middle, "low to high" (default: '{low} – {high}')
     - `lowest <string>`: template for the lower end of classes, "lowest value and below" (default: '< {high}')
     - `nodata <string>`: text to show for null/nodata class (default: 'No data')
-- `unitModifier <object>`: modifies the final class boundary values in order to multiply/divide them by a number. Useful for example when a dataset attribute is in metres, but kilometres would fit the legend better (786000 metres shown as 786 km). Purely visual, only affects legend. Happens after classRounding.
+- `unitModifier <object>`: modifies the final class boundary values in order to multiply/divide them by a number. Useful e.g. when a dataset attribute is in metres, but kilometres would fit the legend better (786000 metres shown as 786 km). Purely visual, only affects legend. In-code, this happens after all classification-related processes, which might alter the boundary values in any way (normalization, classification, rounding), are finished.
     - `action <string>`: ['divide'|'multiply'] Action to take on the number specified by `by`. Required for `unitModifier`.
     - `by <number>`: a number to divide/multiply class boundary values with. Required for `unitModifier`.
 
+⚠️ Parameters set for options `legendTitle`, `legendFooter`, and options `highest`, `middle`, `lowest` and `nodata` of object `legendTemplate` are interpreted as HTML code, as they are assigned to the `innerHTML` property of `div` DOM elements. This is by design, as it allows for greater customization (e.g. you can use links in the footer of the Legend). However, if any of these parameters contain untrusted client input, it is necessary to apply proper sanitization to prevent potential XSS vulnerabilities. This is intentional behaviour, and is consistent with the position taken by Leaflet's maintainers in [Leaflet/#10214](https://github.com/Leaflet/Leaflet/issues/10214) and therefore is not considered a vulnerability of either the plugin or Leaflet.
+
 ## Hatch fill pattern types
-Symbol distinction types, when using a hatch pattern fill: width/angle/both. Option 'both' uses differing stroke width and angle at the same time.
+Symbol distinction types, when using a hatch pattern fill, from left to right: `width`/`angle`/`both` for `polygonHatch.distinctionMode`. Option `both` uses differing stroke width and angle at the same time.
 
 ![Screenshot of different hatch fill pattern modes (distinctionMode option). Samples.](screenshots_hatchfill.png)
-
-⚠️ When using hatch fills with Leaflet v2 and newer, make sure to set the view on the Leaflet map object initially, with `L.map(...).setView([0,0], 3)`. Otherwise, you might get errors originating from the plugin (`TypeError: Cannot read properties of undefined (reading 'style')`), because without `setView()`, Leaflet v2 does not initialize the `_path` property of features at that point. This is also related to `L.Path` not accepting `setStyle()` with a CSS className (https://github.com/leaflet/leaflet/issues/2662). Unfortunately, currently, the only workaround is to set the classname directly on the object's fill, using the internal `layer._path.style['fill']`, to make hatch pattern fills work.
 
 Hatch fill patterns provided by [leaflet-hatchclass](https://github.com/samanbey/leaflet-hatchclass). (Gede, M.: Hatch Fill on Webmaps – to Do or Not to Do, and How to Do, Abstr. Int. Cartogr. Assoc., 5, 48, https://doi.org/10.5194/ica-abs-5-48-2022, 2022.)
 
