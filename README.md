@@ -202,7 +202,7 @@ const layer = L.dataClassification(data, {
     - `middle <string>`: template for rows in the middle, "low to high" (default: '{low} – {high}')
     - `lowest <string>`: template for the lower end of classes, "lowest value and below" (default: '< {high}')
     - `nodata <string>`: text to show for null/nodata class (default: 'No data')
-- `unitModifier <object>`: modifies the final class boundary values in order to multiply/divide them by a number. Useful e.g. when a dataset attribute is in metres, but kilometres would fit the legend better (786000 metres shown as 786 km). Purely visual, only affects legend. In-code, this happens after `classRounding`.
+- `unitModifier <object>`: modifies the final class boundary values in order to multiply/divide them by a number. Useful e.g. when a dataset attribute is in metres, but kilometres would fit the legend better (786000 metres shown as 786 km). Purely visual, only affects legend. In-code, this happens after all classification-related processes, which might alter the boundary values in any way (normalization, classification, rounding), are finished.
     - `action <string>`: ['divide'|'multiply'] Action to take on the number specified by `by`. Required for `unitModifier`.
     - `by <number>`: a number to divide/multiply class boundary values with. Required for `unitModifier`.
 

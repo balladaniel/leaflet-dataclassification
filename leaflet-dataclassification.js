@@ -504,7 +504,6 @@ class DataClassification extends L.GeoJSON {
             // rounding to decimals using toFixed(), store string in classes object
             for (var i=0; i<this._classes.length; i++) {
                 this._classes[i].value = +this._classes[i].value.toFixed(n);
-                this._classes[i].valueFormattedString = this._classes[i].value.toFixed(n);
             }
             this._log('Class interval boundary values have been rounded to', n, 'decimal(s). New classes:', this._classes)
         } else {
@@ -575,14 +574,14 @@ class DataClassification extends L.GeoJSON {
         switch (options.action) {
             case 'multiply':
                 for (var i = 0; i<this._classes.length; i++) {
-                    this._log('MULTIPLY', this._classes[i].value,'by', options.by)
-                    this._classes[i].value = this._classes[i].value * options.by;
+                    this._log('MULTIPLY', this._classes[i].valueFormatted, 'by', options.by)
+                    this._classes[i].valueFormattedForLegend = this._classes[i].valueFormattedForLegend * options.by;
                 }
                 break;
             case 'divide':
                 for (var i = 0; i<this._classes.length; i++) {
-                    this._log('DIVIDE', this._classes[i].value,'by', options.by)  
-                    this._classes[i].value = this._classes[i].value / options.by;                  
+                    this._log('DIVIDE', this._classes[i].value, 'by', options.by)  
+                    this._classes[i].valueFormattedForLegend = this._classes[i].valueFormattedForLegend / options.by;                  
                 }
                 break;
             default:
@@ -656,8 +655,8 @@ class DataClassification extends L.GeoJSON {
                                     high = (classes[i] != null ? classes[i].stddev_lower : '');
                                     break;
                                 default:
-                                    low = classes[i-1].value;
-                                    high = (classes[i] != null ? classes[i].value : '');
+                                    low = classes[i-1].valueFormattedForLegend;
+                                    high = (classes[i] != null ? classes[i].valueFormattedForLegend : '');
                                     break;
                             }
                             container.innerHTML +=
@@ -686,8 +685,8 @@ class DataClassification extends L.GeoJSON {
                                     break;
                                 default:
                                     // decide low and high boundary values for current legend row (class)
-                                    low = classes[i-1].value;
-                                    high = (classes[i] != null ? classes[i].value : '');
+                                    low = classes[i-1].valueFormattedForLegend;
+                                    high = (classes[i] != null ? classes[i].valueFormattedForLegend : '');
                                     break;
                             }
                             
@@ -746,8 +745,8 @@ class DataClassification extends L.GeoJSON {
                                     break;
                                 default:
                                     //this._log('Legend: building line', i)
-                                    low = classes[i-1].value;
-                                    high = (classes[i] != null ? classes[i].value : '');
+                                    low = classes[i-1].valueFormattedForLegend;
+                                    high = (classes[i] != null ? classes[i].valueFormattedForLegend : '');
                                     break;
                             }
 
@@ -780,8 +779,8 @@ class DataClassification extends L.GeoJSON {
                                     high = (classes[i] != null ? classes[i].stddev_lower : '');
                                     break;
                                 default:
-                                    low = classes[i-1].value;
-                                    high = (classes[i] != null ? classes[i].value : '');
+                                    low = classes[i-1].valueFormattedForLegend;
+                                    high = (classes[i] != null ? classes[i].valueFormattedForLegend : '');
                                     break;
                             }
                             container.innerHTML +=
@@ -817,8 +816,8 @@ class DataClassification extends L.GeoJSON {
                                     high = (classes[i] != null ? classes[i].stddev_lower : '');
                                     break;
                                 default:
-                                    low = classes[i-1].value;
-                                    high = (classes[i] != null ? classes[i].value : '');
+                                    low = classes[i-1].valueFormattedForLegend;
+                                    high = (classes[i] != null ? classes[i].valueFormattedForLegend : '');
                                     break;
                             }
                             container.innerHTML +=
@@ -845,8 +844,8 @@ class DataClassification extends L.GeoJSON {
                                     high = (classes[i] != null ? classes[i].stddev_lower : '');
                                     break;
                                 default:
-                                    low = classes[i-1].value;
-                                    high = (classes[i] != null ? classes[i].value : '');
+                                    low = classes[i-1].valueFormattedForLegend;
+                                    high = (classes[i] != null ? classes[i].valueFormattedForLegend : '');
                                     break;
                             }
                             container.innerHTML +=
@@ -1403,6 +1402,11 @@ class DataClassification extends L.GeoJSON {
         this._classes.nodataFeatureCount = features.length-validFeatureCount;
 
         //this._convertClassesToObjects();
+
+        // the class boundary values are final, legend is ready to be generated - that also means that before legend generation, unitModifier can be applied to alter the displayed values (using .valueFormattedForLegend)
+        this._classes.forEach(element => {
+            element.valueFormattedForLegend = element.value;   // create a property for copy of actual class boundary value
+        });
 
         this._generateLegend(legendtitle, asc, mode_line, mode_point, mode_polygon, typeOfFeatures, legendfooter, this._classes, mode);  // generate legend
 
