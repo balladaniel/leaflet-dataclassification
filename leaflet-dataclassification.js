@@ -618,21 +618,20 @@ class DataClassification extends L.GeoJSON {
     _generateLegendContent = ({title, asc, mode_line, mode_point, mode_polygon, typeOfFeatures, footer, classes, mode, rowgap, prad, pfc, lc, lw, lt_formattedNoData}) => {
             var div = L.DomUtil.create('div', 'info legend');
 
-            var nodata = this._noDataFound;
+            var nodatafound = this._noDataFound;
             var nodatacolor = this._noDataColor;
             var nodataignore = this._noDataIgnore;
+            var nodatarow;
 
             // legend title:
             if (title != null && title != '') {
                 var titlediv = L.DomUtil.create('div', 'legendtitle');
-                titlediv.id = 'legendtitlediv';
                 titlediv.innerHTML += title;
                 div.appendChild(titlediv);
             }
 
             // legenditems container (symbology)
             var container = L.DomUtil.create('div', 'symbology');
-            container.id = 'legendsymbologydiv';
             if (rowgap != null) {
                 if (typeof rowgap === 'number') {
                     container.style['row-gap'] = rowgap+'px';
@@ -662,17 +661,18 @@ class DataClassification extends L.GeoJSON {
                                     break;
                             }
                             container.innerHTML +=
-                                '<div class="legendDataRow legendVarSizeDataRow">'+
-                                    this._svgCreator({shape: this._pointShape, color: this._colors[i-1], size: prad}).outerHTML+
-                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
-                                '</div>';
+                                `<div class="legendDataRow legendVarSizeDataRow">
+                                    ${this._svgCreator({shape: this._pointShape, color: this._colors[i-1], size: prad}).outerHTML}
+                                    <div>${this._legendRowFormatter(low, high, i)}</div>
+                                </div>`;
                         }
-                        if (nodata && !nodataignore) {
-                            container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow legendVarSizeDataRow">'+
-                                    this._svgCreator({shape: this._pointShape, color: nodatacolor, size: prad}).outerHTML+
-                                    '<div>'+lt_formattedNoData+'</div>'+
-                                '</div>'
+                        if (nodatafound && !nodataignore) {
+                            nodatarow = L.DomUtil.create('div', 'legendDataRow');
+                            nodatarow.classList.add('legendVarSizeDataRow');
+                            nodatarow.innerHTML += 
+                                `${this._svgCreator({shape: this._pointShape, color: nodatacolor, size: prad}).outerHTML}
+                                <div>${lt_formattedNoData}</div>`;
+                            container.appendChild(nodatarow);
                         }
                         break;
                     case 'size':
@@ -704,17 +704,19 @@ class DataClassification extends L.GeoJSON {
                             if (symbol.children[0] != null) {
                                 symbol.children[0].setAttribute('style', 'transform: translateX('+shiftX+'px) translateY('+shiftY+'px)');
                             } else {
-                                console.error('there was an error when generating SVG: SVG does not have any children elements')
+                                console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'There was an error when generating SVG: SVG does not have any children elements')
                             }
 
                             // generate row with symbol
                             container.innerHTML += 
-                                '<div class="legendDataRow legendVarSizeDataRow">'+
-                                    symbol.outerHTML+
-                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
-                                '</div>';
+                                `<div class="legendDataRow legendVarSizeDataRow">
+                                    ${symbol.outerHTML}
+                                    <div>${this._legendRowFormatter(low, high, i)}</div>
+                                </div>`;
                         }
-                        if (nodata && !nodataignore) {
+                        if (nodatafound && !nodataignore) {
+                            nodatarow = L.DomUtil.create('div', 'legendDataRow');
+                            nodatarow.classList.add('legendVarSizeDataRow');
                             var NDsymbol = this._svgCreator({shape: this._pointShape, size: Math.min.apply(Math, this._radiuses), color: nodatacolor});
                             var origHeight = NDsymbol.getAttribute('height');
                             var origWidth = NDsymbol.getAttribute('width');
@@ -723,11 +725,10 @@ class DataClassification extends L.GeoJSON {
                             NDsymbol.setAttribute('height', 30);
                             NDsymbol.setAttribute('width', 30);
                             NDsymbol.children[0].setAttribute('style', 'transform: translateX('+shiftX+'px) translateY('+shiftY+'px)');
-                            container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow legendVarSizeDataRow">'+
-                                    NDsymbol.outerHTML+
-                                    '<div>'+lt_formattedNoData+'</div>'+
-                                '</div>'
+                            nodatarow.innerHTML +=
+                                `${NDsymbol.outerHTML}
+                                <div>${lt_formattedNoData}</div>`;
+                            container.appendChild(nodatarow);
                         }
                         break;
                 }
@@ -751,21 +752,21 @@ class DataClassification extends L.GeoJSON {
                             }
 
                             container.innerHTML +=
-                                '<div class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
-                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+this._colors[i-1]+';"/>'+
-                                    '</svg>' +
-                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
-                                '</div>'
+                                `<div class="legendDataRow">
+                                    <svg width="25" height="25" viewBox="0 0 25 25">
+                                        <line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: ${lw}; stroke: ${this._colors[i-1]};"/>
+                                    </svg>
+                                    <div>${this._legendRowFormatter(low, high, i)}</div>
+                                </div>`
                         }
-                        if (nodata && !nodataignore) {
-                            container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
-                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                    '</svg>' +
-                                    '<div>'+lt_formattedNoData+'</div>'+
-                                '</div>'
+                        if (nodatafound && !nodataignore) {
+                            nodatarow = L.DomUtil.create('div', 'legendDataRow');
+                            nodatarow.innerHTML +=
+                                `<svg width="25" height="25" viewBox="0 0 25 25">
+                                    <line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: ${lw}; stroke: ${nodatacolor};"/>
+                                </svg>
+                                <div>${lt_formattedNoData}</div>`;
+                            container.appendChild(nodatarow);
                         }
                         break;
                     case 'width':
@@ -784,21 +785,21 @@ class DataClassification extends L.GeoJSON {
                                     break;
                             }
                             container.innerHTML +=
-                                '<div class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
-                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+this._widths[i-1]+'; stroke: '+lc+';"/>'+
-                                    '</svg>'+
-                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
-                                '</div>'
+                                `<div class="legendDataRow">
+                                    <svg width="25" height="25" viewBox="0 0 25 25">
+                                        <line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: ${this._widths[i-1]}; stroke: ${lc};"/>
+                                    </svg>
+                                    <div>${this._legendRowFormatter(low, high, i)}</div>
+                                </div>`;
                         }
-                        if (nodata && !nodataignore) {
-                            container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    '<svg width="25" height="25" viewBox="0 0 25 25">'+
-                                        '<line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: '+lw+'; stroke: '+nodatacolor+';"/>'+
-                                    '</svg>' +
-                                    '<div>'+lt_formattedNoData+'</div>'+
-                                '</div>'
+                        if (nodatafound && !nodataignore) {
+                            nodatarow = L.DomUtil.create('div', 'legendDataRow');
+                            nodatarow.innerHTML +=
+                                `<svg width="25" height="25" viewBox="0 0 25 25">
+                                    <line x1="0" y1="12.5" x2="25" y2="12.5" style="stroke-width: ${lw}; stroke: ${nodatacolor};"/>
+                                </svg>
+                                <div>${lt_formattedNoData}</div>`;
+                            container.appendChild(nodatarow);
                         }
                         break;
                 }
@@ -821,17 +822,17 @@ class DataClassification extends L.GeoJSON {
                                     break;
                             }
                             container.innerHTML +=
-                                '<div class="legendDataRow">'+
-                                    '<i style="background: ' + this._colors[i-1] + '; opacity: ' + opacity + '"></i>' +
-                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
-                                '</div>'
+                                `<div class="legendDataRow">
+                                    <i style="background: ${this._colors[i-1]}; opacity: ${opacity}"></i>
+                                    <div>${this._legendRowFormatter(low, high, i)}</div>
+                                </div>`;
                         }
-                        if (nodata && !nodataignore) {
-                            container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    '<i style="background: ' + nodatacolor + '; opacity: ' + opacity + '"></i>' +
-                                    '<div>'+lt_formattedNoData+'</div>'+
-                                '</div>'
+                        if (nodatafound && !nodataignore) {
+                            nodatarow = L.DomUtil.create('div', 'legendDataRow');
+                            nodatarow.innerHTML +=
+                                `<i style="background: ${nodatacolor}; opacity: ${opacity}"></i>
+                                <div>${lt_formattedNoData}</div>`;
+                            container.appendChild(nodatarow);
                         }
                         break;
                     case 'hatch':
@@ -849,25 +850,32 @@ class DataClassification extends L.GeoJSON {
                                     break;
                             }
                             container.innerHTML +=
-                                '<div class="legendDataRow">'+
-                                    '<svg class="hatchPatch"><rect fill="url(#'+this._hatchclasses[i-1]+')" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>'+
-                                    '<div>'+ this._legendRowFormatter(low, high, i) +'</div>'+
-                                '</div>'
+                                `<div class="legendDataRow">
+                                    <svg class="hatchPatch">
+                                        <rect fill="url(#${this._hatchclasses[i-1]})" fill-opacity="${opacity}" x="0" y="0" width="100%" height="100%"></rect>
+                                    </svg>
+                                    <div>${this._legendRowFormatter(low, high, i)}</div>
+                                </div>`;
                         }
-                        if (nodata && !nodataignore) {
-                            container.innerHTML +=
-                                '<div id="nodatarow" class="legendDataRow">'+
-                                    '<svg class="hatchPatch"><rect fill="'+ nodatacolor + '" fill-opacity="' + opacity + '" x="0" y="0" width="100%" height="100%"></rect></svg>' +
-                                    '<div>'+lt_formattedNoData+'</div>'+
-                                '</div>'
+                        if (nodatafound && !nodataignore) {
+                            nodatarow = L.DomUtil.create('div', 'legendDataRow');
+                            nodatarow.innerHTML +=
+                                `<svg class="hatchPatch"><rect fill="${nodatacolor}" fill-opacity="${opacity}" x="0" y="0" width="100%" height="100%"></rect></svg>
+                                <div>${lt_formattedNoData}</div>`;
+                            container.appendChild(nodatarow);
                         }
                         break;
                 }
             }
-            // reverse legend row order in ascending mode by reversing flex-direction
+            // in ascending legend mode: reverse legend row order by reversing flex-direction
             if (asc) {
                 container.classList.add('reverseOrder');
+                // move nodata row to the bottom after legend reversal
+                if (nodatarow) {
+                    nodatarow.classList.add('legendAscNodata');
+                }
             }
+
             // append symbology content
             div.appendChild(container);
 
@@ -920,13 +928,6 @@ class DataClassification extends L.GeoJSON {
         this._legend = legend;
         
         this._log('Legend generated:', title);
-        
-        // move nodata row to the bottom after legend reversal (in ascending mode)
-        if (asc) {
-            if (document.getElementById('nodatarow')) {
-                document.getElementById('nodatarow').classList.add('legendAscNodata');
-            }
-        } 
 
         this._timerLegendEnd = Date.now();
     }
@@ -1145,10 +1146,23 @@ class DataClassification extends L.GeoJSON {
                 this._log('Classification method: ', mode);
                 this._log('Value for option "classes": ', classnum);
                 if (!Array.isArray(classnum)) {
-                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using `mode`: "manual", `classes` must be an array of class boundary values you wish to classify features into (for example `classes`: [50, 150, 300]). ');
-                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Classification error, stopped process.');
+                    // the array is not an array
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using `mode`: "manual", `classes` must be an array of class boundary values you wish to classify features into (for example `classes`: [50, 150, 300]). Classification error, stopped process.');
                     return;
+                } else if (!classnum.every((element) => typeof element === 'number')) {
+                    // the array has items that are not numbers
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using `mode`: "manual", `classes` must only contain numbers. Classification error, stopped process.')
+                    return;
+                } else if (new Set(classnum).size != classnum.length) {
+                    // the array contains duplicated boundary values
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using `mode`: "manual", `classes` must only contain unique numbers to avoid empty classes. Classification error, stopped process.')
+                    return;   
+                } else if (classnum.length > validFeatureCount) {
+                    // the array has more classes defined than the number of features that have a numerical value (we would have empty classes)
+                    console.error(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'When using `mode`: "manual", `classes` must define less classes than the count of features with a numeric value in attribute field (', validFeatureCount, '). Classification error, stopped process.')
+                    return;                       
                 } else {
+                    // all seems good, lets sort and we have the final classes
                     classnum.sort(function(a, b) {
                         return a - b;
                     });
@@ -1380,7 +1394,7 @@ class DataClassification extends L.GeoJSON {
                 if (mode == 'stddeviation') {
                     console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Empty class! Zero features belong to class covering interval [${element.stddev_lower},${(idx != this._classes.length-1 ? this._classes[idx+1].stddev_lower : "")}] (class no. ${idx+1}, counted from the lowest class)! Consider using a different classification method.`) 
                 } else {
-                    console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Empty class! Zero features belong to class covering interval [${element.value},${(idx != this._classes.length-1 ? this._classes[idx+1].value : "")}] (class no. ${idx+1}, counted from the lowest class)! Consider using a different classification method.`) 
+                    console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', `Empty class! Zero features belong to class covering interval [${element.value},${(idx != this._classes.length-1 ? this._classes[idx+1].value : "")}] (class no. ${idx+1}, counted from the lowest class)! Consider using a different classification method or adjusting your class boundaries.`) 
                 }                
             };
         });
