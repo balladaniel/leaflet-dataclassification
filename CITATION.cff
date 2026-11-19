@@ -39,9 +39,9 @@ keywords:
   - web cartography
   - open source
 license: MIT
-commit: a4e8d0dce595dff97e32fdaa65b067df89d68b6b
-version: 1.6.1
-date-released: '2024-02-06'
+commit: 777511d743e3efc5bcfe3fc2d456e090d5567312
+version: 1.7.1
+date-released: '2026-11-19'
 preferred-citation:
   authors:
     - given-names: Dániel
