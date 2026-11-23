@@ -13,6 +13,10 @@
  * Copyright (c) 2026 Dániel Balla
 */
 
+import * as L from 'leaflet';
+import * as ss from 'simple-statistics';
+import * as chroma from 'chroma-js';
+
 var LeafletisV1 = L.version.startsWith('1.');
 
 var plugin_defaultOptions = {
@@ -71,7 +75,7 @@ var plugin_defaultOptions = {
     }
 }
 
-class DataClassification extends L.GeoJSON {
+export class DataClassification extends L.GeoJSON {
     static defaultOptions = plugin_defaultOptions;
 
     constructor(data, options) {
@@ -1588,7 +1592,3 @@ if (LeafletisV1) {
 	DataClassification.prototype.options = Object.create(L.GeoJSON.prototype.options);
 }
 DataClassification.mergeOptions(plugin_defaultOptions);
-
-L.dataClassification = function (layers, options) {
-	return new DataClassification(layers, options);
-};

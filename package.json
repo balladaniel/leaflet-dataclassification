@@ -1,0 +1,56 @@
+{
+  "name": "leaflet_dataclassification",
+  "version": "1.7.1",
+  "description": "Single-step data classification, symbology and legend creation for GeoJSON data powered, Leaflet-based thematic maps",
+  "keywords": [
+    "thematic",
+    "maps",
+    "webgis",
+    "leaflet",
+    "gis",
+    "data",
+    "visualization",
+    "leaflet",
+    "plugin",
+    "choropleth",
+    "choropleth",
+    "map"
+  ],
+  "homepage": "https://github.com/balladaniel/leaflet-dataclassification",
+  "bugs": {
+    "url": "https://github.com/balladaniel/leaflet-dataclassification/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/balladaniel/leaflet-dataclassification.git"
+  },
+  "license": "MIT",
+  "author": "Dániel Balla",
+  "type": "module",
+  "main": "leaflet-dataclassification.js",
+  "types": "./leaflet-dataclassification.d.ts",
+  "style": "leaflet-dataclassification.css",
+  "directories": {
+    "example": "examples"
+  },
+  "sideEffects": [
+    "./leaflet_dataclassification.js",
+    ".leaflet_dataclassification.css"
+  ],
+  "peerDependencies": {
+    "leaflet": "^2.0.0-beta.5"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup --config rollup.config.js"
+  },
+  "dependencies": {
+    "chroma-js": "^3.3.0",
+    "simple-statistics": "^8.0.0"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^29.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "rollup": "^4.68.8"
+  }
+}

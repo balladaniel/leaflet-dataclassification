@@ -6,17 +6,15 @@
 		<title>Leaflet-dataclassification plugin demo page: "combined"</title>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
-		<!-- leaflet from CDN -->		
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet.css" />
-		<script src="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet-global.js"></script>
-
-		<!-- plugin: -->
-		<script src="../leaflet-dataclassification.js"></script>
-		<link rel="stylesheet" href="../leaflet-dataclassification.css" />	
-					
-		<!-- dependencies locally: -->
-		<script src="../lib/simple-statistics.min.js"></script>		<!-- https://github.com/simple-statistics/simple-statistics -->
-		<script src="../lib/chroma.min.cjs"></script>				<!-- https://github.com/gka/chroma.js -->
+		<script type="importmap">
+			{
+				"imports": {
+					"leaflet": "https://cdn.jsdelivr.net/npm/leaflet@2.0.0-beta.5/dist/leaflet.js"
+				}
+			}
+		</script>
+		<link rel="stylesheet" href="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.css" />
 		
 		<style>
 			html, body {
@@ -43,7 +41,9 @@
 	</head>
 	<body>		
 		<div id="map"></div>				
-		<script>	
+		<script type="module">	
+			import * as L from 'leaflet';
+			import {DataClassification} from '../leaflet-dataclassification_bundletest.js';
 		
 			// carto API key - restricted to domain
 			var cartoKey = 'cb1_3fpi_1_9bb9b282ea7b7476f058db9a';
@@ -77,7 +77,7 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.Map('map', {layers: [cartodb_voyager]}); 
+			var map = new L.LeafletMap('map', {layers: [OSM]}); 
 			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
 			// create a 'front' pane, so that the overlay data layers appear in front of the polygon layer (this is only specific to multi-layered maps)
 			map.createPane('front');
@@ -92,7 +92,7 @@
 						layer.bindTooltip('<b>' + feature.properties.name + '</b><br>' + parseInt(feature.properties.population));
 					}
 				}
-				window.testdata2 = L.dataClassification(d, {
+				window.testdata2 = new DataClassification(d, {
 					mode: 'jenks',
 					classes: 4,
 					field: 'population',					
@@ -131,7 +131,7 @@
 						});
 					}
 				}
-				window.testdata = L.dataClassification(d, {
+				window.testdata = new DataClassification(d, {
 					mode: 'quantile',
 					classes: 5,
 					field: 'density',
@@ -179,7 +179,7 @@
 					});
 					// line highlighting end
 				}
-				window.testdata3 = L.dataClassification(d, {
+				window.testdata3 = new DataClassification(d, {
 					mode: 'quantile',
 					classes: 4,
 					field: 'discharge',
