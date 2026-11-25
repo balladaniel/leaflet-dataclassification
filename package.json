@@ -35,7 +35,7 @@
   },
   "sideEffects": [
     "./leaflet_dataclassification.js",
-    ".leaflet_dataclassification.css"
+    "./leaflet_dataclassification.css"
   ],
   "peerDependencies": {
     "leaflet": "^2.0.0-beta.5"
