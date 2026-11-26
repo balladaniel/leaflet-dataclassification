@@ -4,9 +4,9 @@ export default [{
     plugins: [
         nodeResolve()
     ],
-    input: './leaflet-dataclassification.js',
+    input: './src/leaflet-dataclassification.js',
     output: [{
-        file: './leaflet-dataclassification_bundletest.js',
+        file: './dist/leaflet-dataclassification.js',
         //format: 'umd',
         //name: 'leaflet-dataclassification'
     }],
@@ -18,7 +18,7 @@ export default [{
     // https://github.com/Leaflet/Leaflet/blob/main/PLUGIN-GUIDE.md#script-tags-and-the-global-build
     input: './build/global.js',
     output: {
-        file: './leaflet-dataclassification_bundletest_global.js', 
+        file: './dist/leaflet-dataclassification-global.js', 
         format: 'iife', 
         globals: {'leaflet': 'L', 'simple-statistics': 'ss', 'chroma-js': 'chroma'}
     },

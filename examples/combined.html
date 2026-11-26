@@ -6,6 +6,7 @@
 		<title>Leaflet-dataclassification plugin demo page: "combined"</title>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
+		<!-- leaflet v2 from CDN with an import map -->	
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet.css" />
 		<script type="importmap">
 			{
@@ -14,7 +15,9 @@
 				}
 			}
 		</script>
-		<link rel="stylesheet" href="https://balladaniel.github.io/leaflet-dataclassification/leaflet-dataclassification.css" />
+
+		<!-- leaflet-dataclassification plugin (CSS) -->	
+		<link rel="stylesheet" href="../dist/leaflet-dataclassification.css" />
 		
 		<style>
 			html, body {
@@ -42,29 +45,32 @@
 	<body>		
 		<div id="map"></div>				
 		<script type="module">	
-			import * as L from 'leaflet';
-			import {DataClassification} from '../leaflet-dataclassification_bundletest.js';
+			// imports for the demo pages
+			import {LeafletMap, TileLayer, LayersControl, Control, DomUtil} from 'leaflet';
+			import {version as Lversion} from 'leaflet';
+			// import the plugin
+			import {DataClassification} from '../dist/leaflet-dataclassification.js';
 		
 			// carto API key - restricted to domain
 			var cartoKey = 'cb1_3fpi_1_9bb9b282ea7b7476f058db9a';
 			// base maps
-			var OSM = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			var OSM = new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var carto_attrib = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_dark = new TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_voyager = new TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_positron = new TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
@@ -77,12 +83,12 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.LeafletMap('map', {layers: [cartodb_voyager]}); 
-			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
+			var map = new LeafletMap('map', {layers: [cartodb_voyager]}); 
+			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + Lversion + '</a>');
 			// create a 'front' pane, so that the overlay data layers appear in front of the polygon layer (this is only specific to multi-layered maps)
 			map.createPane('front');
 			map.getPane('front').style.zIndex = 450;
-			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);			
+			var layerControl = new LayersControl(baseMaps, null, {collapsed: false}).addTo(map);			
 			map.fitBounds([[17, -140],[68, -65]]);
 
 			// Point features example. Attribute to test with: 'population'
@@ -200,9 +206,9 @@
 				}).addTo(map);
 			});
 
-			var infopanel = new L.Control({position: 'bottomright'});
+			var infopanel = new Control({position: 'bottomright'});
 			infopanel.onAdd = function (map) {
-				var div = L.DomUtil.create('div', 'info');
+				var div = new DomUtil.create('div', 'info');
 				div.innerHTML = `
 					<div style="display: flex; flex-direction: column; max-width: 515px; text-align: center; row-gap: 8px">
 						<div style="font-weight: bold; margin-bottom: 5px;">

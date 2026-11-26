@@ -27,22 +27,21 @@
   "license": "MIT",
   "author": "Dániel Balla",
   "type": "module",
-  "main": "leaflet-dataclassification.js",
-  "types": "./leaflet-dataclassification.d.ts",
-  "style": "leaflet-dataclassification.css",
+  "main": "./src/leaflet-dataclassification.js",
+  "types": "./src/leaflet-dataclassification.d.ts",
+  "style": "./src/leaflet-dataclassification.css",
   "directories": {
     "example": "examples"
   },
   "sideEffects": [
-    "./leaflet_dataclassification.js",
-    "./leaflet_dataclassification.css"
+    "./src/leaflet-dataclassification.css"
   ],
   "peerDependencies": {
     "leaflet": "^1.9.0 || ^2.0.0-beta.5"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rollup --config rollup.config.js"
+    "build": "rollup --config rollup.config.js && @powershell copy ./src/leaflet-dataclassification.css ./dist/"
   },
   "dependencies": {
     "chroma-js": "^3.3.0",

@@ -1,5 +1,5 @@
 // build/global.js
-import {DataClassification} from '../leaflet-dataclassification.js';
+import {DataClassification} from '../src/leaflet-dataclassification.js';
 
 // leaflet is external here and resolves to window.L, from 1.x's leaflet.js or 2.0's leaflet-global.js
 window.L.DataClassification = DataClassification;
