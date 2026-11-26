@@ -6,17 +6,18 @@
 		<title>Leaflet-dataclassification plugin demo page: "points_size"</title>
 		<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
 
-		<!-- leaflet from CDN -->
+		<!-- leaflet v2 from CDN with an import map -->	
 		<link rel="stylesheet" href="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet.css" />
-		<script src="https://unpkg.com/leaflet@2.0.0-beta.5/dist/leaflet-global.js"></script>
+		<script type="importmap">
+			{
+				"imports": {
+					"leaflet": "https://cdn.jsdelivr.net/npm/leaflet@2.0.0-beta.5/dist/leaflet.js"
+				}
+			}
+		</script>
 
-		<!-- plugin: -->
-		<script src="../leaflet-dataclassification.js"></script>
-		<link rel="stylesheet" href="../leaflet-dataclassification.css" />				
-					
-		<!-- dependencies locally: -->
-		<script src="../lib/simple-statistics.min.js"></script>		<!-- https://github.com/simple-statistics/simple-statistics -->
-		<script src="../lib/chroma.min.cjs"></script>				<!-- https://github.com/gka/chroma.js -->
+		<!-- leaflet-dataclassification plugin (CSS) -->	
+		<link rel="stylesheet" href="../dist/leaflet-dataclassification.css" />	
 		
 		<style>
 			html, body {
@@ -37,30 +38,35 @@
 		</style>
 	</head>
 	<body>		
-		<div id="map"></div>				
-		<script>
+		<div id="map"></div>
+		<script type="module">
+			// imports for Leaflet
+			import {LeafletMap, TileLayer, LayersControl, Control, DomUtil} from 'leaflet';
+			import {version as Lversion} from 'leaflet';
+			// import the plugin
+			import {DataClassification} from '../dist/leaflet-dataclassification.js';
 		
 			// carto API key - restricted to domain
 			var cartoKey = 'cb1_3fpi_1_9bb9b282ea7b7476f058db9a';
 
 			// base maps
-			var OSM = new L.TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			var OSM = new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors'
 			});
 			var carto_attrib = '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-			var cartodb_dark = new L.TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_dark = new TileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_voyager = new L.TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_voyager = new TileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
 				minZoom: 0
 			});
-			var cartodb_positron = new L.TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
+			var cartodb_positron = new TileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}' + (devicePixelRatio > 1 ? '@2x.png' : '.png') + `?key=${cartoKey}`, {
 				attribution: carto_attrib,
 				subdomains: 'abcd',
 				maxZoom: 20,
@@ -73,9 +79,9 @@
 				"CARTO Positron": cartodb_positron
 			};
 			// map div object, main Leaflet object:
-			var map = new L.Map('map', {layers: [OSM]}); 
-			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + L.version + '</a>');
-			var layerControl = new L.LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
+			var map = new LeafletMap('map', {layers: [OSM]}); 
+			map.attributionControl.setPrefix('<a href="https://leafletjs.com" title="A JavaScript library for interactive maps">Leaflet ' + Lversion + '</a>');
+			var layerControl = new LayersControl(baseMaps, null, {collapsed: false}).addTo(map);
 
 			// Point features example. Attribute to test with: 'population'
 			fetch('data/points_lux_pop_osm.geojson').then(r => r.json()).then(d => {
@@ -84,7 +90,7 @@
 						layer.bindTooltip('<b>' + feature.properties.name + '</b></br>' + String(feature.properties.population));
 					}
 				}
-				window.testdata = L.dataClassification(d, {
+				window.testdata = new DataClassification(d, {
 					mode: 'jenks',
 					classes: 4,
 					field: 'population',
@@ -105,9 +111,9 @@
 				map.fitBounds(testdata.getBounds());
 			});
 
-			var infopanel = new L.Control({position: 'bottomright'});
+			var infopanel = new Control({position: 'bottomright'});
 			infopanel.onAdd = function (map) {
-				var div = L.DomUtil.create('div', 'info');
+				var div = DomUtil.create('div', 'info');
 				div.innerHTML = `
 					<div style="display: flex; flex-direction: column; max-width: 530px; text-align: center; row-gap: 8px;">
 						<div style="font-weight: bold;">

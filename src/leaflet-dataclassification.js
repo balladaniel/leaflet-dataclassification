@@ -14,8 +14,17 @@
 */
 
 import * as L from 'leaflet';
-import * as ss from 'simple-statistics';
-import * as chroma from 'chroma-js';
+import {
+    jenks as ss_jenks, 
+    standardDeviation as ss_standardDeviation, 
+    mean as ss_mean, 
+    extent as ss_extent, 
+    quantile as ss_quantile
+} from 'simple-statistics';
+import chroma from 'chroma-js';
+import {hatchClassExport} from '../lib/leaflet-hatchclass.js';
+
+var hatchClass = hatchClassExport;
 
 var LeafletisV1 = L.version.startsWith('1.');
 
@@ -365,7 +374,7 @@ export class DataClassification extends L.GeoJSON {
                 this._log('hatch distinction mode: `width`');
                 for (var i = 0; i < this._classes.length; i++) {
                     this._log('current hatch class line widths: swMin:', swMin, 'swMax:', swMax);
-                    this._hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, angle));
+                    this._hatchclasses.push(hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, angle));
                     swMin += step;
                     swMax -= step;
                 }
@@ -390,7 +399,7 @@ export class DataClassification extends L.GeoJSON {
                     swMin = 2;
                 }
                 for (var i = 0; i < this._classes.length; i++) {
-                    this._hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
+                    this._hatchclasses.push(hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
                 }
                 break;
             case 'both':
@@ -401,7 +410,7 @@ export class DataClassification extends L.GeoJSON {
                 }
                 for (var i = 0; i < this._classes.length; i++) {
                     this._log('current hatch class line widths: swMin:', swMin, 'swMax:', swMax);
-                    this._hatchclasses.push(L.hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
+                    this._hatchclasses.push(hatchClass([{ color: options.strokeColors[0], width: swMax }, { color: options.strokeColors[1], width: swMin }], null, (altAng != 0 ? angle+altAng*i : angle)));
                     swMin += step;
                     swMax -= step;
                 }
@@ -1183,7 +1192,7 @@ export class DataClassification extends L.GeoJSON {
             if (classnum > 2 && classnum <= validFeatureCount) {	
                 switch (mode) {
                     case 'jenks':	
-                        this._classes = ss.jenks(values.filter((value) => value != null), classnum);
+                        this._classes = ss_jenks(values.filter((value) => value != null), classnum);
                         this._classes.pop(); // remove last, since its the max value
                         this._log('Jenks classes: ', this._classes);
                         this._convertClassesToObjects();
@@ -1191,7 +1200,7 @@ export class DataClassification extends L.GeoJSON {
                         break;
                     case 'equalinterval':
                         this._classes = [];
-                        var minmax = ss.extent(values.filter((value) => value != null));
+                        var minmax = ss_extent(values.filter((value) => value != null));
                         this._log('EI: min:', minmax[0], ', max:', minmax[1])
                         var range = minmax[1]-minmax[0];
                         this._log('EI data range:', range)
@@ -1209,7 +1218,7 @@ export class DataClassification extends L.GeoJSON {
                         this._classes = [];
                         for (var i = 0; i<classnum; i++) {
                             var currentq = (1/classnum)*i;
-                            this._classes.push(ss.quantile(values.filter((value) => value != null), currentq));
+                            this._classes.push(ss_quantile(values.filter((value) => value != null), currentq));
                         }				
                         console.warn(`[ %cl-dcls: %cL.id ${this._leaflet_id}`, `color: red`, `color: orange`, ']', 'Quantile classes at the middle might be slightly different compared to GIS SW');		
                         this._log('Quantile classes: ', this._classes);	
@@ -1225,11 +1234,11 @@ export class DataClassification extends L.GeoJSON {
                     case 'stddeviation':
                         // with zScore: (number-average)/standard_deviation
                         this._classes = [];
-                        var stddev = ss.standardDeviation(values.filter((value) => value != null))
-                        var mean = ss.mean(values.filter((value) => value != null))
+                        var stddev = ss_standardDeviation(values.filter((value) => value != null))
+                        var mean = ss_mean(values.filter((value) => value != null))
                         this._log('stddev:', stddev)
                         this._log('stddev mean:', mean)
-                        var extent = ss.extent(values.filter((value) => value != null))
+                        var extent = ss_extent(values.filter((value) => value != null))
                         this._log('stddev extent:', extent)
                         /*var diff = extent[1]-extent[0]                    
                         console.debug('diff', diff)
@@ -1304,7 +1313,7 @@ export class DataClassification extends L.GeoJSON {
                         break;
                     case 'logarithmic':
                         this._classes = [];
-                        var minmax = ss.extent(values.filter((value) => value != null));
+                        var minmax = ss_extent(values.filter((value) => value != null));
                         this._log('Log: min:', minmax[0], ', max:', minmax[1])	
 
                         var logdiff = Math.log(minmax[1]) - Math.log(minmax[0])
