@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-terser": "^1.0.2",
     "leaflet": "^2.0.0-beta.5",
     "leaflet-v1": "npm:leaflet@^1.9.4",
     "rollup": "^4.68.8"

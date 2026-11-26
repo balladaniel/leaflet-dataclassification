@@ -1,8 +1,10 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve'; // needed for bundling dependencies
+import terser from '@rollup/plugin-terser';
 
 export default [{
     plugins: [
-        nodeResolve()
+        nodeResolve(),
+        terser()
     ],
     input: './src/leaflet-dataclassification.js',
     output: [{
@@ -13,7 +15,8 @@ export default [{
     external: ['leaflet']
 },{
     plugins: [
-        nodeResolve()
+        nodeResolve(),
+        terser()
     ],
     // https://github.com/Leaflet/Leaflet/blob/main/PLUGIN-GUIDE.md#script-tags-and-the-global-build
     input: './build/global.js',
